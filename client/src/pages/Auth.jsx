@@ -9,7 +9,7 @@ import { Box } from "@mui/material";
 import RegisterForm from "../components/Auth/RegisterForm";
 import LoginForm from "../components/Auth/LoginForm";
 import { AnimatePresence, motion } from "framer-motion";
-import { formVariants } from "../utils/animationUtils";
+import { fadeVariant } from "../utils/animationUtils";
 
 const Auth = ({ isMobile, isTablet }) => {
   const [showPassword, setShowPassword] = React.useState(false);
@@ -47,7 +47,7 @@ const Auth = ({ isMobile, isTablet }) => {
               {!toggleAuthForm && (
                 <motion.div
                   key="register-form"
-                  variants={formVariants}
+                  variants={fadeVariant}
                   initial="initial"
                   animate="animate"
                   exit="exit"
@@ -63,7 +63,7 @@ const Auth = ({ isMobile, isTablet }) => {
               {toggleAuthForm && (
                 <motion.div
                   key="login-form"
-                  variants={formVariants}
+                  variants={fadeVariant}
                   initial="initial"
                   animate="animate"
                   exit="exit"

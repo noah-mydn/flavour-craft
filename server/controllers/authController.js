@@ -14,10 +14,40 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "User already exists!" });
     }
 
+    // Create new user and save
     const newUser = new User({ firstName, lastName, email, password });
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully!!!" });
+    const accessToken = jwt.sign(
+      { userId: newUser._id, email: newUser.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: newUser._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "5h" }
+    );
+
+    newUser.refreshToken = refreshToken;
+    await newUser.save();
+
+    // Send response with tokens and user details
+    res.status(201).json({
+      message: "User registered successfully!",
+      accessToken,
+      refreshToken,
+      user: {
+        username: newUser.username,
+        userImg: newUser.userImg,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        cuisinePreferences: newUser.cuisinePreferences,
+        dietaryRestrictions: newUser.dietaryRestrictions,
+        email: newUser.email,
+      },
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -40,13 +70,13 @@ const login = async (req, res) => {
     const accessToken = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "2m" }
+      { expiresIn: "1h" }
     );
 
     const refreshToken = jwt.sign(
       { userId: user._id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "20m" }
+      { expiresIn: "5h" }
     );
 
     user.refreshToken = refreshToken;
@@ -57,7 +87,15 @@ const login = async (req, res) => {
       message: "Login successful",
       accessToken,
       refreshToken,
-      user: user,
+      user: {
+        username: user.username,
+        userImg: user.userImg,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        cuisinePreferences: user.cuisinePreferences,
+        dietaryRestrictions: user.dietaryRestrictions,
+        email: user.email,
+      },
     });
   } catch (error) {
     res
@@ -90,7 +128,7 @@ const refreshToken = async (req, res) => {
     const accessToken = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "2m" }
+      { expiresIn: "1h" }
     );
 
     // Issue a new refresh token and update the database
@@ -181,17 +219,57 @@ passport.deserializeUser(async (id, done) => {
 const googleAuth = passport.authenticate("google", {
   scope: ["profile", "email"],
 });
-const googleCallBack = passport.authenticate("google", {
-  failureRedirect: "/login",
-});
+const googleCallBack = (req, res, next) => {
+  passport.authenticate(
+    "google",
+    { session: false },
+    async (err, user, info) => {
+      if (err) {
+        console.error("Error during Google authentication:", err);
+        return res
+          .status(500)
+          .json({ message: "Internal Server Error", error: err.message });
+      }
+
+      if (!user) {
+        return res.status(401).json({ message: "Authentication failed" });
+      }
+
+      const accessToken = jwt.sign(
+        { userId: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: "5h" }
+      );
+
+      user.refreshToken = refreshToken;
+      await user.save();
+
+      res.status(200).json({
+        message: "Google logged in successfully",
+        user: {
+          username: user.username,
+          userImg: user.userImg,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          cuisinePreferences: user.cuisinePreferences,
+          dietaryRestrictions: user.dietaryRestrictions,
+          email: user.email,
+        },
+        accessToken,
+        refreshToken,
+      });
+    }
+  )(req, res, next);
+};
 
 const googleSuccess = (req, res) => {
-  console.log("New user created:", newUser);
-
-  res.status(200).json({
-    message: "Logged in successfully",
-    user: req.user,
-  });
+  console.log("Successful Logged in");
 };
 
 const logout = async (req, res) => {

@@ -1,4 +1,4 @@
-import { Box, Button, TextField } from "@mui/material";
+import { Box, Button, Chip, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import theme from "../theme/theme";
 
@@ -86,6 +86,39 @@ export const FormArea = styled(Box)({
     padding: "0 2rem",
   },
 });
+
+export const HomeContainer = styled(Box)(({ theme }) => ({
+  padding: "1rem 2rem",
+  background: theme.palette.background.default,
+  minHeight: "100vh",
+}));
+
+export const PreferenceContainer = styled(Box)(({ theme }) => ({}));
+
+export const PreferenceOptionsContainer = styled(Box)(({ theme }) => ({
+  margin: "1rem auto 0 auto",
+  padding: "1rem 0",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: "1.7rem",
+  width: "60%",
+
+  [theme.breakpoints.down("sm")]: {
+    width: "100%",
+    gap: "1rem",
+  },
+}));
+
+export const BannerArea = styled("img")(({ theme }) => ({
+  width: "100%",
+  objectFit: "cover",
+}));
+
+export const SelectableChip = styled(Chip)(({ theme }) => ({
+  cursor: "pointer",
+}));
 
 export const FormTextField = styled(TextField)(({ theme }) => ({
   background: "rgba(0,0,0,0.07)",

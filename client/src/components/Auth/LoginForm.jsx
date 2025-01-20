@@ -15,7 +15,8 @@ import { useAuth } from "../../hooks/useAuth";
 const LoginForm = (props) => {
   const { showPassword, setToggleAuthForm, togglePasswordVisibility } = props;
 
-  const { accountUser, handleInputChange, accountLogin } = useAuth();
+  const { accountUser, handleInputChange, accountLogin, googleLogin } =
+    useAuth();
 
   return (
     <Box paddingTop={2}>
@@ -106,6 +107,7 @@ const LoginForm = (props) => {
         <Button
           fullWidth
           variant="outlined"
+          onClick={() => googleLogin()}
           startIcon={
             <img src="./google-icon.svg" alt="google-icon" width={18} />
           }

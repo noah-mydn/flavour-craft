@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import {
   userSelector,
   loadingSelector,
@@ -8,8 +9,9 @@ import {
   refreshTokenSelector,
   isVerifiedSelector,
 } from "../redux/selectors/selectors";
-import { login } from "../redux/apiClients/authAPI";
+import { googleAuth, login, register } from "../redux/apiClients/authAPI";
 import React from "react";
+import { setUserProfile } from "../redux/reducers/userProfileSlice";
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -26,25 +28,68 @@ export const useAuth = () => {
     lastName: "",
     email: "",
     password: "",
+    termsAndConditions: true,
   });
 
-  //TextField Value On Change
+  //TextField and Checkbox Value On Change
   const handleInputChange = (e) => {
-    setAccountUser({ ...accountUser, [e.target.name]: e.target.value });
+    const { name, type, value, checked } = e.target;
+    setAccountUser((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   //Login
-  const accountLogin = () => {
+  const accountLogin = (e) => {
+    e.preventDefault();
     dispatch(login(accountUser));
     console.log(user);
+    dispatch(setUserProfile(user));
     if (isVerified) {
       return navigate("/home");
     }
   };
+
+  //Register
+  const accountRegister = (e) => {
+    e.preventDefault();
+    dispatch(
+      register({
+        firstName: accountUser.firstName,
+        lastName: accountUser.lastName,
+        email: accountUser.email,
+        password: accountUser.password,
+      })
+    );
+    console.log(user);
+    dispatch(setUserProfile(user));
+    if (isVerified) {
+      return navigate("/home");
+    }
+  };
+
+  // Google Login
+  const googleAuthHandler = (token) => {
+    console.log("Google Token:", token);
+    dispatch(googleAuth(token));
+  };
+
+  const googleLogin = () => {
+    window.location.href = "http://localhost:8080/auth/google";
+  };
+  //useGoogleLogin({
+
+  // onSuccess: googleAuthHandler,
+  // onError: (error) => console.error("Login Failed:", error),
+  //});
+
   return {
     user,
     accountLogin,
+    accountRegister,
     accountUser,
     handleInputChange,
+    googleLogin,
   };
 };

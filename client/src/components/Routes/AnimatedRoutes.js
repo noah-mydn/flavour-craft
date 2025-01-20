@@ -7,8 +7,12 @@ import PrivateRoute from "./PrivateRoute";
 import Auth from "../../pages/Auth";
 import GetStarted from "../../pages/GetStarted";
 import { useSessionVerifier } from "../../hooks/useSessionVerifier";
+import { useMediaQuery } from "@mui/material";
 
 const AnimatedRoutes = () => {
+  const isMobile = useMediaQuery("(max-width: 600px)");
+  const isTablet = useMediaQuery("(max-width: 900px)");
+
   useSessionVerifier();
   return (
     <Routes>
@@ -18,7 +22,7 @@ const AnimatedRoutes = () => {
         path="/"
         element={
           <PublicRoute>
-            <GetStarted />
+            <GetStarted isMobile={isMobile} isTablet={isTablet} />
           </PublicRoute>
         }
       />
@@ -26,7 +30,7 @@ const AnimatedRoutes = () => {
         path="/auth"
         element={
           <PublicRoute>
-            <Auth />
+            <Auth isMobile={isMobile} isTablet={isTablet} />
           </PublicRoute>
         }
       />
@@ -36,7 +40,7 @@ const AnimatedRoutes = () => {
         path="/home"
         element={
           <PrivateRoute>
-            <Home />
+            <Home isMobile={isMobile} />
           </PrivateRoute>
         }
       />

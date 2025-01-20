@@ -11,7 +11,13 @@ const batchGenerateRoute = require("./routes/recipes");
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: "*",
+  credentials: true,
+
+  methods: ["GET", "POST", "PUT", "DELETE"],
+};
+app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -32,6 +38,13 @@ app.use("/auth", authRoutes);
 app.use("/preferences", preferenceRoutes);
 app.use("/recommendations", recommendationRoutes);
 app.use("/recipes", batchGenerateRoute);
+
+app.options("/auth/google", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.sendStatus(200);
+});
 
 app.get("/auth/google", (req, res, next) => {
   console.log("Google Auth Route Hit");

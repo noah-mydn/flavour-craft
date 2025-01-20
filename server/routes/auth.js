@@ -1,4 +1,5 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const {
   register,
   login,
@@ -24,11 +25,26 @@ router.get(
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", { session: false }),
   (req, res) => {
-    console.log("Authentication successful, user:", req.user);
-    res.send("Logged in successfully!");
-    res.redirect("/login");
+    const user = req.user;
+
+    // Generate tokens for your application
+    const accessToken = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.redirect(
+      `http://localhost:3000/home?accessToken=${accessToken}&refreshToken=${refreshToken}`
+    );
   }
 );
 

@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import theme from "../../theme/theme";
+import { useAuth } from "../../hooks/useAuth";
 
 const RegisterForm = (props) => {
   const {
@@ -21,8 +22,9 @@ const RegisterForm = (props) => {
     isMobile,
   } = props;
 
+  const { accountUser, handleInputChange, accountRegister } = useAuth();
   return (
-    <Box paddingTop={2}>
+    <form onSubmit={accountRegister} style={{ padding: "1rem 0" }}>
       <Typography variant={isMobile ? "h3" : "h1"} className="text-center">
         Create an account
       </Typography>
@@ -35,30 +37,47 @@ const RegisterForm = (props) => {
       >
         <Box display="flex" gap="1rem">
           <FormTextField
+            required
             fullWidth
             variant="outlined"
             label="First Name"
             size="small"
+            name="firstName"
+            value={accountUser.firstName}
+            onChange={handleInputChange}
           />
           <FormTextField
+            required
             fullWidth
             variant="outlined"
             label="Last Name"
             size="small"
+            name="lastName"
+            value={accountUser.lastName}
+            onChange={handleInputChange}
           />
         </Box>
         <FormTextField
+          required
           fullWidth
           variant="outlined"
           label="Email"
           size="small"
           margin="normal"
+          name="email"
+          type="email"
+          onChange={handleInputChange}
+          value={accountUser?.email}
           sx={{ marginTop: "1rem" }}
         />
         <FormTextField
+          required
           fullWidth
           variant="outlined"
           label="Password"
+          name="password"
+          onChange={handleInputChange}
+          value={accountUser?.password}
           size="small"
           sx={{ marginTop: ".5rem" }}
           type={showPassword ? "text" : "password"}
@@ -84,7 +103,14 @@ const RegisterForm = (props) => {
 
         {/* Terms and Conditions */}
         <FormControlLabel
-          control={<Checkbox color="primary" />}
+          control={
+            <Checkbox
+              color="primary"
+              name="termsAndConditions"
+              checked={accountUser?.termsAndConditions}
+              onChange={handleInputChange}
+            />
+          }
           label={
             <Typography
               variant="body2"
@@ -98,7 +124,7 @@ const RegisterForm = (props) => {
                   textDecoration: "none",
                 }}
               >
-                Terms & Conditions
+                Terms & Conditions *
               </a>
             </Typography>
           }
@@ -109,7 +135,7 @@ const RegisterForm = (props) => {
           fullWidth
           variant="contained"
           color="primary"
-          //onClick={handleRegister}
+          type="submit"
           sx={{
             padding: "0.5rem",
             fontWeight: "bold",
@@ -155,7 +181,7 @@ const RegisterForm = (props) => {
           &nbsp;&nbsp;Google
         </Button>
       </Box>
-    </Box>
+    </form>
   );
 };
 

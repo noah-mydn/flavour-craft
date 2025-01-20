@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import showErrorToast from "../../utils/toastUtil";
 const BASE_URL = process.env.REACT_APP_BASE_API + "/auth";
 
 // Login
@@ -14,18 +15,64 @@ export const login = createAsyncThunk(
       console.log(response);
       const { user, accessToken, refreshToken } = response.data;
 
-      // Store tokens in appropriate storages
-      sessionStorage.setItem("userData", JSON.stringify(user));
-      sessionStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-
-      return { user, accessToken };
+      return { user, accessToken, refreshToken };
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      if (error?.response?.data) {
+        const errorMsg = error.response.data || error.message;
+        showErrorToast(errorMsg);
+        return rejectWithValue(errorMsg);
+      }
     }
   }
 );
 
+//Register
+export const register = createAsyncThunk(
+  "auth/register",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${BASE_URL}/register`, {
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email,
+        password: payload.password,
+      });
+      const { user, accessToken, refreshToken } = response.data;
+
+      return { user, accessToken, refreshToken };
+    } catch (error) {
+      console.log(error?.response?.data.message);
+      if (error?.response?.data.message) {
+        const errorMsg = error.response.data.message || error.message;
+        return rejectWithValue(errorMsg);
+      }
+      //return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const googleAuth = createAsyncThunk(
+  "auth/googleAuth",
+  async (googleResponse, { rejectWithValue }) => {
+    try {
+      const { access_token } = googleResponse;
+
+      const response = await axios.get("/auth/google", {
+        token: access_token,
+      });
+
+      const { user, accessToken, refreshToken } = response.data;
+
+      sessionStorage.setItem("userData", JSON.stringify(user));
+      sessionStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      console.log("User authenticated successfully:", user);
+    } catch (error) {
+      console.error("Error during Google authentication:", error.message);
+    }
+  }
+);
 // Refresh Token
 export const refreshSession = createAsyncThunk(
   "auth/refresh",
@@ -74,31 +121,6 @@ export const refreshSession = createAsyncThunk(
 
       // Default fallback for unexpected errors
       console.error("An unknown error occurred:", error.message);
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
-
-//Register
-export const register = createAsyncThunk(
-  "auth/register",
-  async (payload, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(`${BASE_URL}/register`, {
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        email: payload.email,
-        password: payload.password,
-      });
-      const { user, accessToken, refreshToken } = response.data;
-
-      // Store tokens in appropriate storages
-      sessionStorage.setItem("userData", JSON.stringify(user));
-      sessionStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-
-      return { user, accessToken };
-    } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
   }

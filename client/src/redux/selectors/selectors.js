@@ -7,6 +7,18 @@ const isVerified = (state) => state.auth.isVerified;
 const loading = (state) => state.auth.loading;
 const error = (state) => state.auth.error;
 
+const cuisinePreferences = (state) => state.userProfile.cuisinePreferences;
+const dietaryRestrictions = (state) => state.userProfile.dietaryRestrictions;
+
+export const cuisineSelectors = createSelector(
+  cuisinePreferences,
+  (cuisinePreferences) => cuisinePreferences
+);
+export const dietaryRestrictionsSelectors = createSelector(
+  dietaryRestrictions,
+  (dietaryRestrictions) => dietaryRestrictions
+);
+
 export const userSelector = createSelector(user, (user) => user);
 export const accessTokenSelector = createSelector(
   accessToken,

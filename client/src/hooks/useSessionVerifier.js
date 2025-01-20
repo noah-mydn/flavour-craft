@@ -15,17 +15,14 @@ export const useSessionVerifier = () => {
     let token = sessionStorage.getItem("accessToken");
     console.log(token);
     if (token) {
-      const isTokenValid = verifySession();
+      const isTokenValid = verifySession(token);
       console.log(isTokenValid);
-      //If not valid, check refresh token exists
       if (!isTokenValid) {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (refreshToken) {
-          dispatch(refreshSession());
-        } else {
-          dispatch(logout);
-        }
+        console.log("This runs!");
+        dispatch(logout());
       }
+    } else {
+      dispatch(logout());
     }
   };
 };
