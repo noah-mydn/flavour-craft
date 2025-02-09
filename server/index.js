@@ -8,6 +8,7 @@ const authRoutes = require("./routes/auth");
 const preferenceRoutes = require("./routes/preferences");
 const recommendationRoutes = require("./routes/recommendations");
 const batchGenerateRoute = require("./routes/recipes");
+const communityRoute = require("./routes/community");
 const app = express();
 
 // Middleware
@@ -38,6 +39,7 @@ app.use("/auth", authRoutes);
 app.use("/preferences", preferenceRoutes);
 app.use("/recommendations", recommendationRoutes);
 app.use("/recipes", batchGenerateRoute);
+app.use("/posts", communityRoute);
 
 app.options("/auth/google", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -57,4 +59,9 @@ app.get("/auth/google/callback", (req, res, next) => {
 
 // Start the server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on PORT:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Server running on PORT:${PORT};
+  console.log("GOOGLE_CLIENT_ID:", ${process.env.GOOGLE_CLIENT_ID});
+console.log("GOOGLE_CLIENT_SECRET:", ${process.env.GOOGLE_CLIENT_SECRET});
+`)
+);

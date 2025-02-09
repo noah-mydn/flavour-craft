@@ -7,75 +7,23 @@ import {
 } from "../../styles/ContainerStyles";
 import { Box, Button, Typography } from "@mui/material";
 import { usePreferences } from "../../hooks/usePreferences";
-import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  updateCuisinePreferences,
-  updateDietaryRestrictions,
-} from "../../redux/reducers/userProfileSlice";
-import {
-  cuisineSelectors,
-  dietaryRestrictionsSelectors,
-} from "../../redux/selectors/selectors";
 import { fadeVariant } from "../../utils/animationUtils";
 
-const Preferences = ({ isMobile }) => {
-  const { cuisines, healthConditions, allergies, lifeStyles } =
-    usePreferences();
+const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
+  const {
+    cuisines,
+    healthConditions,
+    allergies,
+    lifeStyles,
+    handleCuisineSelections,
+    handleDietarySelections,
+    selectCuisineSelections,
+    selectDietaryRestrictions,
+  } = usePreferences();
 
-  const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors) || [];
-  const cuisineSelections = useSelector(cuisineSelectors) || [];
-
-  const dispatch = useDispatch();
-
-  const [selectDietaryRestrictions, setSelectDietaryRestrictions] =
-    React.useState(new Set(dietaryRestrictions));
-  const [selectCuisineSelections, setSelectCuisineSelections] = React.useState(
-    new Set(cuisineSelections)
-  );
-  const [show, setShow] = React.useState(0);
-  const handleDietarySelections = (selection) => {
-    const newSelectedOptions = new Set(selectDietaryRestrictions);
-    if (newSelectedOptions.has(selection)) {
-      newSelectedOptions.delete(selection);
-    } else {
-      newSelectedOptions.add(selection);
-    }
-    setSelectDietaryRestrictions(newSelectedOptions);
-    console.log(newSelectedOptions);
-    dispatch(updateDietaryRestrictions([...newSelectedOptions]));
-  };
-
-  const handleCuisineSelections = (selection) => {
-    const newSelectedOptions = new Set(selectCuisineSelections);
-    if (newSelectedOptions.has(selection)) {
-      newSelectedOptions.delete(selection);
-    } else {
-      newSelectedOptions.add(selection);
-    }
-    setSelectCuisineSelections(newSelectedOptions);
-    console.log(newSelectedOptions);
-    dispatch(updateCuisinePreferences([...newSelectedOptions]));
-  };
-
-  const showNext = () => {
-    setShow(show + 1);
-  };
-
-  const showPrevious = () => {
-    setShow(show - 1);
-  };
-
-  const showMain = () => {
-    setShow(2);
-  };
-
-  // React.useEffect(() => {
-  //   console.log(allergies);
-  //   console.log(healthConditions);
-  //   console.log(cuisines);
-  //   console.log(lifeStyles);
-  // }, [cuisines, allergies, healthConditions, lifeStyles]);
+  const { skipStep, skipToMain, step, nextStep, previousStep } =
+    preferenceSelectionSteps;
 
   return (
     <PreferenceContainer>
@@ -90,12 +38,14 @@ const Preferences = ({ isMobile }) => {
         color="primary"
         fontWeight="bold"
         textAlign="center"
-        mt={4}
+        my={4}
       >
-        Choose your dietary preferences...
+        {step === 0
+          ? "Choose your dietary preferences..."
+          : "Choose your cuisine preferences..."}
       </Typography>
       <AnimatePresence mode="wait">
-        {show === 0 && (
+        {step === 0 && (
           <motion.div
             key="dietary-selections"
             variants={fadeVariant}
@@ -150,7 +100,7 @@ const Preferences = ({ isMobile }) => {
             </PreferenceOptionsContainer>
           </motion.div>
         )}
-        {show === 1 && (
+        {step === 1 && (
           <motion.div
             key="cuisine-selections"
             variants={fadeVariant}
@@ -177,48 +127,54 @@ const Preferences = ({ isMobile }) => {
           </motion.div>
         )}
       </AnimatePresence>
-      {show === 2 && <span>hehe</span>}
-      {selectDietaryRestrictions.size < 1 && show != 2 && (
-        <Box display="flex" justifyContent="flex-end">
+
+      {/* Button controls */}
+      <Box display="flex" justifyContent="flex-end" mt={4}>
+        {step == 1 && (
           <Button
-            onClick={showMain}
+            onClick={previousStep}
             variant="text"
-            pr={6}
-            color="primary"
-            sx={{
-              cursor: "pointer",
-              textTransform: "uppercase",
-            }}
-            fontWeight="bold"
-          >
-            Skip
-          </Button>
-        </Box>
-      )}
-      {selectDietaryRestrictions.size > 0 && show != 2 && (
-        <Box display="flex" justifyContent="space-between">
-          <Button
-            onClick={showPrevious}
-            variant="text"
-            pr={6}
-            color="warning"
+            color="primary.light"
             sx={{ cursor: "pointer", textTransform: "uppercase" }}
-            fontWeight="bold"
           >
             Previous
           </Button>
+        )}
+
+        {step === 0 && selectDietaryRestrictions.size < 1 && (
           <Button
-            onClick={showNext}
-            variant="contained"
-            pr={6}
-            color="secondary"
+            onClick={skipStep}
+            variant="text"
+            color="primary"
             sx={{ cursor: "pointer", textTransform: "uppercase" }}
-            fontWeight="bold"
+          >
+            Skip
+          </Button>
+        )}
+
+        {step === 1 && selectCuisineSelections.size < 1 && (
+          <Button
+            onClick={skipToMain}
+            variant="text"
+            color="primary"
+            sx={{ cursor: "pointer", textTransform: "uppercase" }}
+          >
+            Skip
+          </Button>
+        )}
+
+        {((step === 0 && selectDietaryRestrictions.size > 0) ||
+          (step === 1 && selectCuisineSelections.size > 0)) && (
+          <Button
+            onClick={nextStep}
+            variant="contained"
+            color="warning"
+            sx={{ cursor: "pointer", textTransform: "uppercase" }}
           >
             Next
           </Button>
-        </Box>
-      )}
+        )}
+      </Box>
     </PreferenceContainer>
   );
 };

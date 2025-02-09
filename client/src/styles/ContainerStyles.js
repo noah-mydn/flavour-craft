@@ -1,4 +1,4 @@
-import { Box, Button, Chip, TextField } from "@mui/material";
+import { Box, Button, Chip, Link, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import theme from "../theme/theme";
 
@@ -140,4 +140,39 @@ export const FormTextField = styled(TextField)(({ theme }) => ({
       color: theme.palette.primary.dark,
     },
   },
+}));
+
+export const NavigationLink = styled(Link)({
+  color: theme.palette.secondary.dark,
+  display: "block",
+  paddingBottom: "15px",
+  textTransform: "uppercase",
+  textDecoration: "none",
+  position: "relative",
+  fontSize: "1rem",
+  cursor: "pointer",
+  "&:hover": {
+    color: theme.palette.primary.light,
+  },
+  "&::before": { transition: "all 0.5s" },
+  "&::after": {
+    position: "absolute",
+    width: 0,
+    content: "''",
+    background: theme.palette.primary.light,
+    color: "transparent",
+    height: "2px",
+    right: 0,
+    bottom: 0,
+    left: 0,
+    transition: "all 0.5s",
+  },
+  "&:hover::after": {
+    width: "100%",
+  },
+});
+
+export const ContentArea = styled(Box)(({ theme }) => ({
+  padding: "1rem 2rem",
+  marginTop: "90px",
 }));

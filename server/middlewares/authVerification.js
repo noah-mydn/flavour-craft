@@ -5,11 +5,10 @@ const authenticateToken = (req, res, next) => {
 
   if (!authHeader) {
     return res.status(401).json({
-      message: "Access token is required",
+      message: "Unathorized Access",
     });
   }
 
-  // Extract token from "Bearer <token>" format
   const token = authHeader.split(" ")[1];
 
   if (!token) {

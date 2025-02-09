@@ -38,6 +38,7 @@ const cuisinePreferences = [
   "Burmese",
   "French",
   "Korean",
+  "All",
 ];
 
 module.exports = {

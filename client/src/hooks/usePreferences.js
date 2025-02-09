@@ -1,12 +1,57 @@
 import axios from "axios";
 import React from "react";
-import { data } from "react-router-dom";
+
+import { useDispatch, useSelector } from "react-redux";
+import {
+  updateDietaryRestrictions,
+  updateCuisinePreferences,
+} from "../redux/reducers/userProfileSlice";
+import {
+  cuisineSelectors,
+  dietaryRestrictionsSelectors,
+} from "../redux/selectors/selectors";
 
 export const usePreferences = () => {
   const [allergies, setAllergies] = React.useState([]);
   const [lifeStyles, setLifeStyles] = React.useState([]);
   const [healthConditions, setHealthConditions] = React.useState([]);
+  const [step, setStep] = React.useState(0);
   const [cuisines, setCuisines] = React.useState([]);
+
+  const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors) || [];
+  const cuisineSelections = useSelector(cuisineSelectors) || [];
+
+  const dispatch = useDispatch();
+
+  const [selectDietaryRestrictions, setSelectDietaryRestrictions] =
+    React.useState(new Set(dietaryRestrictions));
+  const [selectCuisineSelections, setSelectCuisineSelections] = React.useState(
+    new Set(cuisineSelections)
+  );
+
+  const handleDietarySelections = (selection) => {
+    const newSelectedOptions = new Set(selectDietaryRestrictions);
+    if (newSelectedOptions.has(selection)) {
+      newSelectedOptions.delete(selection);
+    } else {
+      newSelectedOptions.add(selection);
+    }
+    setSelectDietaryRestrictions(newSelectedOptions);
+    console.log(newSelectedOptions);
+    dispatch(updateDietaryRestrictions([...newSelectedOptions]));
+  };
+
+  const handleCuisineSelections = (selection) => {
+    const newSelectedOptions = new Set(selectCuisineSelections);
+    if (newSelectedOptions.has(selection)) {
+      newSelectedOptions.delete(selection);
+    } else {
+      newSelectedOptions.add(selection);
+    }
+    setSelectCuisineSelections(newSelectedOptions);
+    console.log(newSelectedOptions);
+    dispatch(updateCuisinePreferences([...newSelectedOptions]));
+  };
 
   React.useEffect(() => {
     fetchDietaryPreferences();
@@ -62,9 +107,27 @@ export const usePreferences = () => {
     }
   };
 
+  const nextStep = () => setStep(step + 1);
+  const previousStep = () => setStep(step - 1);
+  const skipStep = () => setStep(step + 1);
+  const skipToMain = () => setStep(2);
+
+  const preferenceSelectionSteps = {
+    step,
+    nextStep,
+    previousStep,
+    skipStep,
+    skipToMain,
+  };
+
   return {
     fetchDietaryPreferences,
     fetchCuisinePreferences,
+    handleCuisineSelections,
+    handleDietarySelections,
+    selectCuisineSelections,
+    selectDietaryRestrictions,
+    preferenceSelectionSteps,
     allergies,
     healthConditions,
     cuisines,

@@ -2,16 +2,41 @@ import { Box } from "@mui/material";
 import React from "react";
 import { LogoArea, HomeContainer } from "../styles/ContainerStyles";
 import Preferences from "../components/Preferences/Preferences";
+import { usePreferences } from "../hooks/usePreferences";
+import { Main } from "../components/Main/Main";
+import { useSelector } from "react-redux";
+import {
+  cuisineSelectors,
+  dietaryRestrictionsSelectors,
+} from "../redux/selectors/selectors";
+import TopNavigationBar from "../components/Navigations/TopNavigationBar";
 
 const Home = ({ isMobile }) => {
+  const { preferenceSelectionSteps } = usePreferences();
+  const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors);
+  const cuisinePreferences = useSelector(cuisineSelectors);
+  const { skipStep, skipToMain, step, nextStep, previousStep } =
+    preferenceSelectionSteps;
+
+  React.useEffect(() => {
+    console.log("Cusines:", cuisinePreferences);
+    console.log("Dietary Restrictions:", dietaryRestrictions);
+  }, []);
   return (
     <>
-      {/* <Box padding={4} display="flex" justifyContent="space-between">
-        <img src="./logo.png" alt="Logo" width={130} height={60} />
-      </Box> */}
-      <HomeContainer>
-        <Preferences isMobile={isMobile} />
-      </HomeContainer>
+      {step < 2 &&
+        (cuisinePreferences?.length <= 0 || !dietaryRestrictions?.length <= 0)(
+          <Preferences
+            isMobile={isMobile}
+            preferenceSelectionSteps={preferenceSelectionSteps}
+          />
+        )}
+      {step == 2 && (
+        <>
+          <TopNavigationBar isMobile={isMobile} />
+          <Main isMobile={isMobile} />
+        </>
+      )}
     </>
   );
 };
