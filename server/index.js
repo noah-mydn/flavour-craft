@@ -2,6 +2,7 @@ const express = require("express");
 const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
+const http = require("http");
 require("dotenv").config();
 require("./config/db");
 const authRoutes = require("./routes/auth");
@@ -10,6 +11,7 @@ const recommendationRoutes = require("./routes/recommendations");
 const batchGenerateRoute = require("./routes/recipes");
 const communityRoute = require("./routes/community");
 const app = express();
+const socket = require("./config/socket");
 
 // Middleware
 const corsOptions = {
@@ -57,11 +59,21 @@ app.get("/auth/google/callback", (req, res, next) => {
   next();
 });
 
+const server = http.createServer(app);
+
+const io = socket.init(server);
+io.on("connection", (socket) => {
+  console.log("a new client connected");
+
+  socket.on("joinRoom", (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} has joined the room`);
+  });
+  socket.on("disconnect", () => {
+    console.log("a user disconnected");
+  });
+});
+
 // Start the server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () =>
-  console.log(`Server running on PORT:${PORT};
-  console.log("GOOGLE_CLIENT_ID:", ${process.env.GOOGLE_CLIENT_ID});
-console.log("GOOGLE_CLIENT_SECRET:", ${process.env.GOOGLE_CLIENT_SECRET});
-`)
-);
+server.listen(PORT, () => console.log(`Server running on PORT:${PORT}`));

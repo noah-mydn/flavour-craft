@@ -17,13 +17,14 @@ import {
   cuisineSelectors,
   dietaryRestrictionsSelectors,
 } from "../../redux/selectors/selectors";
+import TermsAndConditions from "../../pages/TermsAndConditions";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
   const isTablet = useMediaQuery("(max-width: 900px)");
 
-  const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors);
-  const cuisinePreferences = useSelector(cuisineSelectors);
+  // const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors);
+  // const cuisinePreferences = useSelector(cuisineSelectors);
 
   useSessionVerifier();
   return (
@@ -43,6 +44,14 @@ const AnimatedRoutes = () => {
         element={
           <PublicRoute>
             <Auth isMobile={isMobile} isTablet={isTablet} />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/terms"
+        element={
+          <PublicRoute>
+            <TermsAndConditions isMobile={isMobile} isTablet={isTablet} />
           </PublicRoute>
         }
       />

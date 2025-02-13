@@ -1,5 +1,6 @@
 const Post = require("../../models/community/Posts");
 const Comment = require("../../models/community/Comments");
+const Notification = require("../../models/community/Notification");
 
 exports.createPost = async (req, res) => {
   try {
@@ -176,6 +177,7 @@ exports.deletePost = async (req, res) => {
 };
 
 exports.addComment = async (req, res) => {
+  console.log("Commented User:", req.user);
   try {
     const { userId, content } = req.body;
     const postId = req.params.postId;
@@ -195,6 +197,18 @@ exports.addComment = async (req, res) => {
     await newComment.save();
     post.comments.push(newComment._id);
     await post.save();
+
+    //send noti to post's author
+    if (post.user._id.toString() != userId) {
+      const noti = new Notification({
+        user: post.user._id,
+        type: "comment",
+        message: `${req.user.firstName} left a comment on your post.`,
+        link: `/post/${postId}`,
+        isRead: false,
+      });
+      await noti.save();
+    }
 
     res.status(201).json({
       status: 201,
@@ -367,5 +381,21 @@ exports.deleteDownVote = async (req, res) => {
       message: "Failed to remove downvote",
       error: error.message,
     });
+  }
+};
+
+exports.getNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find({
+      userId: req.user._id,
+    }).sort({ createdAt: -1 });
+    res.status(200).json({
+      status: 200,
+      notifications: notifications,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to fetch notifications", error: error.message });
   }
 };

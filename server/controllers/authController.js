@@ -68,7 +68,7 @@ const login = async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, firstName: user.firstName },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -126,7 +126,7 @@ const refreshToken = async (req, res) => {
 
     // Generate a new access token
     const accessToken = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, firstName: user.firstName },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -236,7 +236,7 @@ const googleCallBack = (req, res, next) => {
       }
 
       const accessToken = jwt.sign(
-        { userId: user._id, email: user.email },
+        { userId: user._id, email: user.email, firstName: user.firstName },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
