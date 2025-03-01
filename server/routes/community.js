@@ -22,7 +22,7 @@ const router = express.Router();
 
 router.post(
   "/create",
-  cloudinaryUpload.single("image"),
+  cloudinaryUpload.array("images", 5),
   authenticateToken,
   createPost
 );
@@ -30,7 +30,7 @@ router.get("/popular", authenticateToken, getPopularPosts);
 router.get("/trending", authenticateToken, getTrendingPosts);
 router.put(
   "/:postId",
-  cloudinaryUpload.single("image"),
+  cloudinaryUpload.array("images", 5),
   authenticateToken,
   updatePost
 );

@@ -3,7 +3,7 @@ import React from "react";
 import { ContentArea } from "../styles/ContainerStyles";
 
 const Favourites = ({ isMobile }) => {
-  return <ContentArea>Favourites</ContentArea>;
+  return <h1>Favourites</h1>;
 };
 
 export default Favourites;

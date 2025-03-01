@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 
+//User Profile
 const user = (state) => state.auth.user;
 const accessToken = (state) => state.auth.accessToken;
 const refreshToken = (state) => state.auth.refreshToken;
@@ -34,3 +35,11 @@ export const isVerifiedSelector = createSelector(
 );
 export const loadingSelector = createSelector(loading, (loading) => loading);
 export const errorSelector = createSelector(error, (error) => error);
+
+//Post
+const post = (state) => state.post;
+export const postSelector = createSelector(post, (post) => post);
+export const isResetSelector = createSelector(
+  post,
+  (post) => post.isResetState
+);

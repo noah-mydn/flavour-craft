@@ -6,6 +6,7 @@ const http = require("http");
 require("dotenv").config();
 require("./config/db");
 const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/user");
 const preferenceRoutes = require("./routes/preferences");
 const recommendationRoutes = require("./routes/recommendations");
 const batchGenerateRoute = require("./routes/recipes");
@@ -38,6 +39,7 @@ app.use(passport.session());
 
 // Routes
 app.use("/auth", authRoutes);
+app.use("/user", userRoutes);
 app.use("/preferences", preferenceRoutes);
 app.use("/recommendations", recommendationRoutes);
 app.use("/recipes", batchGenerateRoute);

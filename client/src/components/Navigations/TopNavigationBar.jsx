@@ -44,7 +44,14 @@ const TopNavigationBar = ({ isMobile }) => {
   ];
   return (
     <>
-      <AppBar sx={{ bgcolor: "transparent" }} elevation={0}>
+      <AppBar
+        elevation={0}
+        position="fixed"
+        sx={{
+          zIndex: 99,
+          background: "#faf8f5",
+        }}
+      >
         <Box
           display="flex"
           justifyContent="space-between"

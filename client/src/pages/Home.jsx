@@ -1,6 +1,4 @@
-import { Box } from "@mui/material";
 import React from "react";
-import { LogoArea, HomeContainer } from "../styles/ContainerStyles";
 import Preferences from "../components/Preferences/Preferences";
 import { usePreferences } from "../hooks/usePreferences";
 import { Main } from "../components/Main/Main";
@@ -25,16 +23,18 @@ const Home = ({ isMobile }) => {
   return (
     <>
       {step < 2 &&
-        (cuisinePreferences?.length <= 0 || !dietaryRestrictions?.length <= 0)(
+        (cuisinePreferences?.length === 0 ||
+          dietaryRestrictions?.length === 0) && (
           <Preferences
             isMobile={isMobile}
             preferenceSelectionSteps={preferenceSelectionSteps}
           />
         )}
+
       {step == 2 && (
         <>
-          <TopNavigationBar isMobile={isMobile} />
-          <Main isMobile={isMobile} />
+          <TopNavigationBar />
+          <Main />
         </>
       )}
     </>

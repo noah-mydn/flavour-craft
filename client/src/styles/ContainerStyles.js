@@ -1,6 +1,14 @@
-import { Box, Button, Chip, Link, TextField } from "@mui/material";
+import { Box, Button, Card, Chip, Link, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import theme from "../theme/theme";
+
+export const Section = styled(Box)(({ theme }) => ({
+  height: "auto",
+  minHeight: "100vh",
+  background: theme.palette.background.default,
+  backgroundImage: "linear-gradient(to right, #feffea 0%, #e7e3de 100%)",
+  padding: "1rem ",
+}));
 
 export const MainContainer = styled(Box)(({ theme }) => ({
   width: "100%",
@@ -96,14 +104,14 @@ export const HomeContainer = styled(Box)(({ theme }) => ({
 export const PreferenceContainer = styled(Box)(({ theme }) => ({}));
 
 export const PreferenceOptionsContainer = styled(Box)(({ theme }) => ({
-  margin: "1rem auto 0 auto",
+  margin: "0 auto",
   padding: "1rem 0",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   flexWrap: "wrap",
   gap: "1.7rem",
-  width: "60%",
+  width: "70%",
 
   [theme.breakpoints.down("sm")]: {
     width: "100%",
@@ -172,7 +180,67 @@ export const NavigationLink = styled(Link)({
   },
 });
 
-export const ContentArea = styled(Box)(({ theme }) => ({
-  padding: "1rem 2rem",
-  marginTop: "90px",
+export const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
+  height: 1,
+  overflow: "hidden",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  whiteSpace: "nowrap",
+  width: 1,
+});
+
+export const PostCard = styled(Card)(({ theme }) => ({
+  margin: "2rem 0",
+  padding: "1rem 1rem 0 1rem",
+  borderRadius: 10,
+  background: "#FFFFF7",
+  width: "100%",
 }));
+
+export const PreviewPostCard = styled(Card)(({ theme }) => ({
+  padding: "1rem 1rem 0 1rem",
+  //background: "#FFF8DC",
+  background: theme.palette.primary.main,
+  borderRadius: 10,
+  width: "100%",
+  boxShadow:
+    "rgba(9, 30, 66, 0.25) 0px 4px 8px -2px, rgba(9, 30, 66, 0.08) 0px 0px 0px 1px",
+  cursor: "pointer",
+  transition: "all 0.5s ease-in-out",
+  "&:hover": {
+    transform: "scale(1.03)",
+  },
+}));
+
+export const Wrapper = styled(Box)({
+  paddingTop: "8rem",
+  margin: "1rem 2rem 0 2rem",
+  [theme.breakpoints.down("md")]: {
+    margin: "0 .5rem",
+  },
+});
+
+export const ContentContainer = styled(Box)({
+  width: "100%",
+
+  [theme.breakpoints.down("md")]: {
+    width: "60%",
+    margin: "0 auto",
+  },
+  [theme.breakpoints.down("md")]: {
+    width: "100%",
+  },
+});
+
+export const ForumImage = styled(Box)({
+  width: "48%",
+  border: "1px solid #eee",
+  px: 1,
+  boxShadow: "0 0 4px -3px #333",
+  [theme.breakpoints.down("sm")]: {
+    width: "90%",
+  },
+});

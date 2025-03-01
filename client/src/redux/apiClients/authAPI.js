@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import showErrorToast from "../../utils/toastUtil";
+import { displayErrorToast } from "../../utils/toastUtil";
 const BASE_URL = process.env.REACT_APP_BASE_API + "/auth";
 
 // Login
@@ -17,11 +17,8 @@ export const login = createAsyncThunk(
 
       return { user, accessToken, refreshToken };
     } catch (error) {
-      if (error?.response?.data) {
-        const errorMsg = error.response.data || error.message;
-        showErrorToast(errorMsg);
-        return rejectWithValue(errorMsg);
-      }
+      displayErrorToast(error);
+      return rejectWithValue(error);
     }
   }
 );

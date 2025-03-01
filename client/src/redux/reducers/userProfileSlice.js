@@ -4,6 +4,7 @@ const storedUserData = JSON.parse(sessionStorage.getItem("userData"));
 console.log("StoredUserData:", storedUserData?.dietaryRestrictions);
 
 const initialState = {
+  id: "",
   userImg: "",
   firstName: "",
   lastName: "",

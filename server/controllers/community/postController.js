@@ -5,13 +5,13 @@ const Notification = require("../../models/community/Notification");
 exports.createPost = async (req, res) => {
   try {
     const { user, topic, description, tags } = req.body;
-    const imageUrl = req.file ? req.file.path : "";
+    const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
     const newPost = new Post({
       user,
       topic,
       description,
-      image: imageUrl,
+      images: imageUrls,
       tags,
     });
     await newPost.save();
@@ -96,6 +96,31 @@ exports.getPopularPosts = async (req, res) => {
     res.status(500).json({
       status: 500,
       message: "Failed to retrieve popular posts",
+      error: error.message,
+    });
+  }
+};
+
+exports.getPostsByTags = async (req, res) => {
+  try {
+    const tags = req.query.tags.split(",");
+    const posts = await Post.aggregate([
+      {
+        $match: {
+          tags: { $in: tags },
+        },
+      },
+      { $sort: { netVoteCount: -1 } },
+    ]);
+    res.status(200).json({
+      status: 200,
+      message: "Posts retrieved successfully",
+      posts: posts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "Failed to retrieve posts by tags",
       error: error.message,
     });
   }

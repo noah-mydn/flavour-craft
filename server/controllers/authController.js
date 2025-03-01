@@ -39,6 +39,7 @@ const register = async (req, res) => {
       accessToken,
       refreshToken,
       user: {
+        id: newUser._id,
         username: newUser.username,
         userImg: newUser.userImg,
         firstName: newUser.firstName,
@@ -88,6 +89,7 @@ const login = async (req, res) => {
       accessToken,
       refreshToken,
       user: {
+        id: user._id,
         username: user.username,
         userImg: user.userImg,
         firstName: user.firstName,
@@ -101,66 +103,6 @@ const login = async (req, res) => {
     res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
-  }
-};
-
-// Refresh Session with refreshToken
-const refreshToken = async (req, res) => {
-  try {
-    console.log(req.body);
-    const { refreshToken } = req.body;
-
-    // Verify the refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-    // Check if the user exists
-    const user = await User.findOne({ _id: decoded.userId });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Check if the token matches
-    if (user.refreshToken !== refreshToken) {
-      return res.status(403).json({ message: "Refresh token mismatch" });
-    }
-
-    // Generate a new access token
-    const accessToken = jwt.sign(
-      { userId: user._id, email: user.email, firstName: user.firstName },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    // Issue a new refresh token and update the database
-    const newRefreshToken = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "1d" }
-    );
-    user.refreshToken = newRefreshToken;
-    await user.save();
-
-    res.status(200).json({
-      message: "Token refreshed successfully",
-      accessToken,
-      refreshToken: newRefreshToken,
-    });
-  } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      return res
-        .status(401)
-        .json({ message: "Refresh token expired. Please log in again." });
-    }
-
-    if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
-    // Catch-all for other errors
-    res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message,
-    });
   }
 };
 
@@ -253,6 +195,7 @@ const googleCallBack = (req, res, next) => {
       res.status(200).json({
         message: "Google logged in successfully",
         user: {
+          id: user._id,
           username: user.username,
           userImg: user.userImg,
           firstName: user.firstName,
@@ -289,7 +232,6 @@ module.exports = {
   register,
   login,
   logout,
-  refreshToken,
   googleAuth,
   googleCallBack,
   googleSuccess,

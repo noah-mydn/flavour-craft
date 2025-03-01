@@ -7,7 +7,6 @@ const {
   googleAuth,
   googleCallBack,
   googleSuccess,
-  refreshToken,
 } = require("../controllers/authController");
 const passport = require("passport");
 
@@ -16,7 +15,6 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
-router.post("/refresh-session", refreshToken);
 
 router.get(
   "/google",
