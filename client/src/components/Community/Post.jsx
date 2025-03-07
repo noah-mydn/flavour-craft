@@ -29,9 +29,8 @@ const Post = () => {
   return (
     <ContentContainer>
       <Box
-        mt={2}
         px={2}
-        py={1}
+        pb={1}
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -146,7 +145,7 @@ const Post = () => {
               <Button
                 onClick={() => setShowComments(!showComments)}
                 variant={showComments ? "contained" : "outlined"}
-                color="secondary"
+                color="primary"
                 startIcon={<Comment />}
                 sx={{ borderRadius: 20, px: 2 }}
               >

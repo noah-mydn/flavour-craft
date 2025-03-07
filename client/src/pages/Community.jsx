@@ -16,25 +16,19 @@ const Community = () => {
         display="flex"
         justifyContent={isTablet ? "center" : "space-between"}
       >
-        {!isTablet && (
-          <Box width="70%">
-            <CompactPosts />
-          </Box>
-        )}
+        <Box width={isMobile ? "100%" : "90%"}>
+          <CompactPosts />
+        </Box>
 
         {!isTablet && (
           <Divider orientation="vertical" sx={{ height: "auto", mx: 1 }} />
         )}
 
-        <Box
-          width={isMobile ? "100%" : isTablet ? "80%" : "100%"}
-          display="flex"
-          flexDirection="column"
-          justifyContent={isTablet ? "center" : "space-between"}
-        >
-          <AddPost />
-          <Post />
-        </Box>
+        {!isTablet && (
+          <Box width={isMobile ? "100%" : isTablet ? "80%" : "100%"}>
+            <Post />
+          </Box>
+        )}
       </Box>
     </Wrapper>
   );

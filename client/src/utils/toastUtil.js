@@ -1,9 +1,10 @@
 import toast from "react-hot-toast";
 
 export const displayErrorToast = (error) => {
-  let errorMsg = "";
+  let errorMsg = error.message;
+  console.log(error);
   if (error?.response?.data) {
-    errorMsg = error.response.data || error.message;
+    errorMsg = error.response.data;
   }
   toast.error(errorMsg, {
     icon: "😞",

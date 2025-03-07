@@ -21,13 +21,13 @@ const register = async (req, res) => {
     const accessToken = jwt.sign(
       { userId: newUser._id, email: newUser.email },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1d" }
     );
 
     const refreshToken = jwt.sign(
       { userId: newUser._id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "5h" }
+      { expiresIn: "2d" }
     );
 
     newUser.refreshToken = refreshToken;
@@ -47,6 +47,8 @@ const register = async (req, res) => {
         cuisinePreferences: newUser.cuisinePreferences,
         dietaryRestrictions: newUser.dietaryRestrictions,
         email: newUser.email,
+        savedRecipes: newUser.savedRecipes,
+        ratedRecipes: newUser.ratedRecipes,
       },
     });
   } catch (error) {
@@ -71,13 +73,13 @@ const login = async (req, res) => {
     const accessToken = jwt.sign(
       { userId: user._id, email: user.email, firstName: user.firstName },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1d" }
     );
 
     const refreshToken = jwt.sign(
       { userId: user._id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "5h" }
+      { expiresIn: "2d" }
     );
 
     user.refreshToken = refreshToken;
@@ -130,10 +132,12 @@ passport.use(
         // Creating a new user
         const newUser = new User({
           firstName: profile.name.givenName,
-          lastName: profile.name.familyName,
+          lastName: profile.name.familyName || profile.name.givenName,
           email: profile.emails[0].value,
           password: null,
-          userImg: profile.photos[0] ? profile.photos[0].value : "./avatar.png",
+          userImg: profile.photos[0]
+            ? profile.photos[0].value
+            : "upload/avatar.png",
         });
 
         console.log("Creating new user:", newUser);
@@ -180,13 +184,13 @@ const googleCallBack = (req, res, next) => {
       const accessToken = jwt.sign(
         { userId: user._id, email: user.email, firstName: user.firstName },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1d" }
       );
 
       const refreshToken = jwt.sign(
         { userId: user._id },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: "5h" }
+        { expiresIn: "2d" }
       );
 
       user.refreshToken = refreshToken;

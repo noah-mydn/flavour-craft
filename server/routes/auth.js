@@ -25,20 +25,27 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   (req, res) => {
-    const user = req.user;
+    if (!req.user) {
+      return res.redirect(
+        "http://localhost:3000/login?error=authentication_failed"
+      );
+    }
 
-    // Generate tokens for your application
     const accessToken = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: req.user._id, email: req.user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1d" }
     );
 
     const refreshToken = jwt.sign(
-      { userId: user._id },
+      { userId: req.user._id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "2d" }
     );
+
+    // Store refresh token in DB
+    req.user.refreshToken = refreshToken;
+    req.user.save();
 
     res.redirect(
       `http://localhost:3000/home?accessToken=${accessToken}&refreshToken=${refreshToken}`

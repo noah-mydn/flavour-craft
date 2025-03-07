@@ -35,8 +35,6 @@ export const useCommunity = () => {
     setPost(post);
   };
 
-  //Create
-
   //Edit
   const editPost = async () => {
     let payload = {

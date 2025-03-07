@@ -42,12 +42,22 @@ const recipeSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  views: { type: Number, default: 0 },
+  saves: { type: Number, default: 0 },
+  ratings: {
+    average: { type: Number, default: 0 },
+    count: { type: Number, default: 0 },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
-
+recipeSchema.index({
+  name: "text",
+  "ingredients.name": "text",
+  shortDescription: "text",
+});
 const Recipe = mongoose.model("Recipe", recipeSchema);
 
 module.exports = Recipe;

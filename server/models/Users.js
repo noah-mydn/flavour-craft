@@ -28,6 +28,13 @@ const userSchema = new mongoose.Schema({
   dietaryRestrictions: { type: [String], default: [] },
   cuisinePreferences: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },
+  savedRecipes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Recipe" }],
+  ratedRecipes: [
+    {
+      recipeId: { type: mongoose.Schema.Types.ObjectId, ref: "Recipe" },
+      rating: Number,
+    },
+  ],
 });
 
 // Middleware to generate the username

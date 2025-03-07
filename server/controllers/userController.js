@@ -56,4 +56,83 @@ const deleteUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { editUserProfile, deleteUserProfile };
+const addCuisinePreferences = async (req, res) => {
+  const { cuisineTypes } = req.body;
+  const userId = req.user.id; // Assuming you have authentication middleware that sets `req.user`
+
+  // Validate input
+  if (!Array.isArray(cuisineTypes) || cuisineTypes.length === 0) {
+    return res.status(400).json({
+      status: 400,
+      message: "Invalid cuisine types. It should be a non-empty array.",
+    });
+  }
+
+  try {
+    // Update user preferences
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { cuisinePreferences: cuisineTypes } }, // Store cuisine preferences
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ status: 404, message: "User not found." });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Cuisine preferences updated successfully.",
+      data: updatedUser.cuisinePreferences,
+    });
+  } catch (error) {
+    console.error("Error updating cuisine preferences:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "An error occurred while updating preferences.",
+    });
+  }
+};
+
+const addDietaryPreferences = async (req, res) => {
+  const { dietaryOptions } = req.body;
+  const userId = req.user.id;
+
+  if (!Array.isArray(dietaryOptions) || dietaryOptions.length === 0) {
+    return res.status(400).json({
+      status: 400,
+      message: "Invalid dietary preferences. It should be a non-empty array.",
+    });
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { dietaryPreferences: dietaryOptions } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ status: 404, message: "User not found." });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Dietary preferences updated successfully.",
+      data: updatedUser.dietaryPreferences,
+    });
+  } catch (error) {
+    console.error("Error updating dietary preferences:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "An error occurred while updating preferences.",
+    });
+  }
+};
+
+module.exports = {
+  editUserProfile,
+  deleteUserProfile,
+  addDietaryPreferences,
+  addCuisinePreferences,
+};

@@ -12,6 +12,7 @@ const initialState = {
   username: "",
   cuisinePreferences: storedUserData?.cuisinePreferences || [],
   dietaryRestrictions: storedUserData?.dietaryRestrictions || [],
+  savedRecipes: [],
 };
 
 const userProfileSlice = createSlice({

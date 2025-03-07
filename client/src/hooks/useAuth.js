@@ -78,11 +78,6 @@ export const useAuth = () => {
   const googleLogin = () => {
     window.location.href = "http://localhost:8080/auth/google";
   };
-  //useGoogleLogin({
-
-  // onSuccess: googleAuthHandler,
-  // onError: (error) => console.error("Login Failed:", error),
-  //});
 
   return {
     user,

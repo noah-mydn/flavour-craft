@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Home from "../../pages/Home";
 import NotFound from "../../pages/NotFound";
 import PublicRoute from "./PublicRoute";
@@ -12,21 +12,21 @@ import TopNavigationBar from "../Navigations/TopNavigationBar";
 import Recipes from "../../pages/Recipes";
 import Community from "../../pages/Community";
 import Favourites from "../../pages/Favourites";
-import { useSelector } from "react-redux";
-import {
-  cuisineSelectors,
-  dietaryRestrictionsSelectors,
-} from "../../redux/selectors/selectors";
 import TermsAndConditions from "../../pages/TermsAndConditions";
+import { useDispatch } from "react-redux";
+import { googleAuth } from "../../redux/apiClients/authAPI";
+import { PreferenceProvider } from "../../context/PreferenceContext";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
   const isTablet = useMediaQuery("(max-width: 900px)");
 
-  // const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors);
-  // const cuisinePreferences = useSelector(cuisineSelectors);
+  const navigate = useNavigate();
 
-  useSessionVerifier();
+  // useSessionVerifier();
+  const location = useLocation();
+  const dispatch = useDispatch();
+
   return (
     <Routes>
       {/* Public Routes */}
@@ -61,8 +61,10 @@ const AnimatedRoutes = () => {
         path="/home"
         element={
           <PrivateRoute>
-            <Home isMobile={isMobile} />
-            {isMobile && <BottomNavigation />}
+            <PreferenceProvider>
+              <Home isMobile={isMobile} />
+              {isMobile && <BottomNavigation />}
+            </PreferenceProvider>
           </PrivateRoute>
         }
       />

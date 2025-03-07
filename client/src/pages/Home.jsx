@@ -1,42 +1,36 @@
 import React from "react";
+import PropTypes from "prop-types";
 import Preferences from "../components/Preferences/Preferences";
-import { usePreferences } from "../hooks/usePreferences";
-import { Main } from "../components/Main/Main";
 import { useSelector } from "react-redux";
+import { usePreferenceContext } from "../context/PreferenceContext";
 import {
   cuisineSelectors,
   dietaryRestrictionsSelectors,
 } from "../redux/selectors/selectors";
 import TopNavigationBar from "../components/Navigations/TopNavigationBar";
+import { Main } from "../components/Main/Main";
 
-const Home = ({ isMobile }) => {
-  const { preferenceSelectionSteps } = usePreferences();
+const Home = () => {
+  const { step } = usePreferenceContext();
   const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors);
   const cuisinePreferences = useSelector(cuisineSelectors);
-  const { skipStep, skipToMain, step, nextStep, previousStep } =
-    preferenceSelectionSteps;
 
   React.useEffect(() => {
-    console.log("Cusines:", cuisinePreferences);
-    console.log("Dietary Restrictions:", dietaryRestrictions);
-  }, []);
+    console.log("CURRENT STEP:", step);
+  }, [step]);
+
   return (
     <>
-      {step < 2 &&
+      {/* {step < 2 &&
         (cuisinePreferences?.length === 0 ||
-          dietaryRestrictions?.length === 0) && (
-          <Preferences
-            isMobile={isMobile}
-            preferenceSelectionSteps={preferenceSelectionSteps}
-          />
-        )}
+          dietaryRestrictions?.length === 0) && <Preferences />} */}
 
-      {step == 2 && (
-        <>
-          <TopNavigationBar />
-          <Main />
-        </>
-      )}
+      {/* {step === 2 && ( */}
+      <>
+        <TopNavigationBar />
+        <Main />
+      </>
+      {/* )} */}
     </>
   );
 };

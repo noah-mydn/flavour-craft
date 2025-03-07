@@ -14,12 +14,13 @@ import {
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import ThumbDownAltIcon from "@mui/icons-material/ThumbDownAlt";
 import theme from "../../theme/theme";
+import AddPost from "./AddPost";
 
 const CompactPosts = () => {
   return (
     <ContentContainer>
       <Box height="100%" sx={{ overflowX: "hidden", overflowY: "auto" }}>
-        <Typography
+        {/* <Typography
           variant="h5"
           pl={3}
           pb={2}
@@ -27,7 +28,10 @@ const CompactPosts = () => {
           fontWeight="bold"
         >
           Recent
-        </Typography>
+        </Typography> */}
+        <Box my={2}>
+          <AddPost />
+        </Box>
         <Box
           py={1}
           px={2}
@@ -44,25 +48,26 @@ const CompactPosts = () => {
                   <Typography
                     variant="body2"
                     fontSize={12}
-                    color="error.light"
+                    color="success.light"
                     fontWeight="bold"
+                    gutterBottom
                   >
                     12 hours ago
                   </Typography>
                 </Box>
                 <Typography
                   variant="body1"
-                  color="secondary.light"
+                  color="#FDF2E9"
                   fontWeight="bold"
                   gutterBottom
                 >
-                  Does it okay to eat pork fat?
+                  Is it okay to eat expired biscuits?
                 </Typography>
 
                 <Typography
                   variant="body2"
                   fontSize={12}
-                  color="#efefef"
+                  color="#eee"
                   gutterBottom
                 >
                   Lorem, ipsum dolor sit amet consectetur adipisicing elit.
@@ -78,7 +83,11 @@ const CompactPosts = () => {
                 >
                   <Box display="flex" gap={2} mt={2} alignItems="center">
                     <Avatar sx={{ width: "30px", height: "30px" }} />
-                    <Typography variant="body2" fontWeight="bold" color="#eee">
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color="secondary.light"
+                    >
                       Suzy Ting
                     </Typography>
                   </Box>

@@ -1,24 +1,23 @@
+const socket = require("./config/socket");
 const express = require("express");
 const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
-const http = require("http");
 require("dotenv").config();
 require("./config/db");
+const http = require("http");
+
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const preferenceRoutes = require("./routes/preferences");
-const recommendationRoutes = require("./routes/recommendations");
 const batchGenerateRoute = require("./routes/recipes");
 const communityRoute = require("./routes/community");
-const app = express();
-const socket = require("./config/socket");
 
-// Middleware
+const app = express();
+app.use("/uploads", express.static("public/uploads"));
 const corsOptions = {
   origin: "*",
   credentials: true,
-
   methods: ["GET", "POST", "PUT", "DELETE"],
 };
 app.use(cors(corsOptions));
@@ -41,7 +40,6 @@ app.use(passport.session());
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/preferences", preferenceRoutes);
-app.use("/recommendations", recommendationRoutes);
 app.use("/recipes", batchGenerateRoute);
 app.use("/posts", communityRoute);
 

@@ -54,7 +54,7 @@ export const googleAuth = createAsyncThunk(
     try {
       const { access_token } = googleResponse;
 
-      const response = await axios.get("/auth/google", {
+      const response = await axios.get("http://localhost:8080/auth/google", {
         token: access_token,
       });
 

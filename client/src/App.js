@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme/theme";

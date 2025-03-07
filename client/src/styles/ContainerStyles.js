@@ -99,6 +99,7 @@ export const HomeContainer = styled(Box)(({ theme }) => ({
   padding: "1rem 2rem",
   background: theme.palette.background.default,
   minHeight: "100vh",
+  marginTop: "2.5rem",
 }));
 
 export const PreferenceContainer = styled(Box)(({ theme }) => ({}));
@@ -203,7 +204,7 @@ export const PostCard = styled(Card)(({ theme }) => ({
 export const PreviewPostCard = styled(Card)(({ theme }) => ({
   padding: "1rem 1rem 0 1rem",
   //background: "#FFF8DC",
-  background: theme.palette.primary.main,
+  background: theme.palette.success.dark,
   borderRadius: 10,
   width: "100%",
   boxShadow:

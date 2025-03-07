@@ -5,25 +5,42 @@ import {
   BannerArea,
   SelectableChip,
 } from "../../styles/ContainerStyles";
-import { Box, Button, Container, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
 import { usePreferences } from "../../hooks/usePreferences";
+import { usePreferenceContext } from "../../context/PreferenceContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { fadeVariant } from "../../utils/animationUtils";
+import theme from "../../theme/theme";
 
-const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
+const Preferences = () => {
   const {
     cuisines,
-    healthConditions,
     allergies,
+    healthConditions,
     lifeStyles,
-    handleCuisineSelections,
-    handleDietarySelections,
+    tempCuisineSelections,
+    tempDietarySelections,
+    commitSelections,
     selectCuisineSelections,
     selectDietaryRestrictions,
+    handleTempCuisineSelections,
+    handleTempDietarySelections,
   } = usePreferences();
 
-  const { skipStep, skipToMain, step, nextStep, previousStep } =
-    preferenceSelectionSteps;
+  const { step, nextStep, previousStep, skipStep, skipToMain } =
+    usePreferenceContext();
+
+  React.useEffect(() => {
+    console.log("Calling from Preferences");
+  });
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   return (
     <PreferenceContainer>
@@ -33,6 +50,7 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
           alt="banner"
         />
       </Box>
+
       <Container sx={{ mb: 2 }}>
         <Typography
           variant={isMobile ? "h5" : "h4"}
@@ -55,9 +73,8 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
               exit="exit"
             >
               <PreferenceOptionsContainer>
-                {/* Allergies */}
                 {allergies?.options?.map((allergy) => {
-                  const isSelected = selectDietaryRestrictions.has(allergy);
+                  const isSelected = tempDietarySelections.has(allergy);
                   return (
                     <SelectableChip
                       key={allergy}
@@ -65,28 +82,25 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
                       sx={{ fontSize: "1rem" }}
                       color={isSelected ? "primary" : "error"}
                       variant={isSelected ? "filled" : "outlined"}
-                      onClick={() => handleDietarySelections(allergy)}
+                      onClick={() => handleTempDietarySelections(allergy)}
                     />
                   );
                 })}
-                {/* Health-conditions */}
-                {healthConditions?.options?.map((healthCondition) => {
-                  const isSelected =
-                    selectDietaryRestrictions.has(healthCondition);
+                {healthConditions?.options?.map((hc) => {
+                  const isSelected = tempDietarySelections.has(hc);
                   return (
                     <SelectableChip
-                      key={healthCondition}
-                      label={healthCondition}
+                      key={hc}
+                      label={hc}
                       sx={{ fontSize: "1rem" }}
                       color={isSelected ? "primary" : "error"}
                       variant={isSelected ? "filled" : "outlined"}
-                      onClick={() => handleDietarySelections(healthCondition)}
+                      onClick={() => handleTempDietarySelections(hc)}
                     />
                   );
                 })}
-                {/* Life-styles */}
                 {lifeStyles?.options?.map((lifeStyle) => {
-                  const isSelected = selectDietaryRestrictions.has(lifeStyle);
+                  const isSelected = tempDietarySelections.has(lifeStyle);
                   return (
                     <SelectableChip
                       key={lifeStyle}
@@ -94,7 +108,7 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
                       sx={{ fontSize: "1rem" }}
                       color={isSelected ? "primary" : "error"}
                       variant={isSelected ? "filled" : "outlined"}
-                      onClick={() => handleDietarySelections(lifeStyle)}
+                      onClick={() => handleTempDietarySelections(lifeStyle)}
                     />
                   );
                 })}
@@ -110,9 +124,8 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
               exit="exit"
             >
               <PreferenceOptionsContainer>
-                {/* Cuisines */}
                 {cuisines?.map((cuisine) => {
-                  const isSelected = selectCuisineSelections.has(cuisine);
+                  const isSelected = tempCuisineSelections.has(cuisine);
                   return (
                     <SelectableChip
                       key={cuisine}
@@ -120,7 +133,7 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
                       sx={{ fontSize: "1rem" }}
                       color={isSelected ? "primary" : "error"}
                       variant={isSelected ? "filled" : "outlined"}
-                      onClick={() => handleCuisineSelections(cuisine)}
+                      onClick={() => handleTempCuisineSelections(cuisine)}
                     />
                   );
                 })}
@@ -129,14 +142,12 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
           )}
         </AnimatePresence>
 
-        {/* Button controls */}
         <Box
           display="flex"
           justifyContent={step === 0 ? "flex-end" : "space-between"}
           mt={4}
           width="100%"
         >
-          {/* Previous Button - Only visible at step 1 */}
           {step === 1 && (
             <Button
               onClick={previousStep}
@@ -148,8 +159,7 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
             </Button>
           )}
 
-          {/* Skip Button at Step 0 (Dietary Restrictions) */}
-          {step === 0 && selectDietaryRestrictions.size < 1 && (
+          {step === 0 && tempDietarySelections.size < 1 && (
             <Button
               onClick={skipStep}
               variant="text"
@@ -160,10 +170,12 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
             </Button>
           )}
 
-          {/* Next/Skip Button at Step 0 (Dietary Restrictions - If preferences are selected) */}
-          {step === 0 && selectDietaryRestrictions.size > 0 && (
+          {step === 0 && tempDietarySelections.size > 0 && (
             <Button
-              onClick={nextStep}
+              onClick={() => {
+                commitSelections();
+                nextStep();
+              }}
               variant="contained"
               color="warning"
               sx={{ cursor: "pointer", textTransform: "uppercase" }}
@@ -172,8 +184,7 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
             </Button>
           )}
 
-          {/* Skip Button at Step 1 (Cuisine Preferences) */}
-          {step === 1 && selectCuisineSelections.size < 1 && (
+          {step === 1 && tempCuisineSelections.size < 1 && (
             <Button
               onClick={skipToMain}
               variant="text"
@@ -184,7 +195,6 @@ const Preferences = ({ isMobile, preferenceSelectionSteps }) => {
             </Button>
           )}
 
-          {/* Next Button at Step 1 (Cuisine Preferences - If preferences are selected) */}
           {step === 1 && selectCuisineSelections.size > 0 && (
             <Button
               onClick={nextStep}
