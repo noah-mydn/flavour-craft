@@ -6,7 +6,12 @@ const CuisineSchema = new mongoose.Schema({
 
 const DietaryOptionSchema = new mongoose.Schema({
   category: { type: String, required: true },
-  options: [{ type: String, required: true }],
+  options: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+      name: { type: String, required: true },
+    },
+  ],
 });
 
 const Cuisine = mongoose.model("Cuisine", CuisineSchema);

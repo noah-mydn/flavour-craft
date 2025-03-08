@@ -9,6 +9,7 @@ import {
 } from "../redux/selectors/selectors";
 import TopNavigationBar from "../components/Navigations/TopNavigationBar";
 import { Main } from "../components/Main/Main";
+import { Box } from "@mui/material";
 
 const Home = () => {
   const { step } = usePreferenceContext();
@@ -21,16 +22,8 @@ const Home = () => {
 
   return (
     <>
-      {/* {step < 2 &&
-        (cuisinePreferences?.length === 0 ||
-          dietaryRestrictions?.length === 0) && <Preferences />} */}
-
-      {/* {step === 2 && ( */}
-      <>
-        <TopNavigationBar />
-        <Main />
-      </>
-      {/* )} */}
+      <TopNavigationBar />
+      <Main />
     </>
   );
 };

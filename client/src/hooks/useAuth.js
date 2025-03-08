@@ -19,8 +19,6 @@ export const useAuth = () => {
   const user = useSelector(userSelector);
   const loading = useSelector(loadingSelector);
   const error = useSelector(errorSelector);
-  const accessToken = useSelector(accessTokenSelector);
-  const refreshToken = useSelector(refreshTokenSelector);
   const isVerified = useSelector(isVerifiedSelector);
 
   const [accountUser, setAccountUser] = React.useState({

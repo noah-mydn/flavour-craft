@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 const {
   updateIngredientsDatabase,
 } = require("../controllers/ingredientController");
+const {
+  cuisinePreferences,
+  dietaryRestrictions,
+} = require("../constants/data");
+const { Cuisine, DietaryOption } = require("../models/DietaryOptions");
+const Recipe = require("../models/Recipes");
 
 const connectDB = async () => {
   try {
@@ -9,6 +15,33 @@ const connectDB = async () => {
       console.log("MongoDB connected");
       updateIngredientsDatabase();
     });
+
+    Recipe.find({}).then((recipes) => {
+      recipes.forEach((recipe) => {
+        // Example formula for trending score: views * 0.5 + saves * 1.5 + average ratings * 2
+        const trendingScore =
+          recipe.views * 0.5 + recipe.saves * 1.5 + recipe.ratings.average * 2;
+
+        // Update the recipe with the new trendingScore
+        recipe.trendingScore = trendingScore;
+
+        // Save the updated recipe
+        recipe.save().catch((err) => {
+          console.error(`Failed to update recipe: ${recipe.name}`, err);
+        });
+      });
+    });
+    // await Cuisine.deleteMany({});
+    //await DietaryOption.deleteMany({});
+
+    // Insert cuisines
+    // const cuisineDocs = cuisinePreferences.map((cuisine) => ({
+    //   name: cuisine,
+    // }));
+    // await Cuisine.insertMany(cuisineDocs);
+
+    // Insert dietary restrictions
+    //await DietaryOption.insertMany(dietaryRestrictions);
   } catch (err) {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);

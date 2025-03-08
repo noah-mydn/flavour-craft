@@ -2,28 +2,34 @@
 const dietaryRestrictions = [
   {
     category: "Lifestyle Preferences",
-    options: ["Vegan", "Vegetarian", "Pescatarian", "Halal", "Kosher"],
+    options: [
+      { name: "Vegan" },
+      { name: "Vegetarian" },
+      { name: "Pescatarian" },
+      { name: "Halal" },
+      { name: "Kosher" },
+    ],
   },
   {
     category: "Allergies and Intolerances",
     options: [
-      "Gluten-Free",
-      "Dairy-Free",
-      "Nut-Free",
-      "Soy-Free",
-      "Shellfish-Free",
+      { name: "Gluten-Free" },
+      { name: "Dairy-Free" },
+      { name: "Nut-Free" },
+      { name: "Soy-Free" },
+      { name: "Shellfish-Free" },
     ],
   },
   {
     category: "Health Conditions",
     options: [
-      "Diabetes-Friendly",
-      "Hypertension-Friendly",
-      "Low-Sodium",
-      "Low-Sugar",
-      "Low-Carb",
-      "Heart-Healthy",
-      "Kidney-Friendly",
+      { name: "Diabetes-Friendly" },
+      { name: "Hypertension-Friendly" },
+      { name: "Low-Sodium" },
+      { name: "Low-Sugar" },
+      { name: "Low-Carb" },
+      { name: "Heart-Healthy" },
+      { name: "Kidney-Friendly" },
     ],
   },
 ];

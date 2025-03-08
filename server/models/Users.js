@@ -25,8 +25,13 @@ const userSchema = new mongoose.Schema({
       },
     },
   },
-  dietaryRestrictions: { type: [String], default: [] },
-  cuisinePreferences: { type: [String], default: [] },
+  dietaryRestrictions: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "DietaryOption" },
+  ],
+
+  cuisinePreferences: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Cuisine" },
+  ],
   createdAt: { type: Date, default: Date.now },
   savedRecipes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Recipe" }],
   ratedRecipes: [

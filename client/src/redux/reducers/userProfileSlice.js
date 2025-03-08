@@ -13,6 +13,7 @@ const initialState = {
   cuisinePreferences: storedUserData?.cuisinePreferences || [],
   dietaryRestrictions: storedUserData?.dietaryRestrictions || [],
   savedRecipes: [],
+  ratedRecipes: [],
 };
 
 const userProfileSlice = createSlice({
@@ -21,6 +22,24 @@ const userProfileSlice = createSlice({
   reducers: {
     setUserProfile: (state, action) => {
       return { ...state, ...action.payload };
+    },
+    toggleSavedRecipe: (state, action) => {
+      const recipeId = action.payload;
+
+      const isAlreadySaved = state.savedRecipes.includes(recipeId);
+
+      if (isAlreadySaved) {
+        state.savedRecipes = state.savedRecipes.filter((id) => id !== recipeId);
+      } else {
+        state.savedRecipes.push(recipeId);
+      }
+
+      const storedUserData = sessionStorage.getItem("userData");
+      if (storedUserData) {
+        const userData = JSON.parse(storedUserData);
+        userData.savedRecipes = state.savedRecipes;
+        sessionStorage.setItem("userData", JSON.stringify(userData));
+      }
     },
     updateCuisinePreferences: (state, action) => {
       state.cuisinePreferences = action.payload;
@@ -47,6 +66,7 @@ const userProfileSlice = createSlice({
 
 export const {
   setUserProfile,
+  toggleSavedRecipe,
   updateCuisinePreferences,
   updateDietaryRestrictions,
   clearUserProfile,

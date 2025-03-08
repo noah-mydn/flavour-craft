@@ -5,6 +5,11 @@ const recipeSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  thumbnail: {
+    type: String,
+    default:
+      "https://res.cloudinary.com/dek6ihfme/image/upload/v1741418622/1_ugmnam.png",
+  },
   ingredients: [
     {
       name: { type: String, required: true },
@@ -48,6 +53,7 @@ const recipeSchema = new mongoose.Schema({
     average: { type: Number, default: 0 },
     count: { type: Number, default: 0 },
   },
+  trendingScore: { type: Number, default: 0 },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -58,6 +64,7 @@ recipeSchema.index({
   "ingredients.name": "text",
   shortDescription: "text",
 });
+
 const Recipe = mongoose.model("Recipe", recipeSchema);
 
 module.exports = Recipe;

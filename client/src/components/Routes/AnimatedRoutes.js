@@ -1,31 +1,25 @@
 import React from "react";
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Home from "../../pages/Home";
 import NotFound from "../../pages/NotFound";
 import PublicRoute from "./PublicRoute";
 import PrivateRoute from "./PrivateRoute";
 import Auth from "../../pages/Auth";
 import GetStarted from "../../pages/GetStarted";
-import { useSessionVerifier } from "../../hooks/useSessionVerifier";
 import { BottomNavigation, useMediaQuery } from "@mui/material";
 import TopNavigationBar from "../Navigations/TopNavigationBar";
 import Recipes from "../../pages/Recipes";
 import Community from "../../pages/Community";
 import Favourites from "../../pages/Favourites";
 import TermsAndConditions from "../../pages/TermsAndConditions";
-import { useDispatch } from "react-redux";
-import { googleAuth } from "../../redux/apiClients/authAPI";
 import { PreferenceProvider } from "../../context/PreferenceContext";
+import RecipeDetail from "../../pages/recipes/RecipeDetailCard";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
   const isTablet = useMediaQuery("(max-width: 900px)");
 
   const navigate = useNavigate();
-
-  // useSessionVerifier();
-  const location = useLocation();
-  const dispatch = useDispatch();
 
   return (
     <Routes>
@@ -63,7 +57,6 @@ const AnimatedRoutes = () => {
           <PrivateRoute>
             <PreferenceProvider>
               <Home isMobile={isMobile} />
-              {isMobile && <BottomNavigation />}
             </PreferenceProvider>
           </PrivateRoute>
         }
@@ -73,9 +66,7 @@ const AnimatedRoutes = () => {
         path="/recipes"
         element={
           <PrivateRoute>
-            <TopNavigationBar isMobile={isMobile} />
-            <Recipes isMobile={isMobile} />
-            {isMobile && <BottomNavigation />}
+            <Recipes />
           </PrivateRoute>
         }
       />
@@ -97,6 +88,16 @@ const AnimatedRoutes = () => {
           <PrivateRoute>
             <TopNavigationBar isMobile={isMobile} />
             <Favourites isMobile={isMobile} />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/recipe/:recipeId"
+        element={
+          <PrivateRoute>
+            <TopNavigationBar isMobile={isMobile} />
+            <RecipeDetail isMobile={isMobile} />
           </PrivateRoute>
         }
       />

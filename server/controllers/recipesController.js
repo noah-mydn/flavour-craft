@@ -1,6 +1,10 @@
 const Recipe = require("../models/Recipes");
 const { CohereClient } = require("cohere-ai");
 const User = require("../models/Users");
+const {
+  getTimePeriod,
+  getRecipesByTimeAndDietary,
+} = require("../middlewares/timeBasedRecipe");
 
 const cohere = new CohereClient({
   token: process.env.COHERE_TOKEN,
@@ -136,7 +140,7 @@ const generateRecipe = async (req, res) => {
 
     // AI Recipe Generation
     const prompt = `
-      Generate 10 authentic recipes with these details, if you cannot find authentic recipes with these ingredients, return a meaningful message:
+      Generate 10 authentic recipes with these details, if you cannot find authentic/valid recipes with these ingredients, return a meaningful message:
       - Ingredients: ${ingredients.join(", ")}
       - Cuisine types: ${cuisine.join(", ")}
       - Dietary preferences: ${dietaryPreferences.join(", ")}
@@ -179,12 +183,14 @@ const generateRecipe = async (req, res) => {
 
 const getAllRecipes = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10 } = req.query; // Add page and pageSize from the query params
+    const { page, pageSize } = req.body;
     const skip = (page - 1) * pageSize;
 
     const recipes = await Recipe.find()
-      .skip(skip) // Skip results based on page
-      .limit(parseInt(pageSize)); // Limit the number of recipes per page
+
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(pageSize));
 
     // Get the total number of recipes for pagination info
     const totalRecipes = await Recipe.countDocuments();
@@ -216,7 +222,7 @@ const getRecipeById = async (req, res) => {
         message: "Recipe not found",
       });
     }
-    await trackRecipeViews(id);
+    await trackRecipeViews(req, res);
     res.status(200).json({
       status: 200,
       recipe,
@@ -362,14 +368,8 @@ const trackRecipeViews = async (req, res) => {
     await Recipe.findByIdAndUpdate(recipeId, {
       $inc: { views: 1 },
     });
-    return res.status(200).json({
-      status: 200,
-      message: "Recipe views updated",
-    });
   } catch (error) {
-    return res.status(500).json({
-      message: "Internal Server Error",
-    });
+    console.error("Error updating views:", error);
   }
 };
 
@@ -478,49 +478,66 @@ const rateRecipe = async (req, res) => {
 
 const getPopularRecipes = async (req, res) => {
   try {
-    const trendingRecipes = await Recipe.aggregate([
+    const { page = 1, pageSize = 10 } = req.query;
+    const skip = (page - 1) * pageSize;
+
+    const popularRecipes = await Recipe.aggregate([
       {
         $addFields: {
-          trendingScore: {
+          popularityScore: {
             $add: [
-              { $multiply: ["$views", 0.4] },
-              { $multiply: ["$saves", 0.3] },
-              { $multiply: ["$ratings.count", 0.1] },
+              { $multiply: ["$saves", 0.5] }, // Saves carry the most weight
+              { $multiply: ["$views", 0.3] }, // Views have medium influence
+              { $multiply: ["$ratings.average", 0.2] }, // Consider average rating
             ],
           },
         },
       },
-      { $sort: { trendingScore: -1 } },
-      { $limit: 10 },
+      { $sort: { popularityScore: -1 } }, // Sort by popularity
+      { $skip: skip }, // Skip previous pages
+      { $limit: parseInt(pageSize) }, // Limit results per page
     ]);
+
+    const totalRecipes = await Recipe.countDocuments();
+
     res.status(200).json({
       status: 200,
-      trendingRecipes: trendingRecipes,
+      popularRecipes,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalRecipes / pageSize),
+        totalRecipes,
+      },
     });
   } catch (error) {
+    console.error("Error fetching popular recipes:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 const getTrendingRecipes = async (req, res) => {
   try {
-    // Set the default time frame as 24 hours
-    const dateThreshold = new Date();
-    dateThreshold.setHours(dateThreshold.getHours() - 24); // last 24 hours
+    // Fetch the 10 recipes with the highest trendingScore, sorted in descending order
+    const recipes = await Recipe.find({})
+      .sort({ trendingScore: -1 }) // Sort by trendingScore in descending order
+      .limit(10); // Limit the number of recipes to 10
 
-    // Query for recipes with recent activity (views, saves, etc.)
-    const recipes = await Recipe.find({
-      lastViewDate: { $gte: dateThreshold }, // Filter by recent views within the last 24 hours
-    })
-      .sort({ trendingScore: -1 }) // Sort by the trending score (you'll calculate this separately)
-      .limit(10); // Limit the number of recipes, adjust as necessary
+    // Log the number of recipes fetched for debugging
+    console.log(`Found ${recipes.length} recipes for trending.`);
 
+    // If no recipes are found, log a message
+    if (!recipes.length) {
+      console.log("No trending recipes found.");
+    }
+
+    // Return the results without pagination
     res.status(200).json({
       status: 200,
       recipes,
+      totalRecipes: recipes.length, // Total recipes count based on the 10 fetched
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error while fetching trending recipes:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -553,10 +570,10 @@ const getPersonalizedRecipes = async (req, res) => {
     // Get personalized recipes based on both dietary and cuisine preferences
     let recipes = await Recipe.find(filterCriteria)
       .skip(skip) // Skip results based on page
-      .limit(parseInt(pageSize)); // Limit the number of recipes per page
+      .limit(10); // Limit the number of recipes per page
 
     // Get the total number of matching personalized recipes for pagination info
-    const totalRecipes = await Recipe.countDocuments(filterCriteria);
+    const totalRecipes = recipes.length;
 
     // If no recipes are found, show similar recipes from saved ones
     if (recipes.length === 0 && user.savedRecipes.length > 0) {
@@ -571,7 +588,7 @@ const getPersonalizedRecipes = async (req, res) => {
         recipes: savedRecipes,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(totalRecipes / pageSize),
+          totalPages: Math.ceil(savedRecipes?.length / pageSize),
           totalRecipes,
         },
       });
@@ -720,6 +737,69 @@ const getMostViewedRecipes = async (req, res) => {
   }
 };
 
+const getRecipeOfTheDay = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Fetch user preferences (e.g., dietary restrictions, liked cuisines)
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { dietaryPreferences, savedRecipes, ratedRecipes } = user;
+
+    // Step 1: Get all recipes matching dietary preferences
+    let filteredRecipes = await Recipe.find({
+      dietaryPreferences: { $in: dietaryPreferences },
+    });
+
+    // Step 2: Prioritize saved and highly rated recipes
+    let preferredRecipes = filteredRecipes.filter(
+      (recipe) =>
+        savedRecipes.includes(recipe._id) || ratedRecipes[recipe._id] >= 4
+    );
+
+    let selectedRecipe;
+
+    if (preferredRecipes.length > 0) {
+      // Step 3: Randomly pick from preferred recipes
+      selectedRecipe =
+        preferredRecipes[Math.floor(Math.random() * preferredRecipes.length)];
+    } else if (filteredRecipes.length > 0) {
+      // Step 4: If no preferred recipes, randomly pick from all filtered recipes
+      selectedRecipe =
+        filteredRecipes[Math.floor(Math.random() * filteredRecipes.length)];
+    } else {
+      return res.status(404).json({ message: "No matching recipes found" });
+    }
+
+    // Store the selected recipe as today's recipe (optional: use Redis or cache)
+    await User.findByIdAndUpdate(userId, {
+      lastRecipeOfTheDay: selectedRecipe._id,
+    });
+
+    res.status(200).json({
+      status: 200,
+      recipe: selectedRecipe,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching recipe of the day" });
+  }
+};
+
+const getTimeBasedRecipe = async (req, res) => {
+  const { dietaryPreferences } = req.body || [];
+  const time = getTimePeriod();
+
+  console.log("Time:", time);
+
+  try {
+    const recipes = await getRecipesByTimeAndDietary(time, dietaryPreferences);
+    res.status(200).json({ time, recipes });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching recommended recipes" });
+  }
+};
+
 module.exports = {
   generateRecipesInBatch,
   trackRecipeViews,
@@ -735,4 +815,6 @@ module.exports = {
   getMostViewedRecipes,
   filterPersonalizedRecipe,
   generateRecipe,
+  getRecipeOfTheDay,
+  getTimeBasedRecipe,
 };

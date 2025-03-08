@@ -12,6 +12,7 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  TextField,
   Tooltip,
   useMediaQuery,
 } from "@mui/material";
@@ -21,7 +22,13 @@ import { NavigationLink } from "../../styles/ContainerStyles";
 import theme from "../../theme/theme";
 import { useSelector } from "react-redux";
 import { userSelector } from "../../redux/selectors/selectors";
-import { Favorite, Forum, Home, LocalDining } from "@mui/icons-material";
+import {
+  Favorite,
+  Forum,
+  Home,
+  LocalDining,
+  Search,
+} from "@mui/icons-material";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
@@ -29,8 +36,9 @@ const TopNavigationBar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const open = Boolean(anchorEl);
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const showUserMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -55,7 +63,13 @@ const TopNavigationBar = () => {
       <AppBar
         elevation={0}
         position="fixed"
-        sx={{ zIndex: 99, background: "#faf8f5" }}
+        sx={{
+          zIndex: 99,
+          pb: isMobile ? 1 : 0,
+          //background: theme.palette.info.light,
+          // background: "#faf8f5"
+          background: "linear-gradient(to left, #F5E1C8, #FFFFFF)",
+        }}
       >
         <Box
           display="flex"
@@ -63,7 +77,26 @@ const TopNavigationBar = () => {
           alignItems="center"
           p={2}
         >
-          {/* Mobile Menu Button */}
+          {isTablet && !isMobile && (
+            <Box display="flex" gap={1}>
+              {/* Mobile Menu Button */}
+
+              <IconButton
+                edge="start"
+                color="inherit"
+                aria-label="menu"
+                onClick={toggleDrawer(true)}
+              >
+                <MenuIcon color="primary" />
+              </IconButton>
+
+              {/* Logo */}
+
+              <Box display="flex" justifyContent="center">
+                <img src="../logo.png" alt="Logo" width={130} height={60} />
+              </Box>
+            </Box>
+          )}
           {isMobile && (
             <IconButton
               edge="start"
@@ -74,14 +107,13 @@ const TopNavigationBar = () => {
               <MenuIcon color="primary" />
             </IconButton>
           )}
-
-          {/* Logo */}
-          <Box display="flex" justifyContent="center">
-            <img src="./logo.png" alt="Logo" width={130} height={60} />
-          </Box>
-
+          {(isMobile || isDesktop) && (
+            <Box display="flex" justifyContent="center">
+              <img src="../logo.png" alt="Logo" width={130} height={60} />
+            </Box>
+          )}
           {/* Desktop Navigation */}
-          {!isMobile && (
+          {isDesktop && (
             <Box display="flex" gap={2} justifyContent="flex-end">
               {NavTabs.map((nav) => (
                 <NavigationLink
@@ -97,6 +129,44 @@ const TopNavigationBar = () => {
             </Box>
           )}
 
+          {/* Search Bar */}
+
+          {!isMobile && (
+            <TextField
+              variant="outlined"
+              size="small"
+              placeholder="Search..."
+              //value={searchQuery}
+              //onChange={handleSearchChange}
+              sx={{
+                width: isMobile ? 250 : 350,
+                bgcolor: "transparent",
+
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: theme.palette.secondary.dark,
+                    borderRadius: 20,
+                  },
+                  "&:hover fieldset": {
+                    borderColor: theme.palette.secondary.main,
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: theme.palette.secondary.main,
+                  },
+                },
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <Search
+                      sx={{ color: theme.palette.secondary.dark, mr: 1 }}
+                    />
+                  ),
+                },
+              }}
+            />
+          )}
+
           {/* User Profile Avatar */}
           <Box display="flex" gap={2} justifyContent="flex-end">
             <Tooltip title={user?.firstName}>
@@ -107,6 +177,43 @@ const TopNavigationBar = () => {
               />
             </Tooltip>
           </Box>
+        </Box>
+        <Box display="flex" justifyContent="center" alignItems="center">
+          {isMobile && (
+            <TextField
+              variant="outlined"
+              size="small"
+              placeholder="Search..."
+              //value={searchQuery}
+              //onChange={handleSearchChange}
+              sx={{
+                width: 350,
+                bgcolor: "transparent",
+
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: theme.palette.secondary.dark,
+                    borderRadius: 20,
+                  },
+                  "&:hover fieldset": {
+                    borderColor: theme.palette.secondary.main,
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: theme.palette.secondary.main,
+                  },
+                },
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <Search
+                      sx={{ color: theme.palette.secondary.dark, mr: 1 }}
+                    />
+                  ),
+                },
+              }}
+            />
+          )}
         </Box>
       </AppBar>
 
@@ -122,7 +229,7 @@ const TopNavigationBar = () => {
         }}
       >
         <Box display="flex" justifyContent="center" py={2}>
-          <img src="./logo.png" alt="Logo" width={130} height={60} />
+          <img src="../logo.png" alt="Logo" width={130} height={60} />
         </Box>
 
         <Divider />

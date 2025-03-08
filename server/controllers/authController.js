@@ -33,23 +33,14 @@ const register = async (req, res) => {
     newUser.refreshToken = refreshToken;
     await newUser.save();
 
-    // Send response with tokens and user details
+    const userObj = newUser.toObject();
+    delete userObj.password;
+
     res.status(201).json({
       message: "User registered successfully!",
       accessToken,
       refreshToken,
-      user: {
-        id: newUser._id,
-        username: newUser.username,
-        userImg: newUser.userImg,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        cuisinePreferences: newUser.cuisinePreferences,
-        dietaryRestrictions: newUser.dietaryRestrictions,
-        email: newUser.email,
-        savedRecipes: newUser.savedRecipes,
-        ratedRecipes: newUser.ratedRecipes,
-      },
+      user: userObj,
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -85,21 +76,15 @@ const login = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
+    const userObj = user.toObject();
+    delete userObj.password;
+
     // Step 4: Send response
     res.status(200).json({
       message: "Login successful",
       accessToken,
       refreshToken,
-      user: {
-        id: user._id,
-        username: user.username,
-        userImg: user.userImg,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        cuisinePreferences: user.cuisinePreferences,
-        dietaryRestrictions: user.dietaryRestrictions,
-        email: user.email,
-      },
+      user: userObj,
     });
   } catch (error) {
     res
