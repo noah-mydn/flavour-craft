@@ -286,7 +286,7 @@ Return **ONLY JSON**, nothing else.
 
 const getAllRecipes = async (req, res) => {
   try {
-    const { page, pageSize } = req.body;
+    const { page, pageSize } = req.query;
     const skip = (page - 1) * pageSize;
 
     const recipes = await Recipe.find()
@@ -598,7 +598,7 @@ const getPopularRecipes = async (req, res) => {
 
     res.status(200).json({
       status: 200,
-      popularRecipes,
+      recipes: popularRecipes,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalRecipes / pageSize),
@@ -641,7 +641,7 @@ const getTrendingRecipes = async (req, res) => {
 const getPersonalizedRecipes = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { page = 1, pageSize = 10 } = req.query; // Add page and pageSize from the query params
+    const { page = 1, pageSize = 10 } = req.query;
     const skip = (page - 1) * pageSize;
 
     // Get user preferences
@@ -650,7 +650,6 @@ const getPersonalizedRecipes = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prepare filter criteria based on user preferences
     let filterCriteria = {};
 
     // Filter by dietary preferences

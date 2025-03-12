@@ -1,10 +1,12 @@
-// User Profile
-
+// User
 export const userSelector = (state) => state.auth.user;
 export const isVerifiedSelector = (state) => state.auth.isVerified;
 export const loadingSelector = (state) => state.auth.loading;
 export const errorSelector = (state) => state.auth.error;
 export const tokenSelector = (state) => state.auth.accessToken;
+
+//Profile
+export const profileSelector = (state) => state.userProfile.profile;
 
 //Preferences
 const cuisinePreferences = (state) => state.userProfile.cuisinePreferences;
@@ -13,15 +15,10 @@ export const cuisinePrefSelector = cuisinePreferences;
 export const dietaryRestrictionsSelectors = dietaryRestrictions;
 
 //Recipes
-const recipes = (state) => state.recipes.allRecipes;
-const pagination = (state) => state.recipes.pagination;
-const loadingRecipes = (state) => state.recipes.loading;
-const errorRecipes = (state) => state.recipes.error;
-
-export const recipesSelector = (state) => state.recipes.allRecipes;
+export const recipesListSelector = (state) => state.recipes.allRecipes;
 export const paginationSelector = (state) => state.recipes.pagination;
-export const loadingRecipesSelector = loadingRecipes;
-export const errorRecipesSelector = errorRecipes;
+export const loadingRecipesSelector = (state) => state.recipes.recipesLoading;
+export const errorRecipesSelector = (state) => state.recipes.recipesError;
 
 //Cuisines
 export const cuisinesSelector = (state) => state.cuisine.cuisines;

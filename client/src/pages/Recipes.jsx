@@ -16,33 +16,34 @@ import {
 import React from "react";
 import TopNavigationBar from "../components/Navigations/TopNavigationBar";
 import { useRecipe } from "../hooks/useRecipe";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
+  loadingRecipesSelector,
   paginationSelector,
-  recipesSelector,
+  recipesListSelector,
 } from "../redux/selectors/selectors";
 import RecipeCard from "../components/Recipes/RecipeCard";
-import SortIcon from "@mui/icons-material/Sort";
-import { FilterAlt } from "@mui/icons-material";
+import RecipeCardSkeleton from "../components/Recipes/RecipeCardSkeleton";
+import { fetchRecipes } from "../redux/apiClients/recipeAPI";
 
 const Recipes = () => {
   const theme = useTheme();
-  const recipes = useSelector(recipesSelector);
+  const { page } = useRecipe();
+  const recipes = useSelector(recipesListSelector);
+  const loading = useSelector(loadingRecipesSelector);
   const pagination = useSelector(paginationSelector);
+  const dispatch = useDispatch();
 
-  const { fetchRecentlyAddedRecipes, page, pageSize, handlePageChange } =
-    useRecipe();
+  const { handlePageChange, filterRecipeOption } = useRecipe();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
-  React.useEffect(() => {
-    fetchRecentlyAddedRecipes(page, pageSize);
-  }, [page, pageSize]);
+  const { sortValue, handleSortChange } = filterRecipeOption;
 
   React.useEffect(() => {
-    console.log("Recipes", recipes);
+    dispatch(fetchRecipes({ sortValue: "all", page }, 10));
   }, []);
-
+  console.log("Recipes:", recipes);
   return (
     <React.Fragment>
       <TopNavigationBar />
@@ -56,10 +57,7 @@ const Recipes = () => {
             alignItems="center"
             px={3}
           >
-            <Breadcrumbs
-              aria-label="breadcrumb"
-              sx={{ marginY: 2, marginLeft: 6 }}
-            >
+            <Breadcrumbs aria-label="breadcrumb" sx={{ marginTop: 4 }}>
               <Link
                 color="text.secondary"
                 //href="/recipes"
@@ -67,19 +65,23 @@ const Recipes = () => {
               >
                 Recipes
               </Link>
-              {/* <Link
-                color="secondary.dark"
-                sx={{ textDecoration: "none", cursor: "pointer" }}
+              <Link
+                color="text.secondary"
+                //href="/recipes"
+                sx={{
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  textTransform: "capitalize",
+                }}
               >
-                {recipe?.name}
-              </Link> */}
+                {sortValue}
+              </Link>
             </Breadcrumbs>
             <Box
               display="flex"
               justifyContent={isMobile ? "center" : "flex-end"}
               width="100%"
               mt={isMobile ? 7 : 3}
-              mr={isMobile ? 0 : 3}
             >
               <Stack direction={isMobile ? "column" : "row"} spacing={3}>
                 <FormControl sx={{ width: "150px", maxWidth: "225px" }}>
@@ -89,15 +91,15 @@ const Recipes = () => {
                     id="sort-select"
                     label="Sort By"
                     size="small"
-                    value={10}
+                    value={sortValue}
+                    onChange={handleSortChange}
                   >
-                    <MenuItem value={10} selected>
+                    <MenuItem value="all" selected>
                       Most Recent
                     </MenuItem>
-                    <MenuItem value={20}>Most Popular</MenuItem>
-                    <MenuItem value={30}>Most Viewed</MenuItem>
-                    <MenuItem value={30}>Most Rated</MenuItem>
-                    <MenuItem value={30}>Most Favorites</MenuItem>
+                    <MenuItem value="popular">Most Popular</MenuItem>
+                    <MenuItem value="mostViewed">Most Viewed</MenuItem>
+                    <MenuItem value="personalized">Personalized</MenuItem>
                   </Select>
                 </FormControl>
               </Stack>
@@ -105,12 +107,28 @@ const Recipes = () => {
           </Grid>
 
           {/* Recipe Cards Grid */}
-          <Grid item container justifyContent="center" spacing={3}>
-            {recipes?.map((recipe) => (
-              <Grid item key={recipe.id} xs={7.7} sm={4.5} md={3.5} lg={2.2}>
-                <RecipeCard recipe={recipe} />
-              </Grid>
-            ))}
+          <Grid
+            item
+            container
+            spacing={4}
+            justifyContent="center"
+            alignContent="center"
+            justifyItems="center"
+            alignItems="center"
+          >
+            {loading
+              ? Array(4)
+                  .fill(0)
+                  .map((_, index) => (
+                    <Grid item key={`skeleton-${index}`} md={12} lg={6}>
+                      <RecipeCardSkeleton />
+                    </Grid>
+                  ))
+              : recipes?.map((recipe) => (
+                  <Grid item key={recipe._id} md={12} lg={6}>
+                    <RecipeCard recipe={recipe} />
+                  </Grid>
+                ))}
           </Grid>
 
           {/* Pagination */}

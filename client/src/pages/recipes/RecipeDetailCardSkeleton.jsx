@@ -55,7 +55,6 @@ const RecipeCardSkeleton = ({ isMobile, isTablet }) => {
               {/* Ratings */}
               <Box
                 sx={{
-                  display: "flex",
                   alignItems: "center",
                   mt: 2,
                   mb: 0,

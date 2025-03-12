@@ -311,7 +311,7 @@ function IngredientFilterUI({ onGenerateClick }) {
                   color: "#fff",
                 },
                 borderRadius: 4,
-                background: theme.palette.primary.main,
+                background: theme.palette.secondary.dark,
                 color: "#fff",
               }}
             />
@@ -345,7 +345,7 @@ function IngredientFilterUI({ onGenerateClick }) {
                   color: "#fff",
                 },
                 borderRadius: 4,
-                background: theme.palette.primary.main,
+                background: theme.palette.secondary.dark,
                 color: theme.palette.common.white,
               }}
             />
@@ -384,7 +384,7 @@ function IngredientFilterUI({ onGenerateClick }) {
                   color: "#fff",
                 },
                 borderRadius: 4,
-                background: theme.palette.primary.main,
+                background: theme.palette.secondary.dark,
                 color: theme.palette.common.white,
               }}
             />

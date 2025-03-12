@@ -29,17 +29,28 @@ import theme from "../../theme/theme";
 import { useParams } from "react-router-dom";
 import cuisineFlags from "../../constants/flags";
 import { useSelector } from "react-redux";
-import { userSelector } from "../../redux/selectors/selectors";
+import { profileSelector, userSelector } from "../../redux/selectors/selectors";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
 
-const RecipeDetail = ({ id }) => {
-  const recipeId = useParams()?.recipeId || id;
+const RecipeDetail = () => {
+  const recipeId = useParams()?.recipeId;
   const user = useSelector(userSelector);
+  const profile = useSelector(profileSelector);
   const { fetchRecipeInfo, recipe, saveRecipe, recipeLoading } = useRecipe();
   const [activeTab, setActiveTab] = useState(0);
+
   const [saved, setSaved] = React.useState(
-    user?.savedRecipes?.includes(recipeId)
+    profile?.savedRecipes?.includes(recipeId)
   );
+
+  React.useEffect(() => {
+    setSaved(profile?.savedRecipes?.includes(recipeId));
+  }, [recipeId]);
+
+  const handleSaveRecipe = () => {
+    saveRecipe(recipeId);
+    setSaved(!saved);
+  };
 
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -47,10 +58,7 @@ const RecipeDetail = ({ id }) => {
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
-  const handleSaveRecipe = () => {
-    saveRecipe(recipe?._id);
-    setSaved(!saved);
-  };
+
   const handleRateRecipe = () => {};
 
   React.useEffect(() => {
@@ -58,12 +66,6 @@ const RecipeDetail = ({ id }) => {
       fetchRecipeInfo(recipeId);
     }
   }, []);
-
-  React.useEffect(() => {
-    if (user) {
-      setSaved(user?.savedRecipes?.includes(recipeId));
-    }
-  }, [user, recipeId]);
 
   return (
     <Box

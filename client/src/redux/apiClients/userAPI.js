@@ -36,8 +36,9 @@ export const toggleSavedRecipe = createAsyncThunk(
         {},
         getAuthConfig()
       );
-      getCurrentUserProfile();
+
       displaySuccessToast(response.data.message);
+      return response.data;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response?.data || "Error saving recipe");

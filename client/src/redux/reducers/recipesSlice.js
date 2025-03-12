@@ -1,19 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchAllRecipes } from "../apiClients/recipeAPI";
+import { fetchRecipes } from "../apiClients/recipeAPI";
 
 const initialState = {
   allRecipes: [],
   pagination: {},
-  recipe: null,
-  loading: false,
-  error: null,
+  currentSort: "all",
+  recipesLoading: false,
+  recipesError: null,
 };
 
 const recipesSlice = createSlice({
   name: "recipes",
   initialState,
   reducers: {
-    // You can still use this if you want to set recipes manually later
     setRecipes(state, action) {
       state.allRecipes = action.payload;
     },
@@ -22,26 +21,26 @@ const recipesSlice = createSlice({
     },
     deleteRecipe(state, action) {
       state.allRecipes = state.allRecipes.filter(
-        (recipe) => recipe._id !== action.payload // assuming "_id" is used as the identifier
+        (recipe) => recipe._id !== action.payload
       );
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(fetchAllRecipes.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(fetchAllRecipes.fulfilled, (state, action) => {
-      // The API call will directly update the state
-      state.allRecipes = action.payload.recipes;
-      state.pagination = action.payload.pagination;
-      state.loading = false;
-      state.error = null;
-    });
-    builder.addCase(fetchAllRecipes.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload || "Error fetching recipes";
-    });
+    builder
+      .addCase(fetchRecipes.pending, (state) => {
+        state.recipesLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchRecipes.fulfilled, (state, action) => {
+        state.recipesLoading = false;
+        state.allRecipes = action.payload.data.recipes;
+        state.pagination = action.payload.data.pagination;
+        state.currentSort = action.payload.sortValue;
+      })
+      .addCase(fetchRecipes.rejected, (state, action) => {
+        state.recipesLoading = false;
+        state.error = action.payload;
+      });
   },
 });
 

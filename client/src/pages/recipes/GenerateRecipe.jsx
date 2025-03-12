@@ -13,7 +13,7 @@ import {
   Paper,
 } from "@mui/material";
 import theme from "../../theme/theme";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
 import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
 import IngredientFilterUI from "../../components/Ingredients/IngredientInspection";
@@ -25,6 +25,10 @@ import { fetchAllRecipes } from "../../redux/apiClients/recipeAPI";
 import { useRecipe } from "../../hooks/useRecipe";
 import GeneratedRecipeCard from "../../components/Recipes/GeneratedRecipeCard";
 import RecipeCardHorizontal from "../../components/Recipes/RecipeCardHorizontal";
+import {
+  loadingRecipesSelector,
+  recipesListSelector,
+} from "../../redux/selectors/selectors";
 
 const GenerateRecipe = () => {
   const dispatch = useDispatch();
@@ -37,22 +41,17 @@ const GenerateRecipe = () => {
     generatedRecipe,
   } = useContext(GenerateRecipeContext);
 
-  const { fetchRecentlyAddedRecipes } = useRecipe();
-
   // Media queries for responsive design
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const recipes = useSelector(recipesListSelector);
+  const loading = useSelector(loadingRecipesSelector);
 
   React.useEffect(() => {
     dispatch(fetchCuisines());
     dispatch(fetchDietaryOptions());
   }, [dispatch]);
-
-  React.useEffect(() => {
-    fetchRecentlyAddedRecipes(1, 10);
-  }, [generatedRecipe]);
-
-  console.log("Hook Output:", generatedRecipe);
 
   return (
     <Box

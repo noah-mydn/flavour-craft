@@ -24,7 +24,7 @@ const router = express.Router();
 router.post("/batch-generate", authenticateToken, generateRecipesInBatch);
 router.post("/generate", authenticateToken, generateRecipe);
 router.post("/recommend", authenticateToken, getTimeBasedRecipe);
-router.post("/all", authenticateToken, getAllRecipes);
+router.get("/all", authenticateToken, getAllRecipes);
 router.get("/trending", authenticateToken, getTrendingRecipes);
 router.get("/popular", authenticateToken, getPopularRecipes);
 router.get("/personalized", authenticateToken, getPersonalizedRecipes);

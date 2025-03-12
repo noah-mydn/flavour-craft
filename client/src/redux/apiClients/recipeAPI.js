@@ -1,26 +1,38 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+// recipeAPI.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { displayErrorToast } from "../../utils/toastUtil";
 import { getAuthConfig } from "../../utils/authHeaders";
+import { displayErrorToast } from "../../utils/toastUtil";
 
 const BASE_URL = process.env.REACT_APP_BASE_API + "/recipes";
 
-// Fetch All Recipes
-export const fetchAllRecipes = createAsyncThunk(
-  "recipes/fetchAllRecipes",
-  async (payload, { rejectWithValue }) => {
+export const fetchSortedRecipes = async (sortValue, page, pageSize = 10) => {
+  console.log("Sort Value:", sortValue);
+  try {
+    const response = await axios.get(`${BASE_URL}/${sortValue}`, {
+      params: {
+        page: page,
+        pageSize: pageSize,
+      },
+      ...getAuthConfig(),
+    });
+
+    console.log("DATA:", response.data);
+    return response.data;
+  } catch (error) {
+    displayErrorToast(error);
+    throw error.response ? error.response.data.message : error.message;
+  }
+};
+
+export const fetchRecipes = createAsyncThunk(
+  "recipes/fetchRecipes",
+  async ({ sortValue, page, pageSize }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        `${BASE_URL}/all`,
-        payload,
-        getAuthConfig()
-      );
-      const { recipes, pagination } = response.data;
-      console.log(response.data);
-      return { recipes, pagination };
+      const data = await fetchSortedRecipes(sortValue, page, pageSize);
+      return { data, sortValue };
     } catch (error) {
-      displayErrorToast(error);
-      return rejectWithValue(error.response?.data || "Error fetching recipes");
+      return rejectWithValue(error);
     }
   }
 );

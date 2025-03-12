@@ -41,19 +41,15 @@ const connectDB = async () => {
     // }));
     // await Cuisine.insertMany(cuisineDocs);
 
-    // Insert dietary restrictions
-    //await DietaryOption.insertMany(dietaryRestrictions);
-    // Recipe.updateMany(
-    //   {},
-    //   {
-    //     $set: {
-    //       thumbnail:
-    //         "https://res.cloudinary.com/dek6ihfme/image/upload/v1741418937/recipe-thumbnail-fallback_yhxyqo.png",
-    //     },
-    //   }
-    // );
-    // Remove all existing thumbnails
-    await Recipe.updateMany({}, { $unset: { thumbnail: "" } });
+    await Recipe.updateMany(
+      {},
+      {
+        $set: {
+          thumbnail:
+            "https://res.cloudinary.com/dek6ihfme/image/upload/v1741418937/recipe-thumbnail-fallback_yhxyqo.png",
+        },
+      }
+    );
     console.log("All recipe thumbnails removed!");
 
     // Set new default thumbnail

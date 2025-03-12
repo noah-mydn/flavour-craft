@@ -5,20 +5,10 @@ import {
 } from "../apiClients/userAPI";
 
 const initialState = {
-  id: "",
-  userImg: "",
-  firstName: "",
-  lastName: "",
-  email: "",
-  username: "",
-  cuisinePreferences: [],
-  dietaryRestrictions: [],
-  savedRecipes: [],
-  ratedRecipes: [],
-  myRecipeGenerations: [],
+  profile: null,
   isLoading: false,
   error: null,
-  status: null,
+  status: "",
 };
 
 const userProfileSlice = createSlice({
@@ -45,24 +35,15 @@ const userProfileSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(getCurrentUserProfile.pending, (state) => {
-        state.status = "loading";
+        state.isLoading = true;
       })
       .addCase(getCurrentUserProfile.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.id = action.payload.id;
-        state.userImg = action.payload.userImg;
-        state.firstName = action.payload.firstName;
-        state.lastName = action.payload.lastName;
-        state.email = action.payload.email;
-        state.username = action.payload.username;
-        state.cuisinePreferences = action.payload.cuisinePreferences;
-        state.dietaryRestrictions = action.payload.dietaryRestrictions;
-        state.savedRecipes = action.payload.savedRecipes;
-        state.ratedRecipes = action.payload.ratedRecipes;
+        state.isLoading = false;
+        state.profile = action.payload;
       })
       .addCase(getCurrentUserProfile.rejected, (state, action) => {
         console.error("Profile Fetch Failed:", action.payload);
-        state.status = "failed";
+        state.isLoading = false;
       })
       .addCase(toggleSavedRecipe.pending, (state) => {
         state.status = "loading";
