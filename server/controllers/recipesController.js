@@ -155,7 +155,7 @@ const generateRecipe = async (req, res) => {
     const prompt = `
       Generate 4 complete and authentic recipes based on the given details.
       **Important Rules**:
-      - **ALL fields are required**. Do NOT leave any fields empty.
+     
       - If a value is unknown, generate a realistic value instead.
       - Use ingredients from the list, but not necessarily all. 
       - If no valid recipes can be generated, return: { "error": "Sorry, I couldn't find any recipe." }
@@ -167,6 +167,7 @@ const generateRecipe = async (req, res) => {
       - Dietary preferences: ${dietaryPreferences.join(", ")}
 
       **Expected JSON Schema**:
+       - **ALL fields inside are mandatory.**. Do NOT leave any fields empty.
 {
   "recipes": [
     {
@@ -175,7 +176,7 @@ const generateRecipe = async (req, res) => {
       "ingredients": [{"name": "String", "quantity": "String", "substitute": ["String"]}],
       "cookingInstructions": ["String"],
       "cookingTime": "String",
-      "cuisineTypes": ["String"],
+      "cuisineTypes": ["String"], 
       "dietaryPreferences": ["String"],
       "tags": ["String"],
       "nutritionalInfo": {"calories": "String", "protein": "String", "carbs": "String", "fat": "String"}

@@ -43,7 +43,7 @@ const GenerateRecipe = () => {
 
   // Media queries for responsive design
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
 
   const recipes = useSelector(recipesListSelector);
   const loading = useSelector(loadingRecipesSelector);
@@ -58,7 +58,7 @@ const GenerateRecipe = () => {
       sx={{
         marginTop: isMobile ? "13rem" : "10rem",
         marginBottom: "2rem",
-        mx: { xs: 2, sm: 4 },
+        mx: { xs: 2, sm: 4, md: 12 },
       }}
     >
       <Breadcrumbs
@@ -83,7 +83,7 @@ const GenerateRecipe = () => {
       <Container maxWidth="xl" disableGutters>
         <Grid container spacing={3}>
           {/* Left column for ingredient filter */}
-          <Grid item xs={12} md={5} lg={4}>
+          <Grid item xs={12} md={12} lg={4}>
             {/* Wrap the IngredientFilterUI and modify it to use a callback for generation */}
             <Box sx={{ height: "100%" }}>
               <IngredientFilterUI onGenerateClick={handleGenerateRecipe} />
@@ -105,7 +105,7 @@ const GenerateRecipe = () => {
           </Grid>
 
           {/* Right column for recipe results */}
-          <Grid item xs={12} md={6} lg={7}>
+          <Grid item md={12} lg={7}>
             <Paper
               sx={{
                 height: "100%",
@@ -184,8 +184,14 @@ const GenerateRecipe = () => {
                     alignContent="center"
                   >
                     {generatedRecipe?.map((recipe, index) => (
-                      <Grid item xs={12} lg={6} key={recipe._id || index}>
-                        <RecipeCardHorizontal recipe={recipe} />
+                      <Grid
+                        item
+                        xs={12}
+                        md={6}
+                        lg={12}
+                        key={recipe._id || index}
+                      >
+                        <RecipeCard recipe={recipe} />
                       </Grid>
                     ))}
                   </Grid>

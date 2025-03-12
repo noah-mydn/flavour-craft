@@ -48,7 +48,7 @@ const RecipeCard = ({ recipe, width }) => {
       sx={{
         display: "flex",
         flexDirection: isMobile ? "column" : "row",
-        height: isTablet ? "auto" : "180px",
+        height: isMobile ? "auto" : isTablet ? "160px" : "150px",
         borderRadius: 4,
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         position: "relative",

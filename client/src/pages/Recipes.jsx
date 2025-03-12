@@ -125,7 +125,7 @@ const Recipes = () => {
                     </Grid>
                   ))
               : recipes?.map((recipe) => (
-                  <Grid item key={recipe._id} md={12} lg={6}>
+                  <Grid item key={recipe._id} xs={10} lg={6}>
                     <RecipeCard recipe={recipe} />
                   </Grid>
                 ))}
