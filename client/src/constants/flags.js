@@ -143,10 +143,3 @@ const cuisineFlags = {
 };
 
 export default cuisineFlags;
-
-const flagCDNBaseURL = "https://flagcdn.com/w320/";
-
-export const getFlagCDNURL = (cuisine) => {
-  const countryCode = cuisineFlags[cuisine];
-  return countryCode ? `${flagCDNBaseURL}${countryCode}.png` : null;
-};

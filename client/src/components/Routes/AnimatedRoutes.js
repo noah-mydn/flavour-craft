@@ -14,12 +14,38 @@ import Favourites from "../../pages/Favourites";
 import TermsAndConditions from "../../pages/TermsAndConditions";
 import { PreferenceProvider } from "../../context/PreferenceContext";
 import RecipeDetail from "../../pages/recipes/RecipeDetailCard";
+import { useDispatch, useSelector } from "react-redux";
+import { getCurrentUserProfile } from "../../redux/apiClients/userAPI";
+import {
+  isVerifiedSelector,
+  tokenSelector,
+  userSelector,
+} from "../../redux/selectors/selectors";
+import { verifySession } from "../../utils/verifySession";
+import { logout } from "../../redux/reducers/authSlice";
+import GenerateRecipe from "../../pages/recipes/GenerateRecipe";
+import { GenerateRecipeProvider } from "../../context/GenerateRecipeContext";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
   const isTablet = useMediaQuery("(max-width: 900px)");
-
+  const user = useSelector(userSelector);
+  const isVerified = useSelector(isVerifiedSelector);
+  const accessToken = useSelector(tokenSelector);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user && isVerified) {
+      dispatch(getCurrentUserProfile());
+    }
+  }, [dispatch]);
+
+  React.useEffect(() => {
+    if (accessToken) {
+      verifySession(accessToken);
+    }
+  }, [accessToken]);
 
   return (
     <Routes>
@@ -93,11 +119,23 @@ const AnimatedRoutes = () => {
       />
 
       <Route
-        path="/recipe/:recipeId"
+        path="/recipes/:recipeId"
         element={
           <PrivateRoute>
             <TopNavigationBar isMobile={isMobile} />
             <RecipeDetail isMobile={isMobile} />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/generate"
+        element={
+          <PrivateRoute>
+            <GenerateRecipeProvider>
+              <TopNavigationBar isMobile={isMobile} />
+              <GenerateRecipe />
+            </GenerateRecipeProvider>
           </PrivateRoute>
         }
       />

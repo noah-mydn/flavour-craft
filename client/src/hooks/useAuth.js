@@ -12,6 +12,7 @@ import {
 import { googleAuth, login, register } from "../redux/apiClients/authAPI";
 import React from "react";
 import { setUserProfile } from "../redux/reducers/userProfileSlice";
+import { logout } from "../redux/reducers/authSlice";
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -77,6 +78,12 @@ export const useAuth = () => {
     window.location.href = "http://localhost:8080/auth/google";
   };
 
+  //Logout
+  const accountLogout = () => {
+    dispatch(logout());
+    navigate("/auth");
+  };
+
   return {
     user,
     accountLogin,
@@ -84,5 +91,6 @@ export const useAuth = () => {
     accountUser,
     handleInputChange,
     googleLogin,
+    accountLogout,
   };
 };

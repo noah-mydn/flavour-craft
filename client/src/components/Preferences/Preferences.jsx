@@ -12,7 +12,7 @@ import {
   Typography,
   useMediaQuery,
 } from "@mui/material";
-import { usePreferences } from "../../hooks/usePreferences";
+import { useUserPreferences } from "../../hooks/useUserPreferences";
 import { usePreferenceContext } from "../../context/PreferenceContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { fadeVariant } from "../../utils/animationUtils";
@@ -31,7 +31,7 @@ const Preferences = () => {
     selectDietaryRestrictions,
     handleTempCuisineSelections,
     handleTempDietarySelections,
-  } = usePreferences();
+  } = useUserPreferences();
 
   const { step, nextStep, previousStep, skipStep, skipToMain } =
     usePreferenceContext();

@@ -4,7 +4,7 @@ import Preferences from "../components/Preferences/Preferences";
 import { useSelector } from "react-redux";
 import { usePreferenceContext } from "../context/PreferenceContext";
 import {
-  cuisineSelectors,
+  cuisinePrefSelector,
   dietaryRestrictionsSelectors,
 } from "../redux/selectors/selectors";
 import TopNavigationBar from "../components/Navigations/TopNavigationBar";
@@ -14,7 +14,7 @@ import { Box } from "@mui/material";
 const Home = () => {
   const { step } = usePreferenceContext();
   const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors);
-  const cuisinePreferences = useSelector(cuisineSelectors);
+  const cuisinePreferences = useSelector(cuisinePrefSelector);
 
   React.useEffect(() => {
     console.log("CURRENT STEP:", step);

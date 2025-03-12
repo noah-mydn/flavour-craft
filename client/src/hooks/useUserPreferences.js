@@ -6,11 +6,11 @@ import {
   updateCuisinePreferences,
 } from "../redux/reducers/userProfileSlice";
 import {
-  cuisineSelectors,
+  cuisinesSelector,
   dietaryRestrictionsSelectors,
 } from "../redux/selectors/selectors";
 
-export const usePreferences = () => {
+export const useUserPreferences = () => {
   const [allergies, setAllergies] = React.useState([]);
   const [lifeStyles, setLifeStyles] = React.useState([]);
   const [healthConditions, setHealthConditions] = React.useState([]);
@@ -18,7 +18,7 @@ export const usePreferences = () => {
 
   // Fetching permanent selections from Redux state
   const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors) || [];
-  const cuisineSelections = useSelector(cuisineSelectors) || [];
+  const cuisineSelections = useSelector(cuisinesSelector) || [];
 
   // Temporary selections managed locally (before committing to Redux)
   const [tempCuisineSelections, setTempCuisineSelections] = React.useState(

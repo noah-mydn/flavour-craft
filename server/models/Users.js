@@ -34,6 +34,9 @@ const userSchema = new mongoose.Schema({
   ],
   createdAt: { type: Date, default: Date.now },
   savedRecipes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Recipe" }],
+  myRecipeGenerations: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Recipe" },
+  ],
   ratedRecipes: [
     {
       recipeId: { type: mongoose.Schema.Types.ObjectId, ref: "Recipe" },

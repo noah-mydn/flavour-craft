@@ -99,7 +99,7 @@ const addCuisinePreferences = async (req, res) => {
 };
 
 const addDietaryPreferences = async (req, res) => {
-  const { dietaryOptions } = req.body; // Expecting array of option IDs
+  const { dietaryOptions } = req.body;
   const userId = req.user.userId;
 
   if (!Array.isArray(dietaryOptions) || dietaryOptions.length === 0) {
@@ -139,9 +139,63 @@ const addDietaryPreferences = async (req, res) => {
   }
 };
 
+const getUserProfileById = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not found" });
+    }
+    const newUserFormat = user.toObject();
+    delete newUserFormat.password;
+
+    return res.status(200).json({
+      status: 200,
+      message: "User profile retrieved successfully",
+      user: newUserFormat,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "An error occurred while fetching user profile",
+    });
+  }
+};
+
+const getCurrentUserProfile = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const user = await User.findById(userId)
+      .populate("cuisinePreferences")
+      .populate("dietaryRestrictions");
+    if (!user) {
+      return res.status(404).json({ status: 404, message: "User not foun" });
+    }
+
+    const newUserFormat = user.toObject();
+    delete newUserFormat.password;
+    delete newUserFormat.createdAt;
+
+    return res.status(200).json({
+      status: 200,
+      message: "User profile retrieved successfully",
+      user: newUserFormat,
+    });
+  } catch (error) {
+    console.error("Error fetching current user profile:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "An error occurred while fetching current user profile",
+    });
+  }
+};
+
 module.exports = {
   editUserProfile,
   deleteUserProfile,
   addDietaryPreferences,
   addCuisinePreferences,
+  getUserProfileById,
+  getCurrentUserProfile,
 };

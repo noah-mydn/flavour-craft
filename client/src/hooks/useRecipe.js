@@ -4,11 +4,11 @@ import { getAuthConfig } from "../utils/authHeaders";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllRecipes } from "../redux/apiClients/recipeAPI";
-import {
-  setUserProfile,
-  toggleSavedRecipe,
-} from "../redux/reducers/userProfileSlice";
 import { userSelector } from "../redux/selectors/selectors";
+import {
+  getCurrentUserProfile,
+  toggleSavedRecipe,
+} from "../redux/apiClients/userAPI";
 
 export const useRecipe = () => {
   const [trendingRecipes, setTrendingRecipes] = useState([]);
@@ -38,6 +38,8 @@ export const useRecipe = () => {
       }
     } catch (error) {
       displayErrorToast(error);
+    } finally {
+      setRecipeLoading(false);
     }
   };
 
@@ -48,7 +50,7 @@ export const useRecipe = () => {
         `${process.env.REACT_APP_BASE_API}/recipes/trending`,
         {
           ...getAuthConfig(),
-          params: { page, pageSize }, // ✅ Correct placement of params
+          params: { page, pageSize },
         }
       );
       setTrendingRecipes(response.data.recipes);
@@ -112,23 +114,13 @@ export const useRecipe = () => {
     setPage(newPage);
   };
 
-  const saveRecipe = async (recipeId) => {
-    setRecipeLoading(true);
+  const saveRecipe = (recipeId) => {
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_BASE_API}/recipes/${recipeId}/save`,
-        {},
-        getAuthConfig()
-      );
-
       dispatch(toggleSavedRecipe(recipeId));
-
-      displaySuccessToast(response?.data?.message);
+      dispatch(getCurrentUserProfile());
+      return true;
     } catch (error) {
-      console.error("Error toggling recipe save status:", error);
-      displayErrorToast(error);
-    } finally {
-      setRecipeLoading(false);
+      return false;
     }
   };
 

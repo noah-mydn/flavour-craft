@@ -33,14 +33,17 @@ const register = async (req, res) => {
     newUser.refreshToken = refreshToken;
     await newUser.save();
 
-    const userObj = newUser.toObject();
-    delete userObj.password;
-
     res.status(201).json({
       message: "User registered successfully!",
       accessToken,
       refreshToken,
-      user: userObj,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+      },
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -76,15 +79,18 @@ const login = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    const userObj = user.toObject();
-    delete userObj.password;
-
     // Step 4: Send response
     res.status(200).json({
       message: "Login successful",
       accessToken,
       refreshToken,
-      user: userObj,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+      },
     });
   } catch (error) {
     res
@@ -185,12 +191,9 @@ const googleCallBack = (req, res, next) => {
         message: "Google logged in successfully",
         user: {
           id: user._id,
-          username: user.username,
-          userImg: user.userImg,
           firstName: user.firstName,
           lastName: user.lastName,
-          cuisinePreferences: user.cuisinePreferences,
-          dietaryRestrictions: user.dietaryRestrictions,
+          username: user.username,
           email: user.email,
         },
         accessToken,

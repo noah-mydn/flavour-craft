@@ -15,8 +15,6 @@ import {
   AccessTime as AccessTimeIcon,
   Star as StarIcon,
   FavoriteBorderOutlined,
-  LocalFireDepartmentSharp,
-  FlagCircleRounded,
   Favorite,
 } from "@mui/icons-material";
 import React from "react";
@@ -25,22 +23,38 @@ import { normalizeTime } from "../../utils/timeFormatter";
 import { useRecipe } from "../../hooks/useRecipe";
 import { useSelector } from "react-redux";
 import { userSelector } from "../../redux/selectors/selectors";
+import { useNavigate } from "react-router-dom";
 
 const RecipeCard = ({ recipe, width }) => {
   const { saveRecipe } = useRecipe();
+  const navigate = useNavigate();
   const user = useSelector(userSelector);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isSaved = user?.savedRecipes?.includes(recipe._id);
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
+  const [saved, setSaved] = React.useState(
+    user?.savedRecipes?.includes(recipe._id)
+  );
 
   React.useEffect(() => {
-    console.log("CURRENT RECIPE ID IS:", recipe?._id);
-    console.log(user?.savedRecipes?.includes(recipe._id));
-  });
+    setSaved(user?.savedRecipes?.includes(recipe._id));
+  }, [user, recipe._id]);
+
+  const handleSaveRecipe = () => {
+    saveRecipe(recipe?._id);
+    setSaved(!saved);
+  };
 
   return (
     <Card
       sx={{
-        height: isMobile ? "435px" : "425px",
+        height: isMobile
+          ? "440px"
+          : isTablet
+          ? "410px"
+          : isDesktop
+          ? "415px"
+          : "435px",
         borderRadius: 4,
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         position: "relative",
@@ -64,15 +78,16 @@ const RecipeCard = ({ recipe, width }) => {
           }}
         />
       </Box>
-      <Box sx={{ position: "absolute", bottom: 10, right: 10 }}>
+
+      <Box sx={{ position: "absolute", bottom: 0, right: 10 }}>
         <IconButton
           size="small"
-          onClick={() => saveRecipe(recipe?._id)}
+          onClick={handleSaveRecipe}
           sx={{
             color: "white",
           }}
         >
-          {isSaved ? (
+          {saved ? (
             <Favorite color="primary" />
           ) : (
             <FavoriteBorderOutlined
@@ -108,8 +123,13 @@ const RecipeCard = ({ recipe, width }) => {
       {/* Food image */}
       <CardMedia
         component="img"
-        height="140"
-        image={recipe?.thumbnail}
+        height={100}
+        image={
+          recipe?.thumbnail
+            ? recipe?.thumbnail
+            : "../recipe-thumbnail-fallback.png"
+        }
+        onClick={() => navigate(`/recipes/${recipe?._id}`)}
         loading={
           <Skeleton
             variant="rectangle"
@@ -180,7 +200,7 @@ const RecipeCard = ({ recipe, width }) => {
         </Stack>
 
         <Stack direction="row" spacing={0.5} mt={1} flexWrap="wrap" useFlexGap>
-          {recipe?.dietaryPreferences?.map((tag, index) => (
+          {recipe?.dietaryPreferences?.slice(0, 2).map((tag, index) => (
             <Chip
               key={index}
               label={tag}

@@ -3,17 +3,18 @@ const {
   updateIngredientsDatabase,
 } = require("../controllers/ingredientController");
 const {
-  cuisinePreferences,
-  dietaryRestrictions,
-} = require("../constants/data");
+  updateCuisineAndDietaryDb,
+} = require("../controllers/preferencesController");
 const { Cuisine, DietaryOption } = require("../models/DietaryOptions");
 const Recipe = require("../models/Recipes");
+const Users = require("../models/Users");
 
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI).then(() => {
       console.log("MongoDB connected");
       updateIngredientsDatabase();
+      updateCuisineAndDietaryDb();
     });
 
     Recipe.find({}).then((recipes) => {
@@ -42,6 +43,20 @@ const connectDB = async () => {
 
     // Insert dietary restrictions
     //await DietaryOption.insertMany(dietaryRestrictions);
+    // Recipe.updateMany(
+    //   {},
+    //   {
+    //     $set: {
+    //       thumbnail:
+    //         "https://res.cloudinary.com/dek6ihfme/image/upload/v1741418937/recipe-thumbnail-fallback_yhxyqo.png",
+    //     },
+    //   }
+    // );
+    // Remove all existing thumbnails
+    await Recipe.updateMany({}, { $unset: { thumbnail: "" } });
+    console.log("All recipe thumbnails removed!");
+
+    // Set new default thumbnail
   } catch (err) {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);

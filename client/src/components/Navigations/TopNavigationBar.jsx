@@ -12,15 +12,21 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Popper,
+  Paper,
   TextField,
   Tooltip,
   useMediaQuery,
+  Typography,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import React, { useState } from "react";
-import { NavigationLink } from "../../styles/ContainerStyles";
+import React, { useState, useRef } from "react";
+import {
+  NavigationLink,
+  NavigationListItemBtn,
+} from "../../styles/ContainerStyles";
 import theme from "../../theme/theme";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { userSelector } from "../../redux/selectors/selectors";
 import {
   Favorite,
@@ -28,7 +34,13 @@ import {
   Home,
   LocalDining,
   Search,
+  ExpandMore,
+  ExpandLess,
+  ChevronRight,
+  ArrowBack,
 } from "@mui/icons-material";
+import { useAuth } from "../../hooks/useAuth";
+import { logout } from "../../redux/reducers/authSlice";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
@@ -39,6 +51,40 @@ const TopNavigationBar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+
+  const dispatch = useDispatch();
+
+  // State for hover menus
+  const [recipeMenuOpen, setRecipeMenuOpen] = useState(false);
+  const [recipeMenuAnchorEl, setRecipeMenuAnchorEl] = useState(null);
+  const [cuisineMenuOpen, setCuisineMenuOpen] = useState(false);
+  const [cuisineMenuAnchorEl, setCuisineMenuAnchorEl] = useState(null);
+
+  // State for mobile menu navigation
+  const [mobileMenuLevel, setMobileMenuLevel] = useState("main"); // 'main', 'recipes', 'cuisines'
+  const [mobileMenuTitle, setMobileMenuTitle] = useState("Main Menu");
+
+  const accountLogout = () => {
+    dispatch(logout());
+  };
+
+  const cuisineTypes = [
+    "Italian",
+    "Chinese",
+    "Indian",
+    "Mexican",
+    "Japanese",
+    "Thai",
+    "Mediterranean",
+    "French",
+  ];
+
+  const recipeSubMenuItems = [
+    { label: "All Recipes", link: "/recipes" },
+    { label: "Generate Recipes", link: "/generate" },
+    { label: "Recipes by Cuisine", link: "/recipes/cuisine", hasSubmenu: true },
+  ];
+
   const showUserMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -48,12 +94,60 @@ const TopNavigationBar = () => {
   };
 
   const toggleDrawer = (state) => () => {
+    if (!state) {
+      // Reset to main menu when drawer is closed
+      setMobileMenuLevel("main");
+      setMobileMenuTitle("Menu");
+    }
     setDrawerOpen(state);
+  };
+
+  const handleRecipeHover = (event) => {
+    setRecipeMenuAnchorEl(event.currentTarget);
+    setRecipeMenuOpen(true);
+  };
+
+  const handleCuisineHover = (event) => {
+    setCuisineMenuAnchorEl(event.currentTarget);
+    setCuisineMenuOpen(true);
+  };
+
+  const handleRecipeLeave = () => {
+    setRecipeMenuOpen(false);
+  };
+
+  const handleCuisineLeave = () => {
+    setCuisineMenuOpen(false);
+  };
+
+  const navigateToRecipeMenu = () => {
+    setMobileMenuLevel("recipes");
+    setMobileMenuTitle("Recipes");
+  };
+
+  const navigateToCuisineMenu = () => {
+    setMobileMenuLevel("cuisines");
+    setMobileMenuTitle("Recipes by Cuisine");
+  };
+
+  const navigateBack = () => {
+    if (mobileMenuLevel === "cuisines") {
+      setMobileMenuLevel("recipes");
+      setMobileMenuTitle("Recipes");
+    } else if (mobileMenuLevel === "recipes") {
+      setMobileMenuLevel("main");
+      setMobileMenuTitle("Main Menu");
+    }
   };
 
   const NavTabs = [
     { label: "Home", link: "/home", icon: <Home /> },
-    { label: "Recipes", link: "/recipes", icon: <LocalDining /> },
+    {
+      label: "Recipes",
+      link: "/recipes",
+      icon: <LocalDining />,
+      hasSubmenu: true,
+    },
     { label: "Favourites", link: "/favourites", icon: <Favorite /> },
     { label: "Community", link: "/forum", icon: <Forum /> },
   ];
@@ -66,8 +160,6 @@ const TopNavigationBar = () => {
         sx={{
           zIndex: 99,
           pb: isMobile ? 1 : 0,
-          //background: theme.palette.info.light,
-          // background: "#faf8f5"
           background: "linear-gradient(to left, #F5E1C8, #FFFFFF)",
         }}
       >
@@ -79,8 +171,6 @@ const TopNavigationBar = () => {
         >
           {isTablet && !isMobile && (
             <Box display="flex" gap={1}>
-              {/* Mobile Menu Button */}
-
               <IconButton
                 edge="start"
                 color="inherit"
@@ -89,8 +179,6 @@ const TopNavigationBar = () => {
               >
                 <MenuIcon color="primary" />
               </IconButton>
-
-              {/* Logo */}
 
               <Box display="flex" justifyContent="center">
                 <img src="../logo.png" alt="Logo" width={130} height={60} />
@@ -112,36 +200,128 @@ const TopNavigationBar = () => {
               <img src="../logo.png" alt="Logo" width={130} height={60} />
             </Box>
           )}
+
           {/* Desktop Navigation */}
           {isDesktop && (
             <Box display="flex" gap={2} justifyContent="flex-end">
               {NavTabs.map((nav) => (
-                <NavigationLink
+                <Box
                   key={nav.link}
-                  mx={2}
-                  color="primary"
-                  fontWeight="bolder"
-                  href={nav.link}
+                  onMouseEnter={nav.hasSubmenu ? handleRecipeHover : null}
+                  onMouseLeave={nav.hasSubmenu ? handleRecipeLeave : null}
+                  sx={{ position: "relative" }}
                 >
-                  {nav.label}
-                </NavigationLink>
+                  <NavigationLink
+                    mx={2}
+                    color="primary"
+                    fontWeight="bolder"
+                    href={nav.link}
+                  >
+                    {nav.label}
+                  </NavigationLink>
+
+                  {/* Recipe Submenu for Desktop */}
+                  {nav.hasSubmenu && recipeMenuOpen && (
+                    <Popper
+                      open={recipeMenuOpen}
+                      anchorEl={recipeMenuAnchorEl}
+                      placement="bottom-start"
+                      sx={{ zIndex: 1300 }}
+                    >
+                      <Paper
+                        elevation={3}
+                        sx={{
+                          mt: 1,
+                          width: 200,
+                          bgcolor: theme.palette.background.default,
+                        }}
+                      >
+                        <List>
+                          {recipeSubMenuItems.map((item) => (
+                            <Box
+                              key={item.link}
+                              onMouseEnter={
+                                item.hasSubmenu ? handleCuisineHover : null
+                              }
+                              onMouseLeave={
+                                item.hasSubmenu ? handleCuisineLeave : null
+                              }
+                            >
+                              <ListItem
+                                component="a"
+                                href={item.link}
+                                sx={{
+                                  textDecoration: "none",
+                                  color: theme.palette.secondary.dark,
+                                  "&:hover": {
+                                    bgcolor: theme.palette.primary.light,
+                                    color: theme.palette.common.white,
+                                  },
+                                }}
+                              >
+                                <ListItemText primary={item.label} />
+                                {item.hasSubmenu && <ChevronRight />}
+                              </ListItem>
+
+                              {/* Cuisine Submenu for Desktop */}
+                              {item.hasSubmenu && cuisineMenuOpen && (
+                                <Popper
+                                  open={cuisineMenuOpen}
+                                  anchorEl={cuisineMenuAnchorEl}
+                                  placement="right-start"
+                                  sx={{ zIndex: 1301 }}
+                                >
+                                  <Paper
+                                    elevation={3}
+                                    sx={{
+                                      ml: 1,
+                                      width: 200,
+                                      bgcolor: theme.palette.background.default,
+                                    }}
+                                  >
+                                    <List>
+                                      {cuisineTypes.map((cuisine) => (
+                                        <ListItem
+                                          key={cuisine}
+                                          component="a"
+                                          href={`/recipes/cuisine/${cuisine.toLowerCase()}`}
+                                          sx={{
+                                            textDecoration: "none",
+                                            color: theme.palette.secondary.dark,
+                                            "&:hover": {
+                                              bgcolor:
+                                                theme.palette.primary.light,
+                                              color: theme.palette.common.white,
+                                            },
+                                          }}
+                                        >
+                                          <ListItemText primary={cuisine} />
+                                        </ListItem>
+                                      ))}
+                                    </List>
+                                  </Paper>
+                                </Popper>
+                              )}
+                            </Box>
+                          ))}
+                        </List>
+                      </Paper>
+                    </Popper>
+                  )}
+                </Box>
               ))}
             </Box>
           )}
 
           {/* Search Bar */}
-
           {!isMobile && (
             <TextField
               variant="outlined"
               size="small"
               placeholder="Search..."
-              //value={searchQuery}
-              //onChange={handleSearchChange}
               sx={{
                 width: isMobile ? 250 : 350,
                 bgcolor: "transparent",
-
                 "& .MuiOutlinedInput-root": {
                   "& fieldset": {
                     borderColor: theme.palette.secondary.dark,
@@ -184,12 +364,9 @@ const TopNavigationBar = () => {
               variant="outlined"
               size="small"
               placeholder="Search..."
-              //value={searchQuery}
-              //onChange={handleSearchChange}
               sx={{
                 width: 350,
                 bgcolor: "transparent",
-
                 "& .MuiOutlinedInput-root": {
                   "& fieldset": {
                     borderColor: theme.palette.secondary.dark,
@@ -217,7 +394,7 @@ const TopNavigationBar = () => {
         </Box>
       </AppBar>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer with Menu Levels */}
       <Drawer
         anchor="left"
         open={drawerOpen}
@@ -233,50 +410,224 @@ const TopNavigationBar = () => {
         </Box>
 
         <Divider />
-        <List sx={{ width: 250 }}>
-          {NavTabs.map((nav) => (
-            <ListItem
-              button
-              key={nav.link}
-              component="a"
-              href={nav.link}
-              onClick={toggleDrawer(false)}
-              sx={{
-                "&:hover": { background: "transparent" },
-              }}
+
+        {/* Drawer Header with Back Button */}
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          px={2}
+          py={1}
+          sx={{
+            bgcolor: theme.palette.secondary.main,
+            color: "white",
+          }}
+        >
+          {mobileMenuLevel !== "main" && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="back"
+              onClick={navigateBack}
+              sx={{ mr: 1 }}
             >
-              <ListItemButton
+              <ArrowBack />
+            </IconButton>
+          )}
+          <Typography variant="h6" component="div" textAlign="center">
+            {mobileMenuTitle}
+          </Typography>
+        </Box>
+
+        <Divider />
+
+        {/* Main Menu */}
+        {mobileMenuLevel === "main" && (
+          <List sx={{ width: 250 }}>
+            {NavTabs.map((nav) => (
+              <ListItem
+                key={nav.link}
                 sx={{
-                  borderRadius: 2,
-                  "&:hover": {
-                    bgcolor: theme.palette.primary.light,
-                    "& .MuiTypography-root": {
-                      color: theme.palette.common.white,
-                    },
-                    "& .MuiSvgIcon-root": {
-                      color: theme.palette.common.white,
-                    },
-                  },
+                  "&:hover": { background: "transparent" },
+                  px: 1,
                 }}
               >
-                <ListItemIcon
+                {nav.hasSubmenu ? (
+                  <ListItemButton
+                    onClick={navigateToRecipeMenu}
+                    sx={{
+                      borderRadius: 2,
+                      "&:hover": {
+                        bgcolor: theme.palette.primary.light,
+                        "& .MuiTypography-root": {
+                          color: theme.palette.common.white,
+                        },
+                        "& .MuiSvgIcon-root": {
+                          color: theme.palette.common.white,
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: theme.palette.secondary.dark,
+                      }}
+                    >
+                      {nav.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={nav.label}
+                      sx={{
+                        color: theme.palette.secondary.dark,
+                        fontWeight: "bold",
+                      }}
+                    />
+                    <ChevronRight />
+                  </ListItemButton>
+                ) : (
+                  <ListItemButton
+                    component="a"
+                    href={nav.link}
+                    onClick={toggleDrawer(false)}
+                    sx={{
+                      borderRadius: 2,
+                      "&:hover": {
+                        bgcolor: theme.palette.primary.light,
+                        "& .MuiTypography-root": {
+                          color: theme.palette.common.white,
+                        },
+                        "& .MuiSvgIcon-root": {
+                          color: theme.palette.common.white,
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: theme.palette.secondary.dark,
+                      }}
+                    >
+                      {nav.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={nav.label}
+                      sx={{
+                        color: theme.palette.secondary.dark,
+                        fontWeight: "bold",
+                      }}
+                    />
+                  </ListItemButton>
+                )}
+              </ListItem>
+            ))}
+          </List>
+        )}
+
+        {/* Recipes Submenu */}
+        {mobileMenuLevel === "recipes" && (
+          <List sx={{ width: 250 }}>
+            {recipeSubMenuItems.map((item) => (
+              <ListItem
+                key={item.link}
+                sx={{
+                  "&:hover": { background: "transparent" },
+                  px: 1,
+                }}
+              >
+                {item.hasSubmenu ? (
+                  <ListItemButton
+                    onClick={navigateToCuisineMenu}
+                    sx={{
+                      borderRadius: 2,
+                      "&:hover": {
+                        bgcolor: theme.palette.primary.light,
+                        "& .MuiTypography-root": {
+                          color: theme.palette.common.white,
+                        },
+                        "& .MuiSvgIcon-root": {
+                          color: theme.palette.common.white,
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={item.label}
+                      sx={{
+                        color: theme.palette.secondary.dark,
+                        fontWeight: "bold",
+                      }}
+                    />
+                    <ChevronRight />
+                  </ListItemButton>
+                ) : (
+                  <ListItemButton
+                    component="a"
+                    href={item.link}
+                    onClick={toggleDrawer(false)}
+                    sx={{
+                      borderRadius: 2,
+                      "&:hover": {
+                        bgcolor: theme.palette.primary.light,
+                        "& .MuiTypography-root": {
+                          color: theme.palette.common.white,
+                        },
+                        "& .MuiSvgIcon-root": {
+                          color: theme.palette.common.white,
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={item.label}
+                      sx={{
+                        color: theme.palette.secondary.dark,
+                        fontWeight: "bold",
+                      }}
+                    />
+                  </ListItemButton>
+                )}
+              </ListItem>
+            ))}
+          </List>
+        )}
+
+        {/* Cuisines Submenu */}
+        {mobileMenuLevel === "cuisines" && (
+          <List sx={{ width: 250 }}>
+            {cuisineTypes.map((cuisine) => (
+              <ListItem
+                key={cuisine}
+                sx={{
+                  "&:hover": { background: "transparent" },
+                  px: 1,
+                }}
+              >
+                <ListItemButton
+                  component="a"
+                  href={`/recipes/cuisine/${cuisine.toLowerCase()}`}
+                  onClick={toggleDrawer(false)}
                   sx={{
-                    color: theme.palette.primary.main,
+                    borderRadius: 2,
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.light,
+                      "& .MuiTypography-root": {
+                        color: theme.palette.common.white,
+                      },
+                    },
                   }}
                 >
-                  {nav.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={nav.label}
-                  sx={{
-                    color: theme.palette.primary.main,
-                    fontWeight: "bold",
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+                  <ListItemText
+                    primary={cuisine}
+                    sx={{
+                      color: theme.palette.secondary.dark,
+                      fontWeight: "bold",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        )}
       </Drawer>
 
       {/* User Menu */}
@@ -288,7 +639,7 @@ const TopNavigationBar = () => {
         MenuListProps={{ "aria-labelledby": "basic-button" }}
       >
         <MenuItem>My Profile</MenuItem>
-        <MenuItem>Logout</MenuItem>
+        <MenuItem onClick={accountLogout}>Logout</MenuItem>
       </Menu>
     </>
   );

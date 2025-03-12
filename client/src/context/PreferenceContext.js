@@ -1,14 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { useSelector } from "react-redux";
 import {
-  cuisineSelectors,
+  cuisinePrefSelector,
   dietaryRestrictionsSelectors,
 } from "../redux/selectors/selectors";
 
 const PreferenceContext = createContext();
 
 export const PreferenceProvider = ({ children }) => {
-  const cuisineSelections = useSelector(cuisineSelectors);
+  const cuisineSelections = useSelector(cuisinePrefSelector);
   const dietarySelections = useSelector(dietaryRestrictionsSelectors);
 
   const [step, setStep] = useState(0);

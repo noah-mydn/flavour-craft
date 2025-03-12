@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { login, register } from "../apiClients/authAPI";
 
-const storedUser = JSON.parse(sessionStorage.getItem("userData")) || null;
+const storedUser = JSON.parse(sessionStorage.getItem("auth")) || null;
 const storedAccessToken = sessionStorage.getItem("accessToken") || null;
 const storedRefreshToken = localStorage.getItem("refreshToken") || null;
 
@@ -32,11 +32,12 @@ const authSlice = createSlice({
       console.log("Removing accessToken from sessionStorage");
       sessionStorage.removeItem("accessToken");
 
-      console.log("Removing userData from sessionStorage");
-      sessionStorage.removeItem("userData");
+      console.log("Removing auth from sessionStorage");
+      sessionStorage.removeItem("auth");
 
       console.log("Removing refreshToken from localStorage");
       localStorage.removeItem("refreshToken");
+      window.location.href = "/auth";
     },
     setIsVerified: (state, action) => {
       state.isVerified = action.payload;
@@ -58,7 +59,7 @@ const authSlice = createSlice({
         state.refreshToken = action.payload.refreshToken;
         state.isVerified = true;
         sessionStorage.setItem("accessToken", state.accessToken);
-        sessionStorage.setItem("userData", JSON.stringify(state.user));
+        sessionStorage.setItem("auth", JSON.stringify(state.user));
         localStorage.setItem("refreshToken", state.refreshToken);
       })
       .addCase(login.rejected, (state, action) => {
@@ -79,9 +80,10 @@ const authSlice = createSlice({
         state.isVerified = true;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
+        console.log("Is Verified State:", state.isVerified);
 
         sessionStorage.setItem("accessToken", state.accessToken);
-        sessionStorage.setItem("userData", JSON.stringify(state.user));
+        sessionStorage.setItem("auth", JSON.stringify(state.user));
         localStorage.setItem("refreshToken", state.refreshToken);
       })
       .addCase(register.rejected, (state, action) => {

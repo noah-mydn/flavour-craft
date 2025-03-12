@@ -1,7 +1,6 @@
 import React from "react";
 import { verifySession } from "../utils/verifySession";
 import { useDispatch } from "react-redux";
-import { refreshSession } from "../redux/apiClients/authAPI";
 import { logout } from "../redux/reducers/authSlice";
 
 export const useSessionVerifier = () => {
@@ -20,9 +19,11 @@ export const useSessionVerifier = () => {
       if (!isTokenValid) {
         console.log("This runs!");
         dispatch(logout());
+        window.location.href = "/auth";
       }
     } else {
       dispatch(logout());
+      window.location.href = "/auth";
     }
   };
 };

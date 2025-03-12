@@ -5,6 +5,13 @@ const {
   getTimePeriod,
   getRecipesByTimeAndDietary,
 } = require("../middlewares/timeBasedRecipe");
+const {
+  updateIngredientsDatabase,
+} = require("../controllers/ingredientController");
+
+const {
+  updateCuisineAndDietaryDb,
+} = require("../controllers/preferencesController");
 
 const cohere = new CohereClient({
   token: process.env.COHERE_TOKEN,
@@ -78,7 +85,7 @@ const generateRecipesInBatch = async (req, res) => {
     // Save unique recipes to MongoDB
     await Recipe.insertMany(uniqueRecipes);
     console.log("Recipes successfully saved to the database.");
-
+    await updateIngredientsDatabase();
     return res.status(200).json({
       status: 200,
       message: `${uniqueRecipes.length} new recipes saved to the database.`,
@@ -94,15 +101,16 @@ const generateRecipesInBatch = async (req, res) => {
   }
 };
 const generateRecipe = async (req, res) => {
-  const { ingredients, cuisine, dietaryPreferences } = req.body;
+  const { ingredients, cuisines, dietaryPreferences } = req.body;
 
   // Validate input
   if (!Array.isArray(ingredients) || ingredients.length === 0) {
-    return res
-      .status(400)
-      .json({ status: 400, message: "Ingredients must be an array" });
+    return res.status(400).json({
+      status: 400,
+      message: "You need to have at least one ingredient!",
+    });
   }
-  if (!Array.isArray(cuisine)) {
+  if (!Array.isArray(cuisines)) {
     return res
       .status(400)
       .json({ status: 400, message: "Cuisine must be an array" });
@@ -116,20 +124,25 @@ const generateRecipe = async (req, res) => {
   try {
     // Check DB first
     const query = {
-      ingredients: {
-        $all: ingredients.map((ingredient) => ({
-          $elemMatch: {
-            $or: [{ name: ingredient }, { substitute: { $in: [ingredient] } }],
-          },
-        })),
-      },
+      // Strict match for cuisine
+      cuisineTypes: { $all: cuisines }, // Ensures ALL selected cuisines are included
+
+      // Dietary preferences should be flexible
+      dietaryPreferences: { $in: dietaryPreferences },
+
+      // Ingredients should be flexible but must be part of the list
+      $or: [
+        {
+          "ingredients.name": { $in: ingredients }, // Ingredient matches directly
+        },
+        {
+          "ingredients.substitute": { $in: ingredients }, // Match ingredient substitutes
+        },
+      ],
     };
 
-    if (cuisine.length > 0) query.cuisineTypes = { $all: cuisine };
-    if (dietaryPreferences.length > 0)
-      query.dietaryPreferences = { $all: dietaryPreferences };
+    const recipesFromDB = await Recipe.find(query).limit(25);
 
-    const recipesFromDB = await Recipe.find(query).limit(100);
     if (recipesFromDB.length > 0) {
       return res
         .status(200)
@@ -140,12 +153,37 @@ const generateRecipe = async (req, res) => {
 
     // AI Recipe Generation
     const prompt = `
-      Generate 10 authentic recipes with these details, if you cannot find authentic/valid recipes with these ingredients, return a meaningful message:
+      Generate 4 complete and authentic recipes based on the given details.
+      **Important Rules**:
+      - **ALL fields are required**. Do NOT leave any fields empty.
+      - If a value is unknown, generate a realistic value instead.
+      - Use ingredients from the list, but not necessarily all. 
+      - If no valid recipes can be generated, return: { "error": "Sorry, I couldn't find any recipe." }
+      - If you are unsure about cuisine, just don't add
+
+      **Input Details**:
       - Ingredients: ${ingredients.join(", ")}
-      - Cuisine types: ${cuisine.join(", ")}
+      - Cuisine types: ${cuisines.join(", ")}
       - Dietary preferences: ${dietaryPreferences.join(", ")}
-      Include: recipe name, ingredients, instructions, nutrition info (calories, protein, carbs, fat), cooking time. Return JSON.
-    `;
+
+      **Expected JSON Schema**:
+{
+  "recipes": [
+    {
+      "name": "String",
+      "shortDescription": "String",
+      "ingredients": [{"name": "String", "quantity": "String", "substitute": ["String"]}],
+      "cookingInstructions": ["String"],
+      "cookingTime": "String",
+      "cuisineTypes": ["String"],
+      "dietaryPreferences": ["String"],
+      "tags": ["String"],
+      "nutritionalInfo": {"calories": "String", "protein": "String", "carbs": "String", "fat": "String"}
+    }
+  ]
+}
+Return **ONLY JSON**, nothing else.
+`;
 
     const stream = await cohere.chatStream({
       model: "command-r-08-2024",
@@ -156,28 +194,93 @@ const generateRecipe = async (req, res) => {
     });
 
     let responseText = "";
-    for await (const chat of stream) {
-      if (chat.eventType === "text-generation") {
-        responseText += chat.text;
+    try {
+      for await (const chat of stream) {
+        if (chat.eventType === "text-generation") {
+          responseText += chat.text;
+        }
       }
+    } catch (error) {
+      console.error("Error streaming AI response:", error.message);
+      return res.status(500).json({
+        status: 500,
+        message: "Error retrieving AI response.",
+      });
     }
 
-    const cleanRecipeDataString = responseText
-      .replace(/^```json\n/, "")
-      .replace(/\n```$/, "");
-    const generatedRecipes = JSON.parse(cleanRecipeDataString);
+    console.log("Raw AI Response:", responseText);
 
-    console.log("Generated Recipes:", generatedRecipes);
+    const cleanRecipeDataString = responseText
+      .replace(/^```json\n/, "") // Remove leading code block markers
+      .replace(/\n```$/, "") // Remove trailing markers
+      .trim(); // Remove extra spaces
+
+    // Add a closing bracket if missing
+    if (!cleanRecipeDataString.endsWith("}")) {
+      cleanRecipeDataString += "}";
+    }
+
+    // Validate AI response
+    let generatedRecipes;
+    try {
+      generatedRecipes = JSON.parse(cleanRecipeDataString);
+
+      if (
+        !generatedRecipes ||
+        !generatedRecipes.recipes ||
+        !Array.isArray(generatedRecipes.recipes)
+      ) {
+        throw new Error("Invalid JSON structure from AI");
+      }
+    } catch (error) {
+      console.error("Error parsing AI response:", error.message);
+      console.error("Received AI response:", cleanRecipeDataString);
+      return res.status(500).json({
+        status: 500,
+        message: "AI response is not valid JSON.",
+      });
+    }
+
+    generatedRecipes.recipes = generatedRecipes.recipes.map((recipe) => ({
+      name: recipe.name || "Unknown Recipe",
+      shortDescription: recipe.shortDescription || "",
+      ingredients: recipe.ingredients,
+
+      cookingInstructions: recipe.cookingInstructions,
+      cookingTime: recipe.cookingTime,
+      cuisineTypes: recipe.cuisineTypes || [],
+      dietaryPreferences: recipe.dietaryPreferences || [],
+      tags: recipe.tags || [],
+      nutritionalInfo: {
+        calories: recipe.nutritionalInfo?.calories || "Unknown",
+        protein: recipe.nutritionalInfo?.protein || "Unknown",
+        carbs: recipe.nutritionalInfo?.carbs || "Unknown",
+        fat: recipe.nutritionalInfo?.fat || "Unknown",
+      },
+    }));
+
+    console.log("Generated Recipes:", generatedRecipes.recipes);
 
     // Save to DB
-    await Recipe.insertMany(generatedRecipes);
+    const newlySavedRecipes = await Recipe.insertMany(generatedRecipes.recipes);
+    await updateIngredientsDatabase();
+    await updateCuisineAndDietaryDb();
 
-    return res.status(201).json({ status: 201, data: generatedRecipes });
+    // Extract recipe IDs
+    const recipeIds = newlySavedRecipes?.map((recipe) => recipe._id);
+
+    // Update user's myRecipeGenerations field
+    await User.findByIdAndUpdate(req.user.userId, {
+      $push: { myRecipeGenerations: { $each: recipeIds } },
+    });
+
+    return res.status(201).json({ status: 201, data: newlySavedRecipes });
   } catch (error) {
     console.error("Error generating recipe:", error.message);
-    return res
-      .status(500)
-      .json({ status: 500, message: "Error generating recipe." });
+    return res.status(500).json({
+      status: 500,
+      message: `Error generating recipe, ${error.message}`,
+    });
   }
 };
 
@@ -278,7 +381,6 @@ const filterRecipes = async (req, res) => {
       dietaryPreferences,
       tags,
       cookingTime,
-      filterType = "AND",
       page = 1,
       pageSize = 10,
     } = req.body;
@@ -287,12 +389,11 @@ const filterRecipes = async (req, res) => {
 
     // Filter by ingredients (check if ingredients are in recipe ingredients)
     if (ingredients) {
-      const ingredientCriteria = {
-        "ingredients.name": { $in: ingredients.split(",") },
+      const ingredientsCriteria = {
+        ingredients: { $in: ingredients.split(",") },
       };
-      filterCriteria.push(ingredientCriteria);
+      filterCriteria.push(ingredientsCriteria);
     }
-
     // Filter by cuisine types
     if (cuisineTypes) {
       const cuisineCriteria = {
@@ -328,15 +429,10 @@ const filterRecipes = async (req, res) => {
 
     // Apply 'AND' or 'OR' logic
     let recipes;
-    if (filterType === "OR" && filterCriteria.length > 0) {
-      recipes = await Recipe.find({ $or: filterCriteria })
-        .skip((page - 1) * pageSize) // Skip the results based on the current page
-        .limit(pageSize); // Limit the number of results per page
-    } else {
-      recipes = await Recipe.find({ $and: filterCriteria })
-        .skip((page - 1) * pageSize)
-        .limit(pageSize);
-    }
+
+    recipes = await Recipe.find({ $and: filterCriteria })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize);
 
     // Get the total number of recipes for pagination info
     const totalRecipes = await Recipe.countDocuments({ $and: filterCriteria });

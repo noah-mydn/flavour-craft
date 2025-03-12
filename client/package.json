@@ -14,6 +14,7 @@
     "cra-template": "1.2.0",
     "framer-motion": "^11.15.0",
     "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.479.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
@@ -21,6 +22,7 @@
     "react-router-dom": "^7.3.0",
     "react-scripts": "5.0.1",
     "react-slick": "^0.30.3",
+    "react-world-flags": "^1.6.0",
     "redux-persist": "^6.0.0",
     "slick-carousel": "^1.8.1",
     "web-vitals": "^4.2.4"
