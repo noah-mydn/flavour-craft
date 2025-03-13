@@ -1,5 +1,5 @@
 // recipeAPI.js
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { getAuthConfig } from "../../utils/authHeaders";
 import { displayErrorToast } from "../../utils/toastUtil";
@@ -33,6 +33,20 @@ export const fetchRecipes = createAsyncThunk(
       return { data, sortValue };
     } catch (error) {
       return rejectWithValue(error);
+    }
+  }
+);
+
+export const fetchFilteredRecipes = createAsyncThunk(
+  "recipes/fetchFilteredRecipes",
+  async (filters, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${BASE_URL}/filter`, filters);
+      console.log("Filter Response:", response);
+      return response.data;
+    } catch (error) {
+      displayErrorToast(error);
+      return rejectWithValue(error.response?.data || "Failed to fetch recipes");
     }
   }
 );

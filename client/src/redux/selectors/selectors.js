@@ -15,7 +15,7 @@ export const cuisinePrefSelector = cuisinePreferences;
 export const dietaryRestrictionsSelectors = dietaryRestrictions;
 
 //Recipes
-export const recipesListSelector = (state) => state.recipes.allRecipes;
+export const recipesListSelector = (state) => state.recipes.recipes;
 export const paginationSelector = (state) => state.recipes.pagination;
 export const loadingRecipesSelector = (state) => state.recipes.recipesLoading;
 export const errorRecipesSelector = (state) => state.recipes.recipesError;

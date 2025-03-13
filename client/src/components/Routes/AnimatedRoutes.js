@@ -25,6 +25,7 @@ import { verifySession } from "../../utils/verifySession";
 import { logout } from "../../redux/reducers/authSlice";
 import GenerateRecipe from "../../pages/recipes/GenerateRecipe";
 import { GenerateRecipeProvider } from "../../context/GenerateRecipeContext";
+import FilterSort from "../FilterSort/FilterSort";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
@@ -124,6 +125,16 @@ const AnimatedRoutes = () => {
           <PrivateRoute>
             <TopNavigationBar isMobile={isMobile} />
             <RecipeDetail isMobile={isMobile} />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/filter"
+        element={
+          <PrivateRoute>
+            <TopNavigationBar isMobile={isMobile} />
+            <FilterSort isMobile={isMobile} />
           </PrivateRoute>
         }
       />

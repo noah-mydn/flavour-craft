@@ -421,11 +421,24 @@ const filterRecipes = async (req, res) => {
 
     // Filter by cooking time (greater than or equal to a certain time)
     if (cookingTime) {
-      const time = parseInt(cookingTime);
-      const timeCriteria = {
-        cookingTime: { $lte: time },
+      const operatorMap = {
+        "<": "$lt",
+        "<=": "$lte",
+        ">": "$gt",
+        ">=": "$gte",
+        "=": "$eq",
       };
-      filterCriteria.push(timeCriteria);
+
+      const match = cookingTime.match(/(<=|>=|<|>|=)?\s*(\d+)/);
+      if (match) {
+        const operator = match[1] || "=";
+        const time = parseInt(match[2]);
+
+        const timeCriteria = {
+          cookingTime: { [operatorMap[operator]]: time },
+        };
+        filterCriteria.push(timeCriteria);
+      }
     }
 
     // Apply 'AND' or 'OR' logic

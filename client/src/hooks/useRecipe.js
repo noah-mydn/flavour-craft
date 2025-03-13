@@ -1,20 +1,17 @@
 import axios from "axios";
-import { displayErrorToast, displaySuccessToast } from "../utils/toastUtil";
+import { displayErrorToast } from "../utils/toastUtil";
 import { getAuthConfig } from "../utils/authHeaders";
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchAllRecipes, fetchRecipes } from "../redux/apiClients/recipeAPI";
-import { userSelector } from "../redux/selectors/selectors";
+import React from "react";
+import { useDispatch } from "react-redux";
+
 import {
   getCurrentUserProfile,
   toggleSavedRecipe,
 } from "../redux/apiClients/userAPI";
+import { fetchRecipes } from "../redux/apiClients/recipeAPI";
 
 export const useRecipe = () => {
   const [sortValue, setSortValue] = React.useState("all");
-
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
 
   const dispatch = useDispatch();
 
@@ -38,10 +35,6 @@ export const useRecipe = () => {
     }
   };
 
-  const handlePageChange = (event, newPage) => {
-    setPage(newPage);
-  };
-
   const saveRecipe = async (recipeId) => {
     try {
       await dispatch(toggleSavedRecipe(recipeId)).unwrap();
@@ -52,7 +45,7 @@ export const useRecipe = () => {
     }
   };
 
-  const handleSortChange = (event) => {
+  const handleSortChange = (event, page, pageSize) => {
     const newSortValue = event.target.value;
     setSortValue(newSortValue);
 
@@ -65,10 +58,8 @@ export const useRecipe = () => {
   };
 
   return {
-    page,
     recipe,
     fetchRecipeInfo,
-    handlePageChange,
     saveRecipe,
     recipeLoading,
     filterRecipeOption,

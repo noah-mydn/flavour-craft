@@ -26,29 +26,23 @@ import RecipeCard from "../components/Recipes/RecipeCard";
 import RecipeCardSkeleton from "../components/Recipes/RecipeCardSkeleton";
 import { fetchRecipes } from "../redux/apiClients/recipeAPI";
 
-const Recipes = () => {
+const RecipesByCuisines = () => {
   const theme = useTheme();
+  const { page } = useRecipe();
   const recipes = useSelector(recipesListSelector);
   const loading = useSelector(loadingRecipesSelector);
   const pagination = useSelector(paginationSelector);
   const dispatch = useDispatch();
 
-  const { filterRecipeOption } = useRecipe();
+  const { handlePageChange, filterRecipeOption } = useRecipe();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
   const { sortValue, handleSortChange } = filterRecipeOption;
-  const [page, setPage] = React.useState(1);
-  const pageSize = 10;
-
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
 
   React.useEffect(() => {
-    dispatch(fetchRecipes({ sortValue, page, pageSize }));
-  }, [page, sortValue, dispatch]);
-
+    dispatch(fetchRecipes({ sortValue: "all", page }, 10));
+  }, []);
   console.log("Recipes:", recipes);
   return (
     <React.Fragment>
@@ -98,7 +92,7 @@ const Recipes = () => {
                     label="Sort By"
                     size="small"
                     value={sortValue}
-                    onChange={(e) => handleSortChange(e, page, pageSize)}
+                    onChange={handleSortChange}
                   >
                     <MenuItem value="all" selected>
                       Most Recent
@@ -131,7 +125,7 @@ const Recipes = () => {
                     </Grid>
                   ))
               : recipes?.map((recipe) => (
-                  <Grid item key={recipe._id} xs={11} sm={10} lg={6}>
+                  <Grid item key={recipe._id} xs={10} lg={6}>
                     <RecipeCard recipe={recipe} />
                   </Grid>
                 ))}
@@ -152,4 +146,4 @@ const Recipes = () => {
   );
 };
 
-export default Recipes;
+export default RecipesByCuisines;
