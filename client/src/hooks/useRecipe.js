@@ -12,11 +12,24 @@ import { fetchRecipes } from "../redux/apiClients/recipeAPI";
 
 export const useRecipe = () => {
   const [sortValue, setSortValue] = React.useState("all");
+  const [trendingRecipes, setTrendingRecipes] = React.useState([]);
 
   const dispatch = useDispatch();
 
   const [recipe, setRecipe] = React.useState(null);
   const [recipeLoading, setRecipeLoading] = React.useState(false);
+
+  const fetchTrendingRecipes = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_API}/recipes/trending`,
+        getAuthConfig()
+      );
+      setTrendingRecipes(response.data.recipes);
+    } catch (error) {
+      displayErrorToast(error);
+    }
+  };
 
   const fetchRecipeInfo = async (recipeId) => {
     setRecipeLoading(true);
@@ -58,8 +71,10 @@ export const useRecipe = () => {
   };
 
   return {
+    trendingRecipes,
     recipe,
     fetchRecipeInfo,
+    fetchTrendingRecipes,
     saveRecipe,
     recipeLoading,
     filterRecipeOption,

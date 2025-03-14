@@ -1,6 +1,7 @@
 import {
   Box,
   Breadcrumbs,
+  Button,
   FormControl,
   Grid,
   IconButton,
@@ -10,6 +11,7 @@ import {
   Pagination,
   Select,
   Stack,
+  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -18,26 +20,38 @@ import TopNavigationBar from "../components/Navigations/TopNavigationBar";
 import { useRecipe } from "../hooks/useRecipe";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  filterExistsSelector,
+  filtersSelector,
   loadingRecipesSelector,
   paginationSelector,
   recipesListSelector,
 } from "../redux/selectors/selectors";
 import RecipeCard from "../components/Recipes/RecipeCard";
 import RecipeCardSkeleton from "../components/Recipes/RecipeCardSkeleton";
-import { fetchRecipes } from "../redux/apiClients/recipeAPI";
+import {
+  fetchFilteredRecipes,
+  fetchRecipes,
+} from "../redux/apiClients/recipeAPI";
+import FilterSort from "../components/FilterSort/FilterSort";
+import { SearchOff } from "@mui/icons-material";
 
 const Recipes = () => {
   const theme = useTheme();
   const recipes = useSelector(recipesListSelector);
   const loading = useSelector(loadingRecipesSelector);
   const pagination = useSelector(paginationSelector);
+  const filters = useSelector(filtersSelector);
   const dispatch = useDispatch();
 
   const { filterRecipeOption } = useRecipe();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
-  const { sortValue, handleSortChange } = filterRecipeOption;
+  //Check if recipes exist
+  const hasRecipes = !loading && recipes && recipes.length > 0;
+  const showNoResults = !loading && (!recipes || recipes.length === 0);
+
+  const { sortValue } = filterRecipeOption;
   const [page, setPage] = React.useState(1);
   const pageSize = 10;
 
@@ -46,8 +60,12 @@ const Recipes = () => {
   };
 
   React.useEffect(() => {
-    dispatch(fetchRecipes({ sortValue, page, pageSize }));
-  }, [page, sortValue, dispatch]);
+    if (filters) {
+      dispatch(fetchFilteredRecipes(filters, page, pageSize));
+    } else {
+      dispatch(fetchRecipes({ sortValue, page, pageSize }));
+    }
+  }, [filters, page, sortValue, dispatch]);
 
   console.log("Recipes:", recipes);
   return (
@@ -56,7 +74,7 @@ const Recipes = () => {
       <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
         <Grid container direction="column" spacing={3}>
           {/* Breadcrumbs and Sort/Filter Section */}
-          <Grid
+          {/* <Grid
             item
             container
             justifyContent="space-between"
@@ -110,8 +128,8 @@ const Recipes = () => {
                 </FormControl>
               </Stack>
             </Box>
-          </Grid>
-
+          </Grid> */}
+          <FilterSort page={page} pageSize={pageSize} />
           {/* Recipe Cards Grid */}
           <Grid
             item
@@ -130,22 +148,57 @@ const Recipes = () => {
                       <RecipeCardSkeleton />
                     </Grid>
                   ))
-              : recipes?.map((recipe) => (
+              : hasRecipes
+              ? recipes.map((recipe) => (
                   <Grid item key={recipe._id} xs={11} sm={10} lg={6}>
                     <RecipeCard recipe={recipe} />
                   </Grid>
-                ))}
+                ))
+              : null}
           </Grid>
 
-          {/* Pagination */}
-          <Grid item container justifyContent="center">
-            <Pagination
-              count={pagination?.totalPages || 1}
-              color="primary"
-              size="large"
-              onChange={handlePageChange}
-            />
-          </Grid>
+          {/* No Results UI */}
+          {showNoResults && (
+            <Grid item container justifyContent="center" mt={6} mb={10}>
+              <Stack
+                spacing={3}
+                alignItems="center"
+                sx={{ maxWidth: 500, textAlign: "center" }}
+              >
+                <SearchOff
+                  sx={{ fontSize: 80, color: "text.secondary", opacity: 0.7 }}
+                />
+                <Typography variant="h5" color="text.primary">
+                  No recipes found
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  We couldn't find any recipes that match your current filters.
+                  Try adjusting your filters or exploring different categories.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  sx={{ mt: 2, borderRadius: 2, textTransform: "none", px: 4 }}
+                  onClick={() => window.location.reload()}
+                >
+                  Clear All Filters
+                </Button>
+              </Stack>
+            </Grid>
+          )}
+
+          {/* Pagination - only show when we have recipes */}
+          {hasRecipes && (
+            <Grid item container justifyContent="center" mt={4} mb={6}>
+              <Pagination
+                count={pagination?.totalPages || 1}
+                page={page}
+                color="primary"
+                size="large"
+                onChange={handlePageChange}
+              />
+            </Grid>
+          )}
         </Grid>
       </Box>
     </React.Fragment>

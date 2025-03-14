@@ -19,6 +19,13 @@ export const recipesListSelector = (state) => state.recipes.recipes;
 export const paginationSelector = (state) => state.recipes.pagination;
 export const loadingRecipesSelector = (state) => state.recipes.recipesLoading;
 export const errorRecipesSelector = (state) => state.recipes.recipesError;
+export const filtersSelector = (state) => state.recipes.filters;
+export const filterExistsSelector = (state) => state.recipes.filterExists;
+
+//Recipe
+export const recipeSelector = (state) => state.recipes.recipe;
+export const recipeLoadingSelector = (state) => state.recipes.recipeLoading;
+export const recipeErrorSelector = (state) => state.recipes.recipeError;
 
 //Cuisines
 export const cuisinesSelector = (state) => state.cuisine.cuisines;

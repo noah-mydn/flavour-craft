@@ -34,6 +34,7 @@ const authSlice = createSlice({
 
       console.log("Removing auth from sessionStorage");
       sessionStorage.removeItem("auth");
+      sessionStorage.removeItem("userData");
 
       console.log("Removing refreshToken from localStorage");
       localStorage.removeItem("refreshToken");

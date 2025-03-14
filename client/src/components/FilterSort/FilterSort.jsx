@@ -6,7 +6,6 @@ import {
   Divider,
   FormControl,
   Grid,
-  InputLabel,
   MenuItem,
   OutlinedInput,
   Paper,
@@ -16,6 +15,7 @@ import {
   useMediaQuery,
   Chip,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import {
   FilterAlt,
@@ -27,120 +27,163 @@ import {
   SetMeal,
 } from "@mui/icons-material";
 import theme from "../../theme/theme";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   cuisinesSelector,
   dietaryOptionsSelector,
 } from "../../redux/selectors/selectors";
+import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
+import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
+import { fetchFilteredRecipes } from "../../redux/apiClients/recipeAPI";
+import { setFilters } from "../../redux/reducers/recipesSlice";
 
-const FilterSort = () => {
+const FilterSort = ({ page, pageSize }) => {
+  const dispatch = useDispatch();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sortOption, setSortOption] = useState("personalized");
+  const [sortOption, setSortOption] = useState("all");
   const [selectedCuisines, setSelectedCuisines] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedDietaryPreferences, setSelectedDietaryPreferences] = useState(
     []
   );
-  const [cookingTimeOperator, setCookingTimeOperator] = useState("≤");
-  const [cookingTimeValue, setCookingTimeValue] = useState(30);
+  const [cookingTimeOperator, setCookingTimeOperator] = useState("");
+  const [cookingTimeValue, setCookingTimeValue] = useState();
 
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const cuisineOptions = useSelector(cuisinesSelector);
   const dietaryOptions = useSelector(dietaryOptionsSelector);
 
+  React.useEffect(() => {
+    dispatch(fetchCuisines());
+    dispatch(fetchDietaryOptions());
+  }, [dispatch]);
+
   const tagOptions = [
     "Breakfast",
+    "Brunch",
     "Lunch",
     "Dinner",
     "Dessert",
+    "Quick",
     "Snack",
     "Appetizer",
     "Soup",
     "Curry",
     "Seafood",
     "Salad",
+    "Stew",
   ];
 
   const timeOperators = [
     { value: "<", label: "Less than" },
     { value: "=", label: "Equal to" },
-    { value: "≤", label: "Less than or equal to" },
+    { value: "<=", label: "Less than or equal to" },
     { value: ">", label: "Greater than" },
-    { value: "≥", label: "Greater than or equal to" },
+    { value: ">=", label: "Greater than or equal to" },
   ];
 
   const handleClearFilters = () => {
     setSelectedCuisines([]);
     setSelectedTags([]);
     setSelectedDietaryPreferences([]);
-    setCookingTimeOperator("≤");
-    setCookingTimeValue(30);
+    setCookingTimeOperator("");
+    setCookingTimeValue();
+  };
+
+  const handleFilterRecipes = () => {
+    setFiltersOpen(false);
+    console.log("Selected Cuisines:", selectedCuisines);
+    console.log("Selected Tags:", selectedTags);
+    console.log("Selected Dietary Preferences:", selectedDietaryPreferences);
+    console.log("Cooking Time Operator:", cookingTimeOperator);
+    console.log("Cooking Time Value:", cookingTimeValue);
+
+    let payload = {};
+
+    if (selectedCuisines && selectedCuisines.length > 0) {
+      payload.cuisineTypes = selectedCuisines;
+    }
+    if (selectedTags && selectedTags.length > 0) {
+      payload.tags = selectedTags;
+    }
+    if (selectedDietaryPreferences && selectedDietaryPreferences.length > 0) {
+      payload.dietaryPreferences = selectedDietaryPreferences;
+    }
+    if (cookingTimeOperator && cookingTimeValue) {
+      payload.cookingTime = `${cookingTimeOperator} ${cookingTimeValue}`;
+    }
+
+    console.log("Payload:", payload);
+    dispatch(setFilters(payload));
+    dispatch(fetchFilteredRecipes(payload, page, pageSize));
   };
 
   const totalActiveFilters =
     selectedCuisines.length +
     selectedTags.length +
     selectedDietaryPreferences.length +
-    (cookingTimeValue !== 30 || cookingTimeOperator !== "≤" ? 1 : 0);
+    (cookingTimeValue === "" || cookingTimeOperator === "" ? 0 : 1);
 
   return (
-    <Box sx={{ marginTop: "12rem" }}>
+    <Box sx={{ mt: 3, px: { xs: 1, sm: 2 } }}>
       <Paper
-        elevation={1}
+        elevation={0}
         sx={{
-          p: 2,
-          mb: 3,
-          borderRadius: 2,
           transition: "all 0.3s ease",
+          borderRadius: 3,
+          overflow: "hidden",
+          //   bgcolor: "background.paper",
+          bgcolor: "#FAF9F6",
         }}
       >
         {/* Top row with sort options and filter toggle */}
-        <Grid
-          container
-          spacing={2}
-          alignItems="center"
-          sx={{ mb: filtersOpen ? 2 : 0 }}
-        >
+        <Grid container spacing={2} alignItems="center" sx={{ p: 2 }}>
           {isMobile ? (
             // Mobile layout: Sort on left, Filter on right
             <>
               <Grid item xs={6}>
                 <FormControl size="small" fullWidth variant="outlined">
-                  <InputLabel>Sort by</InputLabel>
                   <Select
                     value={sortOption}
                     onChange={(e) => setSortOption(e.target.value)}
-                    label="Sort by"
+                    displayEmpty
                     sx={{ borderRadius: 2 }}
                   >
-                    <MenuItem value="most popular">Most Popular</MenuItem>
-                    <MenuItem value="most viewed">Most Viewed</MenuItem>
-                    <MenuItem value="most recent">Most Recent</MenuItem>
+                    <MenuItem disabled value="">
+                      <Typography variant="body2" color="text.secondary">
+                        Sort by
+                      </Typography>
+                    </MenuItem>
+                    <MenuItem value="all">Most Recent</MenuItem>
+                    <MenuItem value="popular">Most Popular</MenuItem>
+                    <MenuItem value="mostViewed">Most Viewed</MenuItem>
                     <MenuItem value="personalized">Personalized</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  fullWidth
-                  size="medium"
-                  startIcon={<FilterAlt />}
-                  endIcon={filtersOpen ? <ExpandLess /> : <ExpandMore />}
-                  onClick={() => setFiltersOpen(!filtersOpen)}
-                  sx={{ borderRadius: 2, height: "40px" }}
-                >
-                  Filters {totalActiveFilters > 0 && `(${totalActiveFilters})`}
-                </Button>
+                <Tooltip title="Filter">
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    size="medium"
+                    startIcon={<FilterAlt />}
+                    endIcon={filtersOpen ? <ExpandLess /> : <ExpandMore />}
+                    onClick={() => setFiltersOpen(!filtersOpen)}
+                    sx={{ borderRadius: 2, height: "40px" }}
+                  >
+                    Filter {totalActiveFilters > 0 && `(${totalActiveFilters})`}
+                  </Button>
+                </Tooltip>
               </Grid>
             </>
           ) : (
             // Desktop/tablet layout: Both sort and filter on right
             <>
-              <Grid item xs={12} sm={5} md={6}></Grid>
-              <Grid item xs={12} sm={7} md={6}>
+              <Grid item xs={12} sm={7}></Grid>
+              <Grid item xs={12} sm={5}>
                 <Stack
                   direction="row"
                   justifyContent="flex-end"
@@ -149,19 +192,23 @@ const FilterSort = () => {
                 >
                   <FormControl
                     size="small"
-                    sx={{ minWidth: 180 }}
+                    sx={{ minWidth: 150 }}
                     variant="outlined"
                   >
-                    <InputLabel>Sort by</InputLabel>
                     <Select
                       value={sortOption}
                       onChange={(e) => setSortOption(e.target.value)}
-                      label="Sort by"
+                      displayEmpty
                       sx={{ borderRadius: 2 }}
                     >
-                      <MenuItem value="most popular">Most Popular</MenuItem>
-                      <MenuItem value="most viewed">Most Viewed</MenuItem>
-                      <MenuItem value="most recent">Most Recent</MenuItem>
+                      <MenuItem disabled value="">
+                        <Typography variant="body2" color="text.secondary">
+                          Sort by
+                        </Typography>
+                      </MenuItem>
+                      <MenuItem value="all">Most Recent</MenuItem>
+                      <MenuItem value="mostViewed">Most Viewed</MenuItem>
+                      <MenuItem value="popular">Most Popular</MenuItem>
                       <MenuItem value="personalized">Personalized</MenuItem>
                     </Select>
                   </FormControl>
@@ -184,188 +231,254 @@ const FilterSort = () => {
           )}
         </Grid>
 
-        {totalActiveFilters > 0 && (
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              size="small"
-              color="secondary"
-              onClick={handleClearFilters}
-              sx={{ borderRadius: 4 }}
-            >
-              Clear All Filters
-            </Button>
-          </Box>
-        )}
-
         {/* Expandable filter section */}
         <Collapse in={filtersOpen}>
-          <Divider sx={{ my: 2 }} />
+          <Divider sx={{ opacity: 0.6 }} />
 
-          <Grid container spacing={3}>
-            {/* Cuisine Type */}
-            <Grid item xs={12} md={6} lg={3}>
-              <Stack spacing={1.5}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <RestaurantMenu fontSize="small" color="primary" />
-                  <Typography variant="subtitle2">Cuisine Types</Typography>
-                </Stack>
+          <Box sx={{ p: 3 }}>
+            {totalActiveFilters > 0 && (
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="secondary"
+                  onClick={handleClearFilters}
+                  sx={{ textTransform: "none" }}
+                >
+                  Clear All Filters
+                </Button>
+              </Box>
+            )}
 
-                <FormControl fullWidth size="small">
-                  <InputLabel id="cuisine-select-label">
-                    Select Cuisines
-                  </InputLabel>
-                  <Select
-                    labelId="cuisine-select-label"
-                    multiple
-                    value={selectedCuisines}
-                    onChange={(e) => setSelectedCuisines(e.target.value)}
-                    input={<OutlinedInput label="Select Cuisines" />}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                        {selected.map((value) => (
-                          <Chip key={value} label={value} size="small" />
-                        ))}
-                      </Box>
-                    )}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {cuisineOptions.map((cuisine) => (
-                      <MenuItem key={cuisine} value={cuisine}>
-                        {cuisine}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Grid>
+            <Grid container spacing={3}>
+              {/* Using 2 columns layout (except on mobile) */}
+              {/* Cuisine Type */}
+              <Grid item xs={12} sm={6}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <RestaurantMenu fontSize="small" color="primary" />
+                    <Typography variant="subtitle2">Cuisine Types</Typography>
+                  </Stack>
 
-            {/* Cooking Time */}
-            <Grid item xs={12} md={6} lg={3}>
-              <Stack spacing={1.5}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <AccessTime fontSize="small" color="primary" />
-                  <Typography variant="subtitle2">
-                    Cooking Time (minutes)
-                  </Typography>
-                </Stack>
-
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <FormControl size="small" sx={{ minWidth: 130 }}>
-                    <InputLabel>Operator</InputLabel>
+                  <FormControl fullWidth size="small">
                     <Select
-                      value={cookingTimeOperator}
-                      onChange={(e) => setCookingTimeOperator(e.target.value)}
-                      label="Operator"
+                      multiple
+                      value={selectedCuisines}
+                      onChange={(e) => setSelectedCuisines(e.target.value)}
+                      input={<OutlinedInput />}
+                      displayEmpty
+                      renderValue={(selected) => {
+                        if (selected.length === 0) {
+                          return (
+                            <Typography variant="body2" color="text.secondary">
+                              Select cuisines
+                            </Typography>
+                          );
+                        }
+                        return (
+                          <Box
+                            sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                          >
+                            {selected.map((value) => (
+                              <Chip
+                                key={value}
+                                label={value}
+                                size="small"
+                                sx={{
+                                  background: theme.palette.secondary.dark,
+                                  color: theme.palette.common.white,
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        );
+                      }}
                       sx={{ borderRadius: 2 }}
                     >
-                      {timeOperators.map((op) => (
-                        <MenuItem key={op.value} value={op.value}>
-                          {op.label} ({op.value})
+                      {cuisineOptions.map((cuisine) => (
+                        <MenuItem key={cuisine._id} value={cuisine.name}>
+                          {cuisine.name}
                         </MenuItem>
                       ))}
                     </Select>
                   </FormControl>
-
-                  <TextField
-                    type="number"
-                    size="small"
-                    label="Minutes"
-                    value={cookingTimeValue}
-                    onChange={(e) =>
-                      setCookingTimeValue(Number(e.target.value))
-                    }
-                    InputProps={{ inputProps: { min: 5, max: 120 } }}
-                    sx={{ borderRadius: 2 }}
-                  />
                 </Stack>
-              </Stack>
-            </Grid>
+              </Grid>
 
-            {/* Tags */}
-            <Grid item xs={12} md={6} lg={3}>
-              <Stack spacing={1.5}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <LocalOffer fontSize="small" color="primary" />
-                  <Typography variant="subtitle2">Tags</Typography>
+              {/* Tags */}
+              <Grid item xs={12} sm={6}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <LocalOffer fontSize="small" color="primary" />
+                    <Typography variant="subtitle2">Tags</Typography>
+                  </Stack>
+
+                  <FormControl fullWidth size="small">
+                    <Select
+                      multiple
+                      value={selectedTags}
+                      onChange={(e) => setSelectedTags(e.target.value)}
+                      input={<OutlinedInput />}
+                      displayEmpty
+                      renderValue={(selected) => {
+                        if (selected.length === 0) {
+                          return (
+                            <Typography variant="body2" color="text.secondary">
+                              Select tags
+                            </Typography>
+                          );
+                        }
+                        return (
+                          <Box
+                            sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                          >
+                            {selected.map((value) => (
+                              <Chip
+                                key={value}
+                                label={value}
+                                size="small"
+                                sx={{
+                                  background: theme.palette.secondary.dark,
+                                  color: theme.palette.common.white,
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        );
+                      }}
+                      sx={{ borderRadius: 2 }}
+                    >
+                      {tagOptions.map((tag) => (
+                        <MenuItem key={tag} value={tag}>
+                          {tag}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Stack>
+              </Grid>
 
-                <FormControl fullWidth size="small">
-                  <InputLabel id="tags-select-label">Select Tags</InputLabel>
-                  <Select
-                    labelId="tags-select-label"
-                    multiple
-                    value={selectedTags}
-                    onChange={(e) => setSelectedTags(e.target.value)}
-                    input={<OutlinedInput label="Select Tags" />}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                        {selected.map((value) => (
-                          <Chip key={value} label={value} size="small" />
+              {/* Dietary Preferences */}
+              <Grid item xs={12} sm={6}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <SetMeal fontSize="small" color="primary" />
+                    <Typography variant="subtitle2">
+                      Dietary Preferences
+                    </Typography>
+                  </Stack>
+
+                  <FormControl fullWidth size="small">
+                    <Select
+                      multiple
+                      value={selectedDietaryPreferences}
+                      onChange={(e) =>
+                        setSelectedDietaryPreferences(e.target.value)
+                      }
+                      input={<OutlinedInput />}
+                      displayEmpty
+                      renderValue={(selected) => {
+                        if (selected.length === 0) {
+                          return (
+                            <Typography variant="body2" color="text.secondary">
+                              Select preferences
+                            </Typography>
+                          );
+                        }
+                        return (
+                          <Box
+                            sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
+                          >
+                            {selected.map((value) => (
+                              <Chip
+                                key={value}
+                                label={value}
+                                size="small"
+                                sx={{
+                                  background: theme.palette.secondary.dark,
+                                  color: theme.palette.common.white,
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        );
+                      }}
+                      sx={{ borderRadius: 2 }}
+                    >
+                      {dietaryOptions.map((diet) => (
+                        <MenuItem key={diet._id} value={diet.name}>
+                          {diet.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Stack>
+              </Grid>
+
+              {/* Cooking Time */}
+              {/* Cooking Time */}
+              <Grid item xs={12} sm={6}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <AccessTime fontSize="small" color="primary" />
+                    <Typography variant="subtitle2">Cooking Time</Typography>
+                  </Stack>
+
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <FormControl size="small" sx={{ minWidth: 130 }}>
+                      <Select
+                        value={cookingTimeOperator}
+                        onChange={(e) => setCookingTimeOperator(e.target.value)}
+                        displayEmpty
+                        sx={{ borderRadius: 2 }}
+                        renderValue={(selected) => {
+                          if (selected === "") {
+                            return (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Operator
+                              </Typography>
+                            );
+                          }
+                          return selected;
+                        }}
+                      >
+                        {timeOperators.map((op) => (
+                          <MenuItem key={op.value} value={op.value}>
+                            {op.label}
+                          </MenuItem>
                         ))}
-                      </Box>
-                    )}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {tagOptions.map((tag) => (
-                      <MenuItem key={tag} value={tag}>
-                        {tag}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Grid>
+                      </Select>
+                    </FormControl>
 
-            {/* Dietary Preferences */}
-            <Grid item xs={12} md={6} lg={3}>
-              <Stack spacing={1.5}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <SetMeal fontSize="small" color="primary" />
-                  <Typography variant="subtitle2">
-                    Dietary Preferences
-                  </Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      placeholder="Minutes"
+                      value={cookingTimeValue}
+                      onChange={(e) =>
+                        setCookingTimeValue(Number(e.target.value))
+                      }
+                      InputProps={{ inputProps: { min: 5, max: 120 } }}
+                      sx={{ borderRadius: 2 }}
+                    />
+                  </Stack>
                 </Stack>
-
-                <FormControl fullWidth size="small">
-                  <InputLabel id="dietary-select-label">
-                    Select Preferences
-                  </InputLabel>
-                  <Select
-                    labelId="dietary-select-label"
-                    multiple
-                    value={selectedDietaryPreferences}
-                    onChange={(e) =>
-                      setSelectedDietaryPreferences(e.target.value)
-                    }
-                    input={<OutlinedInput label="Select Preferences" />}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                        {selected.map((value) => (
-                          <Chip key={value} label={value} size="small" />
-                        ))}
-                      </Box>
-                    )}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {dietaryOptions.map((diet) => (
-                      <MenuItem key={diet} value={diet}>
-                        {diet}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Stack>
+              </Grid>
             </Grid>
-          </Grid>
 
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{ borderRadius: 4 }}
-            >
-              Apply Filters
-            </Button>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleFilterRecipes}
+                sx={{ borderRadius: 4, px: 3, textTransform: "none" }}
+              >
+                Apply Filters
+              </Button>
+            </Box>
           </Box>
         </Collapse>
       </Paper>

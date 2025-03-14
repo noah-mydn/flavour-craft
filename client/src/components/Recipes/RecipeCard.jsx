@@ -20,11 +20,11 @@ import React from "react";
 import theme from "../../theme/theme";
 import { normalizeTime } from "../../utils/timeFormatter";
 import { useDispatch, useSelector } from "react-redux";
-import { profileSelector, userSelector } from "../../redux/selectors/selectors";
+import { profileSelector } from "../../redux/selectors/selectors";
 import { useNavigate } from "react-router-dom";
 import { useRecipe } from "../../hooks/useRecipe";
 
-const RecipeCard = ({ recipe, width }) => {
+const RecipeCard = ({ recipe, recipeId }) => {
   const navigate = useNavigate();
   const profile = useSelector(profileSelector);
   const { saveRecipe } = useRecipe();
@@ -107,18 +107,20 @@ const RecipeCard = ({ recipe, width }) => {
 
         {/* Category chip */}
         <Box sx={{ position: "absolute", top: 10, right: 10 }}>
-          <Chip
-            label={recipe.tags[0]}
-            size="small"
-            sx={{
-              fontSize: "0.7rem",
-              height: 24,
-              mr: 0.5,
-              mb: 0.5,
-              bgcolor: theme.palette.primary.main,
-              color: "#fff",
-            }}
-          />
+          {recipe?.tags?.length > 0 && (
+            <Chip
+              label={recipe?.tags[0]}
+              size="small"
+              sx={{
+                fontSize: "0.7rem",
+                height: 24,
+                mr: 0.5,
+                mb: 0.5,
+                bgcolor: theme.palette.primary.main,
+                color: "#fff",
+              }}
+            />
+          )}
         </Box>
       </Box>
 

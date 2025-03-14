@@ -41,6 +41,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../hooks/useAuth";
 import { logout } from "../../redux/reducers/authSlice";
+import { useNavigate } from "react-router-dom";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
@@ -53,6 +54,7 @@ const TopNavigationBar = () => {
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // State for hover menus
   const [recipeMenuOpen, setRecipeMenuOpen] = useState(false);
@@ -638,7 +640,7 @@ const TopNavigationBar = () => {
         onClose={hideUserMenu}
         MenuListProps={{ "aria-labelledby": "basic-button" }}
       >
-        <MenuItem>My Profile</MenuItem>
+        <MenuItem onClick={() => navigate("/profile")}>My Profile</MenuItem>
         <MenuItem onClick={accountLogout}>Logout</MenuItem>
       </Menu>
     </>

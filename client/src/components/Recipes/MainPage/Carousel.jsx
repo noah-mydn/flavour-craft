@@ -2,11 +2,11 @@ import React from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import RecipeCard from "../RecipeCard";
 import { Box, Typography, useMediaQuery } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import theme from "../../../theme/theme";
+import CarouselRecpieCard from "./CarouselRecipeCard";
 
 const NextArrow = (props) => {
   const { onClick } = props;
@@ -48,6 +48,8 @@ const PrevArrow = (props) => {
 
 const Carousel = ({ recipes, heading }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  console.log("Trending Recipes:", recipes);
 
   const settings = {
     dots: true,
@@ -95,7 +97,7 @@ const Carousel = ({ recipes, heading }) => {
         <Slider {...settings}>
           {recipes?.map((recipe) => (
             <Box key={recipe._id} px={1}>
-              <RecipeCard recipe={recipe} />
+              <CarouselRecpieCard recipe={recipe} />
             </Box>
           ))}
         </Slider>

@@ -1,4 +1,6 @@
 export const normalizeTime = (input) => {
+  if (!input || typeof input !== "string") return "N/A";
+
   let part = input.split("+")[0].trim();
 
   let hours = 0,

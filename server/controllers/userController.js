@@ -175,7 +175,6 @@ const getCurrentUserProfile = async (req, res) => {
 
     const newUserFormat = user.toObject();
     delete newUserFormat.password;
-    delete newUserFormat.createdAt;
 
     return res.status(200).json({
       status: 200,

@@ -41,12 +41,29 @@ export const fetchFilteredRecipes = createAsyncThunk(
   "recipes/fetchFilteredRecipes",
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${BASE_URL}/filter`, filters);
-      console.log("Filter Response:", response);
+      const response = await axios.post(
+        `${BASE_URL}/filter`,
+        filters,
+        getAuthConfig()
+      );
+      console.log("Filter Response:", response.data);
       return response.data;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response?.data || "Failed to fetch recipes");
+    }
+  }
+);
+
+export const fetchRecipeById = createAsyncThunk(
+  "recipes/fetchRecipeById",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/${id}`, getAuthConfig());
+      return response.data.recipe;
+    } catch (error) {
+      displayErrorToast(error);
+      return rejectWithValue(error);
     }
   }
 );

@@ -388,39 +388,38 @@ const filterRecipes = async (req, res) => {
 
     let filterCriteria = [];
 
-    // Filter by ingredients (check if ingredients are in recipe ingredients)
+    // Convert ingredients to array properly
     if (ingredients) {
-      const ingredientsCriteria = {
-        ingredients: { $in: ingredients.split(",") },
-      };
-      filterCriteria.push(ingredientsCriteria);
-    }
-    // Filter by cuisine types
-    if (cuisineTypes) {
-      const cuisineCriteria = {
-        cuisineTypes: { $in: cuisineTypes.split(",") },
-      };
-      filterCriteria.push(cuisineCriteria);
+      const ingredientsArray = Array.isArray(ingredients)
+        ? ingredients
+        : ingredients.split(",");
+      filterCriteria.push({ ingredients: { $in: ingredientsArray } });
     }
 
-    // Filter by dietary preferences
-    if (dietaryPreferences) {
-      const dietaryCriteria = {
-        dietaryPreferences: { $in: dietaryPreferences.split(",") },
-      };
-      filterCriteria.push(dietaryCriteria);
+    // Convert cuisine types to array and apply strict filtering
+    if (cuisineTypes && cuisineTypes.length > 0) {
+      const cuisineArray = Array.isArray(cuisineTypes)
+        ? cuisineTypes
+        : cuisineTypes.toString().split(",");
+      filterCriteria.push({ cuisineTypes: { $in: cuisineArray } });
     }
 
-    // Filter by tags
-    if (tags) {
-      const tagCriteria = {
-        tags: { $in: tags.split(",") },
-      };
-      filterCriteria.push(tagCriteria);
+    // Convert dietary preferences to array
+    if (dietaryPreferences && dietaryPreferences.length > 0) {
+      const dietaryArray = Array.isArray(dietaryPreferences)
+        ? dietaryPreferences
+        : dietaryPreferences.toString().split(",");
+      filterCriteria.push({ dietaryPreferences: { $in: dietaryArray } });
     }
 
-    // Filter by cooking time (greater than or equal to a certain time)
-    if (cookingTime) {
+    // Convert tags to array
+    if (tags && tags.length > 0) {
+      const tagArray = Array.isArray(tags) ? tags : tags.toString().split(",");
+      filterCriteria.push({ tags: { $in: tagArray } });
+    }
+
+    // Filter by cooking time
+    if (cookingTime && !isNaN(parseInt(cookingTime))) {
       const operatorMap = {
         "<": "$lt",
         "<=": "$lte",
@@ -428,32 +427,36 @@ const filterRecipes = async (req, res) => {
         ">=": "$gte",
         "=": "$eq",
       };
-
       const match = cookingTime.match(/(<=|>=|<|>|=)?\s*(\d+)/);
       if (match) {
         const operator = match[1] || "=";
-        const time = parseInt(match[2]);
-
-        const timeCriteria = {
-          cookingTime: { [operatorMap[operator]]: time },
-        };
-        filterCriteria.push(timeCriteria);
+        const time = parseInt(match[2], 10);
+        if (!isNaN(time)) {
+          filterCriteria.push({
+            cookingTime: { [operatorMap[operator]]: time },
+          });
+        }
       }
     }
 
-    // Apply 'AND' or 'OR' logic
-    let recipes;
+    // Convert pagination values to numbers
+    const pageNumber = parseInt(page, 10) || 1;
+    const pageSizeNumber = parseInt(pageSize, 10) || 10;
 
-    recipes = await Recipe.find({ $and: filterCriteria })
-      .skip((page - 1) * pageSize)
-      .limit(pageSize);
+    // Construct query properly
+    const query = filterCriteria.length ? { $and: filterCriteria } : {};
+    console.log("Filtered Query:", JSON.stringify(query, null, 2));
 
-    // Get the total number of recipes for pagination info
-    const totalRecipes = await Recipe.countDocuments({ $and: filterCriteria });
+    // Fetch recipes
+    const recipes = await Recipe.find(query)
+      .skip((pageNumber - 1) * pageSizeNumber)
+      .limit(pageSizeNumber);
+
+    // Get total recipe count
+    const totalRecipes = await Recipe.countDocuments(query);
 
     if (recipes.length === 0) {
-      return res.status(404).json({
-        status: 404,
+      return res.status(200).json({
         message: "No recipes found for the given filter criteria",
       });
     }
@@ -461,8 +464,8 @@ const filterRecipes = async (req, res) => {
     res.status(200).json({
       recipes,
       pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalRecipes / pageSize),
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalRecipes / pageSizeNumber),
         totalRecipes,
       },
     });

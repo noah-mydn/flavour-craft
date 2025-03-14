@@ -1,5 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchFilteredRecipes, fetchRecipes } from "../apiClients/recipeAPI";
+import {
+  fetchFilteredRecipes,
+  fetchRecipeById,
+  fetchRecipes,
+} from "../apiClients/recipeAPI";
 
 const initialState = {
   // Sorting
@@ -9,7 +13,12 @@ const initialState = {
   recipesLoading: false,
   recipesError: null,
   // Filtering
-  filters: null,
+  filters: false,
+  filterExists: false,
+  //Single recipe
+  recipe: null,
+  recipeLoading: false,
+  recipeError: null,
 };
 
 const recipesSlice = createSlice({
@@ -21,7 +30,7 @@ const recipesSlice = createSlice({
       state.pagination = action.payload.pagination;
     },
     setSortType(state, action) {
-      state.currentSort = action.payload; // Fix typo here
+      state.currentSort = action.payload;
       state.filters = null;
     },
     setFilters(state, action) {
@@ -42,12 +51,12 @@ const recipesSlice = createSlice({
       .addCase(fetchRecipes.pending, (state) => {
         state.recipesLoading = true;
         state.recipesError = null;
+        state.filterExists = false;
       })
       .addCase(fetchRecipes.fulfilled, (state, action) => {
         state.recipesLoading = false;
         state.recipes = action.payload.data.recipes;
         state.pagination = action.payload.data.pagination;
-        state.currentSort = action.payload.sortValue;
       })
       .addCase(fetchRecipes.rejected, (state, action) => {
         state.recipesLoading = false;
@@ -58,16 +67,30 @@ const recipesSlice = createSlice({
       .addCase(fetchFilteredRecipes.pending, (state) => {
         state.recipesLoading = true;
         state.recipesError = null;
+        state.filterExists = false;
       })
       .addCase(fetchFilteredRecipes.fulfilled, (state, action) => {
+        console.log("Filtered recipes:", action.payload);
         state.recipesLoading = false;
-        state.recipes = action.payload.data.recipes;
-        state.pagination = action.payload.data.pagination;
-        state.filters = action.payload.filters;
+        state.recipes = action.payload?.recipes || [];
+        state.pagination = action.payload?.pagination;
       })
       .addCase(fetchFilteredRecipes.rejected, (state, action) => {
         state.recipesLoading = false;
         state.recipesError = action.payload;
+      })
+      .addCase(fetchRecipeById.pending, (state, action) => {
+        state.recipeLoading = true;
+        state.recipeError = null;
+      })
+      .addCase(fetchRecipeById.fulfilled, (state, action) => {
+        state.recipeLoading = false;
+        state.recipe = action.payload;
+        state.recipeError = null;
+      })
+      .addCase(fetchRecipeById.rejected, (state, action) => {
+        state.recipeLoading = false;
+        state.recipeError = action.payload;
       });
   },
 });
