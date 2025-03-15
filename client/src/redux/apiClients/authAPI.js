@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { displayErrorToast } from "../../utils/toastUtil";
+import { getAuthConfig } from "../../utils/authHeaders";
 const BASE_URL = process.env.REACT_APP_BASE_API + "/auth";
 
 // Login
@@ -48,77 +49,32 @@ export const register = createAsyncThunk(
   }
 );
 
+//Google Auth
 export const googleAuth = createAsyncThunk(
   "auth/googleAuth",
-  async (googleResponse, { rejectWithValue }) => {
+  async (token, { rejectWithValue }) => {
     try {
-      const { access_token } = googleResponse;
+      const response = await axios.post(
+        `${process.env.REACT_APP_BASE_API}/auth/google`,
+        { token },
+        getAuthConfig()
+      );
+      console.log("Google Auth Response:", response.data);
 
-      const response = await axios.get("http://localhost:8080/auth/google", {
-        token: access_token,
-      });
+      sessionStorage.setItem("accessToken", response.data.accessToken);
+      localStorage.setItem("refreshToken", response.data.refreshToken);
+      sessionStorage.setItem("user", JSON.stringify(response.data.user));
 
-      const { user, accessToken, refreshToken } = response.data;
-
-      sessionStorage.setItem("userData", JSON.stringify(user));
-      sessionStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-
-      console.log("User authenticated successfully:", user);
+      return {
+        user: response.data.user,
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken,
+      };
     } catch (error) {
-      console.error("Error during Google authentication:", error.message);
-    }
-  }
-);
-// Refresh Token
-export const refreshSession = createAsyncThunk(
-  "auth/refresh",
-  async (_, { rejectWithValue }) => {
-    try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) throw new Error("No refresh token available");
-
-      const response = await axios.post(`${BASE_URL}/refresh-session`, {
-        refreshToken,
-      });
-
-      const { accessToken, refreshToken: newRefreshToken } = response.data;
-
-      sessionStorage.setItem("accessToken", accessToken);
-      if (newRefreshToken) {
-        localStorage.setItem("refreshToken", newRefreshToken);
-      }
-
-      return accessToken;
-    } catch (error) {
-      const statusCode = error.response?.status;
-
-      // Handle specific status codes
-      if (statusCode === 401) {
-        //token expired case
-        console.error("Refresh token expired. Logging out...");
-        localStorage.removeItem("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("userData");
-
-        return rejectWithValue("Session expired. Please log in again.");
-      } else if (statusCode === 403) {
-        // Refresh token mismatch or unauthorized
-        console.error("Forbidden request.");
-        return rejectWithValue("Unauthorized. Please log in again.");
-      } else if (statusCode === 404) {
-        // User not found
-        console.error("User not found.");
-        return rejectWithValue("User not found. Please contact support.");
-      } else if (statusCode >= 500) {
-        // Server error
-        console.error("Server error. Please try again later.");
-        return rejectWithValue("Server error. Please try again later.");
-      }
-
-      // Default fallback for unexpected errors
-      console.error("An unknown error occurred:", error.message);
-      return rejectWithValue(error.response?.data || error.message);
+      displayErrorToast(error);
+      return rejectWithValue(
+        error.response.data || "Error authenticating with Google"
+      );
     }
   }
 );

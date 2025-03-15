@@ -20,31 +20,32 @@ import {
   Typography,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import React, { useState, useRef } from "react";
-import {
-  NavigationLink,
-  NavigationListItemBtn,
-} from "../../styles/ContainerStyles";
+import React, { useState } from "react";
+import { NavigationLink } from "../../styles/ContainerStyles";
 import theme from "../../theme/theme";
 import { useDispatch, useSelector } from "react-redux";
-import { userSelector } from "../../redux/selectors/selectors";
+import {
+  cuisinesSelector,
+  profileSelector,
+  userSelector,
+} from "../../redux/selectors/selectors";
 import {
   Favorite,
   Forum,
   Home,
   LocalDining,
   Search,
-  ExpandMore,
-  ExpandLess,
   ChevronRight,
   ArrowBack,
 } from "@mui/icons-material";
-import { useAuth } from "../../hooks/useAuth";
+
 import { logout } from "../../redux/reducers/authSlice";
 import { useNavigate } from "react-router-dom";
+import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
+  const profile = useSelector(profileSelector);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -69,17 +70,13 @@ const TopNavigationBar = () => {
   const accountLogout = () => {
     dispatch(logout());
   };
+  const cuisineTypes = useSelector(cuisinesSelector);
 
-  const cuisineTypes = [
-    "Italian",
-    "Chinese",
-    "Indian",
-    "Mexican",
-    "Japanese",
-    "Thai",
-    "Mediterranean",
-    "French",
-  ];
+  console.log("CuisineTypes:", cuisineTypes);
+
+  React.useEffect(() => {
+    dispatch(fetchCuisines());
+  }, []);
 
   const recipeSubMenuItems = [
     { label: "All Recipes", link: "/recipes" },
@@ -278,15 +275,18 @@ const TopNavigationBar = () => {
                                     sx={{
                                       ml: 1,
                                       width: 200,
+                                      maxHeight: 300,
                                       bgcolor: theme.palette.background.default,
+                                      overflowY: "auto",
                                     }}
                                   >
                                     <List>
                                       {cuisineTypes.map((cuisine) => (
                                         <ListItem
-                                          key={cuisine}
+                                          key={cuisine._id}
                                           component="a"
-                                          href={`/recipes/cuisine/${cuisine.toLowerCase()}`}
+                                          href={`/recipes/cuisine/${cuisine.name.toLowerCase()}`}
+                                          dense
                                           sx={{
                                             textDecoration: "none",
                                             color: theme.palette.secondary.dark,
@@ -297,7 +297,9 @@ const TopNavigationBar = () => {
                                             },
                                           }}
                                         >
-                                          <ListItemText primary={cuisine} />
+                                          <ListItemText
+                                            primary={cuisine.name}
+                                          />
                                         </ListItem>
                                       ))}
                                     </List>
@@ -353,8 +355,11 @@ const TopNavigationBar = () => {
           <Box display="flex" gap={2} justifyContent="flex-end">
             <Tooltip title={user?.firstName}>
               <Avatar
-                sx={{ bgcolor: theme.palette.primary.light, cursor: "pointer" }}
-                src={user?.userImg}
+                sx={{
+                  cursor: "pointer",
+                  border: `2px solid ${theme.palette.primary.main}`,
+                }}
+                src={profile?.userImg || "./avatar.png"}
                 onClick={showUserMenu}
               />
             </Tooltip>
@@ -595,10 +600,16 @@ const TopNavigationBar = () => {
 
         {/* Cuisines Submenu */}
         {mobileMenuLevel === "cuisines" && (
-          <List sx={{ width: 250 }}>
+          <List
+            sx={{
+              width: 250,
+              maxHeight: "calc(100vh - 180px)",
+              overflowY: "auto",
+            }}
+          >
             {cuisineTypes.map((cuisine) => (
               <ListItem
-                key={cuisine}
+                key={cuisine._id}
                 sx={{
                   "&:hover": { background: "transparent" },
                   px: 1,
@@ -606,7 +617,7 @@ const TopNavigationBar = () => {
               >
                 <ListItemButton
                   component="a"
-                  href={`/recipes/cuisine/${cuisine.toLowerCase()}`}
+                  href={`/recipes/cuisine/${cuisine.name.toLowerCase()}`}
                   onClick={toggleDrawer(false)}
                   sx={{
                     borderRadius: 2,
@@ -619,7 +630,7 @@ const TopNavigationBar = () => {
                   }}
                 >
                   <ListItemText
-                    primary={cuisine}
+                    primary={cuisine.name}
                     sx={{
                       color: theme.palette.secondary.dark,
                       fontWeight: "bold",

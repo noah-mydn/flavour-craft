@@ -7,7 +7,7 @@ import {
   ListItemButton,
   TextField,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { alpha, styled } from "@mui/material/styles";
 import theme from "../theme/theme";
 
 export const Section = styled(Box)(({ theme }) => ({
@@ -212,7 +212,7 @@ export const PostCard = styled(Card)(({ theme }) => ({
 export const PreviewPostCard = styled(Card)(({ theme }) => ({
   padding: "1rem 1rem 0 1rem",
   //background: "#FFF8DC",
-  background: theme.palette.success.dark,
+  // background: theme.palette.success.dark,
   borderRadius: 10,
   width: "100%",
   boxShadow:
@@ -253,3 +253,45 @@ export const ForumImage = styled(Box)({
     width: "90%",
   },
 });
+
+export const AnimatedChip = styled(Chip)(({ theme }) => ({
+  borderRadius: 20,
+  height: 28,
+  padding: "0 6px",
+  fontWeight: 500,
+  transition: "all 0.2s ease",
+  background: alpha(theme.palette.success.main, 0.08),
+  color: theme.palette.success.main,
+  "&:hover": {
+    background: alpha(theme.palette.success.main, 0.1),
+    transform: "translateY(-2px)",
+  },
+}));
+
+export const ActionButton = styled(Box)(({ theme, active }) => ({
+  display: "flex",
+  alignItems: "center",
+  padding: "4px 10px",
+  borderRadius: 20,
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+  background: active ? alpha(theme.palette.primary.main, 0.1) : "transparent",
+  "&:hover": {
+    background: alpha(theme.palette.primary.main, active ? 0.15 : 0.05),
+  },
+}));
+
+export const GradientCard = styled(Card)(({ theme }) => ({
+  borderRadius: 16,
+  background: "white",
+  position: "relative",
+  transition: "all 0.3s ease",
+  overflow: "visible",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+  border: "1px solid",
+  borderColor: alpha(theme.palette.primary.main, 0.08),
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+  },
+}));

@@ -419,7 +419,8 @@ const filterRecipes = async (req, res) => {
     }
 
     // Filter by cooking time
-    if (cookingTime && !isNaN(parseInt(cookingTime))) {
+    // Filter by cooking time
+    if (cookingTime) {
       const operatorMap = {
         "<": "$lt",
         "<=": "$lte",
@@ -427,13 +428,38 @@ const filterRecipes = async (req, res) => {
         ">=": "$gte",
         "=": "$eq",
       };
+
       const match = cookingTime.match(/(<=|>=|<|>|=)?\s*(\d+)/);
       if (match) {
         const operator = match[1] || "=";
         const time = parseInt(match[2], 10);
+
         if (!isNaN(time)) {
+          // Extract just the numeric part from the cookingTime string and convert to number for comparison
           filterCriteria.push({
-            cookingTime: { [operatorMap[operator]]: time },
+            $expr: {
+              [operatorMap[operator]]: [
+                {
+                  $toInt: {
+                    $arrayElemAt: [
+                      {
+                        $split: [
+                          {
+                            $arrayElemAt: [
+                              { $split: ["$cookingTime", ","] },
+                              0,
+                            ],
+                          },
+                          " ",
+                        ],
+                      },
+                      0,
+                    ],
+                  },
+                },
+                time,
+              ],
+            },
           });
         }
       }

@@ -3,7 +3,6 @@ import {
   Breadcrumbs,
   FormControl,
   Grid,
-  IconButton,
   InputLabel,
   Link,
   MenuItem,
@@ -14,21 +13,26 @@ import {
   useTheme,
 } from "@mui/material";
 import React from "react";
-import TopNavigationBar from "../components/Navigations/TopNavigationBar";
-import { useRecipe } from "../hooks/useRecipe";
+
 import { useDispatch, useSelector } from "react-redux";
+import { fetchRecipes } from "../../redux/apiClients/recipeAPI";
+import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
+import RecipeCard from "../../components/Recipes/RecipeCard";
 import {
   loadingRecipesSelector,
   paginationSelector,
   recipesListSelector,
-} from "../redux/selectors/selectors";
-import RecipeCard from "../components/Recipes/RecipeCard";
-import RecipeCardSkeleton from "../components/Recipes/RecipeCardSkeleton";
-import { fetchRecipes } from "../redux/apiClients/recipeAPI";
+} from "../../redux/selectors/selectors";
+import { useRecipe } from "../../hooks/useRecipe";
+import TopNavigationBar from "../../components/Navigations/TopNavigationBar";
+import { useParams } from "react-router-dom";
 
 const RecipesByCuisines = () => {
+  const [page, pageSize] = React.useState(1);
   const theme = useTheme();
-  const { page } = useRecipe();
+  //get cuisine type from params
+  const { cuisineType } = useParams();
+
   const recipes = useSelector(recipesListSelector);
   const loading = useSelector(loadingRecipesSelector);
   const pagination = useSelector(paginationSelector);
@@ -41,8 +45,13 @@ const RecipesByCuisines = () => {
   const { sortValue, handleSortChange } = filterRecipeOption;
 
   React.useEffect(() => {
-    dispatch(fetchRecipes({ sortValue: "all", page }, 10));
-  }, []);
+    if (cuisineType) {
+      let filter = {
+        cuisineTypes: [cuisineType],
+      };
+      dispatch(fetchRecipes({ filter, page }, 10));
+    }
+  }, [cuisineType]);
   console.log("Recipes:", recipes);
   return (
     <React.Fragment>

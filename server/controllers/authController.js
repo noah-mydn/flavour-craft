@@ -143,7 +143,55 @@ passport.use(
   )
 );
 
-passport.serializeUser((user, done) => done(null, user.id));
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`,
+      passReqToCallback: true,
+    },
+    async (req, accessToken, refreshToken, profile, done) => {
+      try {
+        // Check if user exists
+        let user = await User.findOne({ email: profile.emails[0].value });
+
+        if (!user) {
+          // Create new user if doesn't exist
+          user = await User.create({
+            firstName:
+              profile.name.givenName || profile.displayName.split(" ")[0],
+            lastName:
+              profile.name.familyName ||
+              profile.displayName.split(" ").slice(1).join(" "),
+            email: profile.emails[0].value,
+            googleId: profile.id,
+            profileImage: profile.photos[0]?.value || "",
+            // Set a random password or handle this differently based on your requirements
+            password:
+              Math.random().toString(36).slice(-8) +
+              Math.random().toString(36).slice(-8),
+          });
+        } else if (!user.googleId) {
+          // If user exists but doesn't have googleId (maybe they registered with email)
+          user.googleId = profile.id;
+          await user.save();
+        }
+
+        return done(null, user);
+      } catch (error) {
+        console.error("Error in Google Strategy:", error);
+        return done(error, null);
+      }
+    }
+  )
+);
+
+// Serialize and deserialize user
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
@@ -153,59 +201,46 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-const googleAuth = passport.authenticate("google", {
-  scope: ["profile", "email"],
-});
-const googleCallBack = (req, res, next) => {
-  passport.authenticate(
-    "google",
-    { session: false },
-    async (err, user, info) => {
-      if (err) {
-        console.error("Error during Google authentication:", err);
-        return res
-          .status(500)
-          .json({ message: "Internal Server Error", error: err.message });
+// Setup Google strategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "http://localhost:8080/auth/google/callback",
+      userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // Check if user exists in database
+        let user = await User.findOne({ email: profile.emails[0].value });
+
+        if (!user) {
+          // Create new user if not found
+          user = await User.create({
+            firstName:
+              profile.name.givenName || profile.displayName.split(" ")[0],
+            lastName:
+              profile.name.familyName ||
+              profile.displayName.split(" ").slice(1).join(" "),
+            email: profile.emails[0].value,
+            googleId: profile.id,
+            // Set other required fields with default values as needed
+          });
+        } else if (!user.googleId) {
+          // If user exists but hasn't used Google auth before, update their record
+          user.googleId = profile.id;
+          await user.save();
+        }
+
+        return done(null, user);
+      } catch (error) {
+        console.error("Error in Google strategy:", error);
+        return done(error, null);
       }
-
-      if (!user) {
-        return res.status(401).json({ message: "Authentication failed" });
-      }
-
-      const accessToken = jwt.sign(
-        { userId: user._id, email: user.email, firstName: user.firstName },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
-      );
-
-      const refreshToken = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_REFRESH_SECRET,
-        { expiresIn: "2d" }
-      );
-
-      user.refreshToken = refreshToken;
-      await user.save();
-
-      res.status(200).json({
-        message: "Google logged in successfully",
-        user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
-          email: user.email,
-        },
-        accessToken,
-        refreshToken,
-      });
     }
-  )(req, res, next);
-};
-
-const googleSuccess = (req, res) => {
-  console.log("Successful Logged in");
-};
+  )
+);
 
 const logout = async (req, res) => {
   try {
@@ -224,7 +259,4 @@ module.exports = {
   register,
   login,
   logout,
-  googleAuth,
-  googleCallBack,
-  googleSuccess,
 };

@@ -22,7 +22,8 @@ const RegisterForm = (props) => {
     isMobile,
   } = props;
 
-  const { accountUser, handleInputChange, accountRegister } = useAuth();
+  const { accountUser, handleInputChange, accountRegister, handleGoogleLogin } =
+    useAuth();
   return (
     <form onSubmit={accountRegister} style={{ padding: "1rem 0" }}>
       <Typography variant={isMobile ? "h3" : "h1"} className="text-center">
@@ -164,6 +165,9 @@ const RegisterForm = (props) => {
         <Divider sx={{ margin: "1rem 0" }}>or register with</Divider>
 
         <Button
+          onClick={() =>
+            (window.location.href = "http://localhost:8080/auth/google")
+          }
           fullWidth
           variant="outlined"
           startIcon={

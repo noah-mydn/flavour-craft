@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f8f9fa" rx="20" ry="20" />
+  
+  <!-- Decorative food pattern background -->
+  <g opacity="0.1">
+    <circle cx="100" cy="50" r="8" fill="#FF6B6B" />
+    <path d="M200,100 l10,10 l-10,10 l-10,-10 z" fill="#4ECDC4" />
+    <rect x="650" y="80" width="15" height="15" rx="2" fill="#FFD166" />
+    <circle cx="500" cy="70" r="10" fill="#FF6B6B" />
+    <path d="M350,150 c5,-10 15,-10 20,0" stroke="#4ECDC4" stroke-width="3" fill="none" />
+    <rect x="150" y="500" width="15" height="15" rx="2" fill="#FFD166" />
+    <circle cx="700" cy="480" r="8" fill="#FF6B6B" />
+    <path d="M600,520 l10,10 l-10,10 l-10,-10 z" fill="#4ECDC4" />
+    <rect x="450" y="530" width="15" height="15" rx="2" fill="#FFD166" />
+    <circle cx="50" cy="450" r="10" fill="#FF6B6B" />
+    <path d="M250,550 c5,-10 15,-10 20,0" stroke="#4ECDC4" stroke-width="3" fill="none" />
+  </g>
+  
+  <!-- Main 404 text -->
+  <g transform="translate(400, 150)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#FF6B6B" text-anchor="middle">404</text>
+    <text x="0" y="40" font-family="Arial, sans-serif" font-size="24" fill="#1A535C" text-anchor="middle">Recipe Not Found</text>
+  </g>
+  
+  <!-- Cooking pot with question mark steam -->
+  <g transform="translate(400, 350)">
+    <!-- Pot body -->
+    <path d="M-100,0 C-100,-20 -80,-40 0,-40 C80,-40 100,-20 100,0 L100,80 C100,100 80,120 0,120 C-80,120 -100,100 -100,80 Z" fill="#E0E0E0" stroke="#1A535C" stroke-width="5" />
+    
+    <!-- Pot rim -->
+    <ellipse cx="0" cy="0" rx="100" ry="20" fill="#F0F0F0" stroke="#1A535C" stroke-width="5" />
+    
+    <!-- Pot handles -->
+    <path d="M-100,30 C-130,30 -140,50 -120,60" fill="none" stroke="#1A535C" stroke-width="8" stroke-linecap="round" />
+    <path d="M100,30 C130,30 140,50 120,60" fill="none" stroke="#1A535C" stroke-width="8" stroke-linecap="round" />
+    
+    <!-- Steam in form of question marks -->
+    <g opacity="0.8">
+      <path d="M-60,-50 C-60,-70 -40,-80 -30,-70 C-20,-60 -30,-40 -40,-40 L-40,-30" fill="none" stroke="#4ECDC4" stroke-width="5" stroke-linecap="round" />
+      <circle cx="-40" cy="-20" r="3" fill="#4ECDC4" />
+      
+      <path d="M0,-90 C0,-110 20,-120 30,-110 C40,-100 30,-80 20,-80 L20,-70" fill="none" stroke="#4ECDC4" stroke-width="5" stroke-linecap="round" />
+      <circle cx="20" cy="-60" r="3" fill="#4ECDC4" />
+      
+      <path d="M60,-50 C60,-70 40,-80 30,-70 C20,-60 30,-40 40,-40 L40,-30" fill="none" stroke="#4ECDC4" stroke-width="5" stroke-linecap="round" />
+      <circle cx="40" cy="-20" r="3" fill="#4ECDC4" />
+    </g>
+  </g>
+  
+  <!-- Recipe card with missing elements -->
+  <g transform="translate(200, 350)">
+    <!-- Card background -->
+    <rect x="-100" y="-80" width="200" height="160" rx="10" ry="10" fill="white" stroke="#FFD166" stroke-width="3" />
+    
+    <!-- Title line -->
+    <rect x="-80" y="-60" width="160" height="10" rx="5" ry="5" fill="#F0F0F0" />
+    
+    <!-- Missing ingredient lines with question marks -->
+    <rect x="-80" y="-30" width="100" height="8" rx="4" ry="4" fill="#F0F0F0" />
+    <text x="50" y="-24" font-family="Arial, sans-serif" font-size="16" fill="#FF6B6B">?</text>
+    
+    <rect x="-80" y="-10" width="100" height="8" rx="4" ry="4" fill="#F0F0F0" />
+    <text x="50" y="-4" font-family="Arial, sans-serif" font-size="16" fill="#FF6B6B">?</text>
+    
+    <rect x="-80" y="10" width="100" height="8" rx="4" ry="4" fill="#F0F0F0" />
+    <text x="50" y="16" font-family="Arial, sans-serif" font-size="16" fill="#FF6B6B">?</text>
+    
+    <rect x="-80" y="30" width="100" height="8" rx="4" ry="4" fill="#F0F0F0" />
+    <text x="50" y="36" font-family="Arial, sans-serif" font-size="16" fill="#FF6B6B">?</text>
+    
+    <!-- Recipe image placeholder -->
+    <circle cx="60" cy="0" r="30" fill="#F0F0F0" />
+    <text x="60" y="5" font-family="Arial, sans-serif" font-size="24" fill="#FFD166" text-anchor="middle">?</text>
+  </g>
+  
+  <!-- Chef hat -->
+  <g transform="translate(600, 350)">
+    <!-- Hat base -->
+    <ellipse cx="0" cy="30" rx="40" ry="10" fill="white" stroke="#1A535C" stroke-width="3" />
+    
+    <!-- Hat body -->
+    <path d="M-30,30 C-30,0 -15,-40 0,-40 C15,-40 30,0 30,30" fill="white" stroke="#1A535C" stroke-width="3" />
+    
+    <!-- Hat folds -->
+    <path d="M-15,20 C-15,0 -10,-30 0,-30 C10,-30 15,0 15,20" fill="none" stroke="#1A535C" stroke-width="1.5" />
+    
+    <!-- Question mark near hat -->
+    <text x="60" y="0" font-family="Arial, sans-serif" font-size="40" fill="#FF6B6B">?</text>
+  </g>
+  
+  <!-- Fork and spoon -->
+  <g transform="translate(150, 200) rotate(-30)">
+    <!-- Fork -->
+    <rect x="-15" y="-80" width="10" height="70" rx="5" ry="5" fill="#E0E0E0" />
+    <path d="M-15,-80 L-15,-110 M-7.5,-80 L-7.5,-110 M0,-80 L0,-110 M7.5,-80 L7.5,-110" stroke="#E0E0E0" stroke-width="5" stroke-linecap="round" />
+    
+    <!-- Spoon -->
+    <rect x="25" y="-80" width="10" height="70" rx="5" ry="5" fill="#E0E0E0" />
+    <ellipse cx="30" cy="-110" rx="20" ry="15" fill="#E0E0E0" />
+  </g>
+  
+  <!-- Cutting board -->
+  <g transform="translate(650, 200) rotate(20)">
+    <rect x="-60" y="-40" width="120" height="80" rx="10" ry="10" fill="#FFD166" stroke="#1A535C" stroke-width="3" />
+    <ellipse cx="-40" cy="-20" rx="10" ry="5" fill="white" opacity="0.3" />
+  </g>
+  
+  <!-- Button text -->
+
+</svg>

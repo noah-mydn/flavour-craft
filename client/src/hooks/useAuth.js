@@ -1,21 +1,21 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { useGoogleLogin } from "@react-oauth/google";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import {
   userSelector,
   loadingSelector,
   errorSelector,
-  accessTokenSelector,
-  refreshTokenSelector,
   isVerifiedSelector,
 } from "../redux/selectors/selectors";
-import { googleAuth, login, register } from "../redux/apiClients/authAPI";
+import { login, register } from "../redux/apiClients/authAPI";
 import React from "react";
 import { setUserProfile } from "../redux/reducers/userProfileSlice";
 import { logout } from "../redux/reducers/authSlice";
+import { displayErrorToast, displaySuccessToast } from "../utils/toastUtil";
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const user = useSelector(userSelector);
   const loading = useSelector(loadingSelector);
@@ -68,16 +68,6 @@ export const useAuth = () => {
     }
   };
 
-  // Google Login
-  const googleAuthHandler = (token) => {
-    console.log("Google Token:", token);
-    dispatch(googleAuth(token));
-  };
-
-  const googleLogin = () => {
-    window.location.href = "http://localhost:8080/auth/google";
-  };
-
   //Logout
   const accountLogout = () => {
     dispatch(logout());
@@ -90,7 +80,6 @@ export const useAuth = () => {
     accountRegister,
     accountUser,
     handleInputChange,
-    googleLogin,
     accountLogout,
   };
 };

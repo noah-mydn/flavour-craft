@@ -119,26 +119,12 @@ const UserProfile = () => {
                       src={user?.userImg}
                       alt={`${user?.firstName} ${user?.lastName}`}
                       sx={{
-                        width: 120,
-                        height: 120,
+                        width: 110,
+                        height: 110,
                         border: `4px solid ${theme.palette.background.paper}`,
                         mt: isMobile ? 4 : 2,
                       }}
                     />
-                    <IconButton
-                      size="small"
-                      sx={{
-                        position: "absolute",
-                        bottom: 5,
-                        right: 5,
-                        backgroundColor: theme.palette.background.paper,
-                        "&:hover": {
-                          backgroundColor: theme.palette.grey[200],
-                        },
-                      }}
-                    >
-                      <AddAPhoto fontSize="small" />
-                    </IconButton>
                   </Box>
 
                   <Box

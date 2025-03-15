@@ -16,40 +16,50 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
 
+// Route to initiate Google OAuth flow
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
+// Google OAuth callback route - this is where Google redirects after authentication
 router.get(
   "/google/callback",
-  passport.authenticate("google", { session: false }),
-  (req, res) => {
-    if (!req.user) {
-      return res.redirect(
-        "http://localhost:3000/login?error=authentication_failed"
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "http://localhost:3000/login?error=authentication_failed",
+  }),
+  async (req, res) => {
+    try {
+      // Generate tokens from authenticated user
+      const accessToken = jwt.sign(
+        {
+          userId: req.user._id,
+          email: req.user.email,
+          firstName: req.user.firstName,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
       );
+
+      const refreshToken = jwt.sign(
+        { userId: req.user._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      // Store refresh token in DB
+      req.user.refreshToken = refreshToken;
+      await req.user.save();
+
+      // Redirect to frontend with tokens (you might want a more secure approach)
+      res.redirect(
+        `http://localhost:3000/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
+      );
+    } catch (error) {
+      console.error("Error in callback handling:", error);
+      res.redirect("http://localhost:3000/login?error=server_error");
     }
-
-    const accessToken = jwt.sign(
-      { userId: req.user._id, email: req.user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    const refreshToken = jwt.sign(
-      { userId: req.user._id },
-      process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "2d" }
-    );
-
-    // Store refresh token in DB
-    req.user.refreshToken = refreshToken;
-    req.user.save();
-
-    res.redirect(
-      `http://localhost:3000/home?accessToken=${accessToken}&refreshToken=${refreshToken}`
-    );
   }
 );
 

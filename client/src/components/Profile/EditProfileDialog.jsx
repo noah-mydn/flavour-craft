@@ -134,7 +134,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
     >
       <DialogTitle
         sx={{
-          bgcolor: theme.palette.primary.light,
+          bgcolor: theme.palette.primary.main,
           color: theme.palette.primary.contrastText,
           pb: 2,
         }}
@@ -321,15 +321,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
         </Grid>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, justifyContent: "space-between" }}>
-        <Button
-          onClick={() => onClose(false)}
-          variant="outlined"
-          startIcon={<Close />}
-          sx={{ borderRadius: 2, textTransform: "none" }}
-        >
-          Cancel
-        </Button>
+      <DialogActions sx={{ p: 3, justifyContent: "flex-end" }}>
         <Button
           onClick={handleSubmit}
           variant="contained"
@@ -338,7 +330,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
           sx={{
             borderRadius: 2,
             textTransform: "none",
-            background: theme.palette.secondary.dark,
+            background: theme.palette.primary.main,
           }}
         >
           {loading ? "Saving..." : "Save Changes"}

@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { login, register } from "../apiClients/authAPI";
+import { googleAuth, login, register } from "../apiClients/authAPI";
 
 const storedUser = JSON.parse(sessionStorage.getItem("auth")) || null;
 const storedAccessToken = sessionStorage.getItem("accessToken") || null;
@@ -42,6 +42,14 @@ const authSlice = createSlice({
     },
     setIsVerified: (state, action) => {
       state.isVerified = action.payload;
+    },
+    loginSuccess: (state, action) => {
+      state.loading = false;
+      state.user = action.payload.user;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
+      state.isVerified = true;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -88,6 +96,24 @@ const authSlice = createSlice({
         localStorage.setItem("refreshToken", state.refreshToken);
       })
       .addCase(register.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.isVerified = false;
+      })
+      .addCase(googleAuth.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.isVerified = false;
+      })
+      .addCase(googleAuth.fulfilled, (state, action) => {
+        console.log("Google Auth Fulfilled Payload:", action.payload);
+        state.loading = false;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.isVerified = true;
+      })
+      .addCase(googleAuth.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.isVerified = false;

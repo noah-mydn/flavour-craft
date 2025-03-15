@@ -15,7 +15,7 @@ import { useAuth } from "../../hooks/useAuth";
 const LoginForm = (props) => {
   const { showPassword, setToggleAuthForm, togglePasswordVisibility } = props;
 
-  const { accountUser, handleInputChange, accountLogin, googleLogin } =
+  const { accountUser, handleInputChange, accountLogin, handleGoogleLogin } =
     useAuth();
 
   return (
@@ -107,7 +107,9 @@ const LoginForm = (props) => {
         <Button
           fullWidth
           variant="outlined"
-          onClick={() => googleLogin()}
+          onClick={() =>
+            (window.location.href = "http://localhost:8080/auth/google")
+          }
           startIcon={
             <img src="./google-icon.svg" alt="google-icon" width={18} />
           }
