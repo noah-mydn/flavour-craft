@@ -21,7 +21,7 @@ export const Main = () => {
   const createNewPostWithHashTag = () => {};
 
   return (
-    <React.Fragment>
+    <>
       <Box
         mt={isMobile ? 16 : isTablet ? 14 : 10}
         component="img"
@@ -38,6 +38,6 @@ export const Main = () => {
           <RecipeOfTheDay />
         </HomeContainer>
       </Box>
-    </React.Fragment>
+    </>
   );
 };

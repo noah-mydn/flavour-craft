@@ -7,7 +7,6 @@ import {
   Container,
   Divider,
   Grid,
-  IconButton,
   Paper,
   Stack,
   Tab,
@@ -23,17 +22,12 @@ import {
   Bookmark,
   Create,
   Settings,
-  AddAPhoto,
   GridView,
   Add,
   FoodBank,
 } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  cuisinePrefSelector,
-  dietaryRestrictionsSelectors,
-  profileSelector,
-} from "../redux/selectors/selectors";
+import { profileSelector } from "../redux/selectors/selectors";
 
 import { Link, useNavigate } from "react-router-dom";
 import EditProfileDialog from "../components/Profile/EditProfileDialog";

@@ -8,12 +8,11 @@ import { postSelector, userSelector } from "../../redux/selectors/selectors";
 import {
   updatePostField,
   addImages,
-  addTag,
-  removeTag,
   deleteImage,
   setPost,
   clearPost,
 } from "../../redux/reducers/postSlice";
+import { convertBlobsToFiles } from "../../utils/blobToFile";
 
 export const useCreatePost = () => {
   const user = useSelector(userSelector);
@@ -31,25 +30,11 @@ export const useCreatePost = () => {
     setShowPostForm(false);
   };
 
-  const handleKeyDown = (event) => {
-    if (event.key === "," && tagInputVal.trim() !== "") {
-      event.preventDefault();
-      const formattedTag = tagInputVal.trim().replace(/^#/, "");
-
-      dispatch(addTag(formattedTag)); // Dispatch addTag action
-
-      setTagInputVal("");
-    }
-  };
-
-  const handleDelete = (tagToDelete) => {
-    dispatch(removeTag(tagToDelete));
-  };
-
   const handlePostFieldOnChange = (e) => {
     const { name, value } = e.target;
 
     dispatch(updatePostField({ name, value }));
+    console.log(post);
   };
 
   const handleImageUpload = (event) => {
@@ -70,7 +55,7 @@ export const useCreatePost = () => {
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
 
-    dispatch(deleteImage(index)); // Dispatch removeImage action
+    dispatch(deleteImage(index));
   };
 
   React.useEffect(() => {
@@ -81,34 +66,39 @@ export const useCreatePost = () => {
     console.log("POST:", post);
   }, []);
 
-  const createNewPost = async (e) => {
+  const createPost = async (e) => {
     e.preventDefault();
 
-    const payload = {
-      user: user?.id,
-      topic: post?.topic,
-      description: post?.description,
-      tags: post?.tags,
-      images: post?.images,
-    };
+    const formData = new FormData();
+    formData.append("topic", post?.topic);
+    formData.append("description", post?.description);
 
-    console.log("Payload:", payload);
+    // Append each tag
+    post?.tags.forEach((tag, index) => {
+      formData.append(`tags[${index}]`, tag);
+    });
+
+    // Convert blob URLs to File objs
+    const imageFiles = await convertBlobsToFiles(post?.images);
+
+    // Append valid images
+    imageFiles.forEach((file) => {
+      if (file) formData.append("images", file);
+    });
+
+    console.log("FormData:", formData);
 
     try {
       const response = await axios.post(
-        process.env.REACT_APP_BASE_API + "/posts/create",
-        payload,
-        {
-          headers: {
-            ...getAuthConfig(),
-          },
-        }
+        `${process.env.REACT_APP_BASE_API}/posts/create`,
+        formData,
+        getAuthConfig(true)
       );
       console.log(response);
       displaySuccessToast(response?.data?.message);
       setTimeout(() => {
         closeDialogue();
-      }, [2000]);
+      }, 2000);
     } catch (error) {
       console.error(error);
       displayErrorToast(error);
@@ -126,9 +116,7 @@ export const useCreatePost = () => {
     handlePostFieldOnChange,
     handleImageUpload,
     removeImage,
-    handleKeyDown,
-    handleDelete,
-    createNewPost,
+    createPost,
     openDialogue,
     closeDialogue,
   };

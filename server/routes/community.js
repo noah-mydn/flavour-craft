@@ -1,6 +1,5 @@
 const express = require("express");
 const { cloudinaryUpload } = require("../middlewares/multer");
-
 const {
   createPost,
   updatePost,
@@ -12,37 +11,55 @@ const {
   addComment,
   deleteComment,
   upvotePost,
-  downvotePost,
-  deleteUpVote,
-  deleteDownVote,
+  getAllComments,
+  getNotifications,
+  updateComment,
+  // downvotePost,
+  // deleteUpVote,
+  // deleteDownVote,
 } = require("../controllers/community/postController");
 
-const authenticateToken = require("../middlewares/authVerification");
+const authenticateToken =
+  require("../middlewares/authVerification").authenticateToken;
+const adminAuth = require("../middlewares/authVerification").adminAuth;
 const router = express.Router();
 
+// ✅ Notifications route placed above any dynamic `/:postId` routes
+router.get("/notifications", authenticateToken, getNotifications);
+
+// ✅ Post creation & update
 router.post(
   "/create",
   cloudinaryUpload.array("images", 5),
   authenticateToken,
   createPost
 );
-router.get("/popular", authenticateToken, getPopularPosts);
-router.get("/trending", authenticateToken, getTrendingPosts);
 router.put(
   "/:postId",
   cloudinaryUpload.array("images", 5),
   authenticateToken,
   updatePost
 );
-router.get("/", authenticateToken, getAllPosts);
-router.delete("/:postId", authenticateToken, deletePost);
-router.get("/:postId", authenticateToken, getPostById);
 
+//  Popular & trending posts
+router.get("/popular", authenticateToken, getPopularPosts);
+router.get("/trending", authenticateToken, getTrendingPosts);
+
+//  General post routes
+router.get("/", authenticateToken, getAllPosts);
+router.get("/:postId", authenticateToken, getPostById);
+router.delete("/:postId", authenticateToken, deletePost);
+
+//  Comments section
+router.get("/:postId/comments", authenticateToken, getAllComments);
 router.post("/:postId/comment", authenticateToken, addComment);
+router.put("/:postId/comment/:commentId", authenticateToken, updateComment);
 router.delete("/:postId/comment/:commentId", authenticateToken, deleteComment);
+
+//  Voting routes
 router.post("/:postId/upvote", authenticateToken, upvotePost);
-router.post("/:postId/downvote", authenticateToken, downvotePost);
-router.delete("/:postId/removeUpvote", authenticateToken, deleteUpVote);
-router.delete("/:postId/removeDownVote", authenticateToken, deleteDownVote);
+// router.post("/:postId/downvote", authenticateToken, downvotePost);
+// router.delete("/:postId/removeUpvote", authenticateToken, deleteUpVote);
+// router.delete("/:postId/removeDownVote", authenticateToken, deleteDownVote);
 
 module.exports = router;

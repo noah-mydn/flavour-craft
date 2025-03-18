@@ -22,7 +22,6 @@ const Home = () => {
 
   return (
     <>
-      <TopNavigationBar />
       <Main />
     </>
   );

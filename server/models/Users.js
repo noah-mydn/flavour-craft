@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "./avatar.png",
   },
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
+  },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -67,6 +72,18 @@ userSchema.pre("save", async function (next) {
   } catch (error) {
     next(error);
   }
+});
+
+// Remove unnecessary fields for admin users
+userSchema.pre("save", function (next) {
+  if (this.role === "admin") {
+    this.dietaryRestrictions = undefined;
+    this.cuisinePreferences = undefined;
+    this.savedRecipes = undefined;
+    this.myRecipeGenerations = undefined;
+    this.ratedRecipes = undefined;
+  }
+  next();
 });
 
 module.exports = mongoose.model("User", userSchema, "users");

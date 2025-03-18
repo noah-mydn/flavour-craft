@@ -337,43 +337,6 @@ const getRecipeById = async (req, res) => {
   }
 };
 
-const searchRecipes = async (req, res) => {
-  try {
-    const { query, page = 1, pageSize = 10 } = req.query; // Add page and pageSize from the query params
-    const skip = (page - 1) * pageSize;
-
-    const recipes = await Recipe.find({
-      $text: { $search: query },
-    })
-      .skip(skip) // Skip results based on page
-      .limit(parseInt(pageSize)); // Limit the number of recipes per page
-
-    // Get the total number of matching recipes for pagination info
-    const totalRecipes = await Recipe.countDocuments({
-      $text: { $search: query },
-    });
-
-    if (recipes.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No recipes found for the given keyword" });
-    }
-
-    res.status(200).json({
-      status: 200,
-      recipes,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalRecipes / pageSize),
-        totalRecipes,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
 const filterRecipes = async (req, res) => {
   try {
     const {
@@ -401,7 +364,13 @@ const filterRecipes = async (req, res) => {
       const cuisineArray = Array.isArray(cuisineTypes)
         ? cuisineTypes
         : cuisineTypes.toString().split(",");
-      filterCriteria.push({ cuisineTypes: { $in: cuisineArray } });
+
+      // Apply case-insensitive regex filtering for each cuisine type
+      const regexCuisines = cuisineArray.map((cuisine) => ({
+        cuisineTypes: { $regex: new RegExp(`^${cuisine.trim()}$`, "i") },
+      }));
+
+      filterCriteria.push({ $or: regexCuisines });
     }
 
     // Convert dietary preferences to array
@@ -945,7 +914,6 @@ module.exports = {
   rateRecipe,
   getAllRecipes,
   getRecipeById,
-  searchRecipes,
   filterRecipes,
   getPopularRecipes,
   getTrendingRecipes,

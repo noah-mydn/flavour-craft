@@ -23,7 +23,6 @@ import { verifySession } from "../../utils/verifySession";
 import GenerateRecipe from "../../pages/recipes/GenerateRecipe";
 import { GenerateRecipeProvider } from "../../context/GenerateRecipeContext";
 import UserProfile from "../../pages/UserProfile";
-import PostFeed from "../../pages/PostFeed";
 import AdminLayout from "../../layout/AdminLayout";
 import Dashboard from "../../pages/admin/Dashboard";
 import RecipeGenerator from "../../pages/admin/RecipeGenerator";
@@ -33,6 +32,10 @@ import CampaignManager from "../../pages/admin/CampaignManager";
 import RecipeImageManagement from "../../pages/admin/RecipeManagement";
 import RecipesByCuisines from "../../pages/recipes/RecipeByCuisines";
 import { displayErrorToast, displaySuccessToast } from "../../utils/toastUtil";
+import Post from "../Community/Post";
+import { Main } from "../Main/Main";
+import SavedRecipes from "../../pages/recipes/SavedRecipes";
+import GeneratedRecipes from "../../pages/recipes/GeneratedRecipes";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
@@ -164,56 +167,37 @@ const AnimatedRoutes = () => {
         path="/home"
         element={
           <PrivateRoute>
-            <Home isMobile={isMobile} />
+            <Main />
           </PrivateRoute>
         }
       />
 
-      <Route
-        path="/recipes"
-        element={
-          <PrivateRoute>
-            <Recipes />
-          </PrivateRoute>
-        }
-      />
+      <Route path="/recipes" element={<PrivateRoute />}>
+        <Route index element={<Recipes />} />
+        <Route path=":recipeId" element={<RecipeDetail />} />
+        <Route path="cuisines/:cuisineType" element={<RecipesByCuisines />} />
+        <Route path="me/saved" element={<SavedRecipes />} />
+        <Route path="me/generated" element={<GeneratedRecipes />} />
+      </Route>
 
-      <Route
-        path="/forum"
-        element={
-          <PrivateRoute>
-            <TopNavigationBar isMobile={isMobile} />
-            <Community isMobile={isMobile} />
-            {isMobile && <BottomNavigation />}
-          </PrivateRoute>
-        }
-      />
+      <Route path="/forum" element={<PrivateRoute />}>
+        <Route index element={<Community isMobile={isMobile} />} />
+        <Route path=":postId" element={<Post />} />
+      </Route>
 
-      <Route
-        path="/feed"
-        element={
-          <PrivateRoute>
-            <TopNavigationBar isMobile={isMobile} />
-            <PostFeed isMobile={isMobile} />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
+      {/* <Route
         path="/recipes/:recipeId"
         element={
           <PrivateRoute>
-            <TopNavigationBar isMobile={isMobile} />
             <RecipeDetail isMobile={isMobile} />
           </PrivateRoute>
         }
-      />
+      /> */}
 
       <Route
         path="/profile"
         element={
           <PrivateRoute>
-            <TopNavigationBar isMobile={isMobile} />
             <UserProfile />
           </PrivateRoute>
         }
@@ -224,7 +208,6 @@ const AnimatedRoutes = () => {
         element={
           <PrivateRoute>
             <GenerateRecipeProvider>
-              <TopNavigationBar isMobile={isMobile} />
               <GenerateRecipe />
             </GenerateRecipeProvider>
           </PrivateRoute>
@@ -235,21 +218,20 @@ const AnimatedRoutes = () => {
         path="/recipes/cuisine/:cuisineType"
         element={
           <PrivateRoute>
-            <TopNavigationBar isMobile={isMobile} />
             <RecipesByCuisines />
           </PrivateRoute>
         }
       />
 
+      {/* Admin-Only Routes */}
       <Route
         path="/admin"
         element={
-          <PrivateRoute>
+          <PrivateRoute adminOnly={true}>
             <AdminLayout />
           </PrivateRoute>
         }
       >
-        {/* Nested Routes under /admin */}
         <Route index element={<Dashboard />} />
         <Route path="recipes" element={<RecipeImageManagement />} />
         <Route path="generator" element={<RecipeGenerator />} />

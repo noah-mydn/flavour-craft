@@ -1,47 +1,92 @@
 import React, { useState } from "react";
-import { TextField, Box, Chip, InputBase } from "@mui/material";
-import { useCreatePost } from "../../hooks/community/useCreatePost";
+import {
+  TextField,
+  Box,
+  Chip,
+  useTheme,
+  Typography,
+  IconButton,
+  alpha,
+} from "@mui/material";
+import { Add } from "@mui/icons-material";
+import { useDispatch, useSelector } from "react-redux";
+import { addTag, removeTag } from "../../redux/reducers/postSlice";
+import { tagsSelector } from "../../redux/selectors/selectors";
 
 const HashtagInput = () => {
-  const { post, tagInputVal, setTagInputVal, handleKeyDown, handleDelete } =
-    useCreatePost();
+  const tags = useSelector(tagsSelector);
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const [inputValue, setInputValue] = useState("");
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addNewTag();
+    }
+  };
+
+  const addNewTag = () => {
+    // Extract hashtag from input (remove # if present)
+    const tag = inputValue?.trim()?.replace(/^#/, "");
+    dispatch(addTag(tag));
+    setInputValue("");
+  };
+
+  const deleteTag = (tagToDelete) => {
+    dispatch(removeTag(tagToDelete));
+  };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 1,
-        border: "1px solid #ccc",
-        borderRadius: 5.5,
-        p: 1,
-        mb: 1,
-        alignItems: "center",
-        minHeight: "40px",
-      }}
-    >
-      {post?.tags.map((tag, index) => (
-        <Chip
-          key={index}
-          label={tag}
-          onDelete={() => handleDelete(tag)}
-          color="success"
+    <Box>
+      <Typography variant="body2" color="text.secondary" mb={1}>
+        Add hashtags
+      </Typography>
+      <Box display="flex" alignItems="center" mb={2}>
+        <TextField
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleInputKeyDown}
+          placeholder=" Add your hashtags"
+          size="small"
+          fullWidth
+          InputProps={{
+            startAdornment: <Typography color="primary">#</Typography>,
+            sx: {
+              borderRadius: 2,
+              "&:hover": {
+                boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
+              },
+            },
+          }}
         />
-      ))}
-      <InputBase
-        placeholder="Hashtags..."
-        multiline
-        rows={1}
-        value={tagInputVal}
-        onChange={(e) => setTagInputVal(e.target.value)}
-        onKeyDown={handleKeyDown}
-        sx={{
-          flexGrow: 1,
-          ml: 1,
-          outline: "none",
-          border: "none",
-        }}
-      />
+        <IconButton onClick={addTag} color="primary">
+          <Add />
+        </IconButton>
+      </Box>
+
+      <Box display="flex" flexWrap="wrap" gap={1}>
+        {tags.map((tag, index) => (
+          <Chip
+            key={index}
+            label={`#${tag}`}
+            onDelete={() => deleteTag(tag)}
+            sx={{
+              background: alpha(theme.palette.success.main, 0.08),
+              color: theme.palette.success.main,
+              "& .MuiChip-deleteIcon": {
+                color: theme.palette.success.main,
+              },
+            }}
+            variant="outlined"
+            size="small"
+          />
+        ))}
+      </Box>
     </Box>
   );
 };

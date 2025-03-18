@@ -225,10 +225,15 @@ export const PreviewPostCard = styled(Card)(({ theme }) => ({
 }));
 
 export const Wrapper = styled(Box)({
-  paddingTop: "8rem",
+  paddingTop: "5rem",
   margin: "1rem 2rem 0 2rem",
   [theme.breakpoints.down("md")]: {
     margin: "0 .5rem",
+    paddingTop: "6rem",
+  },
+  [theme.breakpoints.down("sm")]: {
+    margin: "0 .25rem",
+    paddingTop: "7.5rem",
   },
 });
 
@@ -236,10 +241,10 @@ export const ContentContainer = styled(Box)({
   width: "100%",
 
   [theme.breakpoints.down("md")]: {
-    width: "60%",
+    width: "90%",
     margin: "0 auto",
   },
-  [theme.breakpoints.down("md")]: {
+  [theme.breakpoints.down("sm")]: {
     width: "100%",
   },
 });
@@ -294,4 +299,16 @@ export const GradientCard = styled(Card)(({ theme }) => ({
     transform: "translateY(-4px)",
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
   },
+}));
+
+export const DetailCard = styled(Card)(({ theme }) => ({
+  borderRadius: 16,
+  background: "white",
+  position: "relative",
+  transition: "all 0.3s ease",
+  overflow: "visible",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+  border: "1px solid",
+  borderColor: alpha(theme.palette.primary.main, 0.08),
+  padding: "1rem",
 }));

@@ -23,7 +23,7 @@ import TopNavigationBar from "../../components/Navigations/TopNavigationBar";
 import { Link, useParams } from "react-router-dom";
 import { setFilters } from "../../redux/reducers/recipesSlice";
 
-const RecipesByCuisines = () => {
+const GeneratedRecipes = () => {
   const [page, setPage] = React.useState(1);
   const theme = useTheme();
   //get cuisine type from params
@@ -153,4 +153,4 @@ const RecipesByCuisines = () => {
   );
 };
 
-export default RecipesByCuisines;
+export default GeneratedRecipes;

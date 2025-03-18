@@ -1,12 +1,34 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { isVerifiedSelector } from "../../redux/selectors/selectors";
+import {
+  isVerifiedSelector,
+  userSelector,
+} from "../../redux/selectors/selectors";
+import TopNavigationBar from "../Navigations/TopNavigationBar";
 
-const PrivateRoute = ({ children }) => {
+const PrivateRoute = ({ adminOnly = false, children }) => {
   const isVerified = useSelector(isVerifiedSelector);
+  const user = useSelector(userSelector);
 
-  return isVerified ? children : <Navigate to="/auth" replace />;
+  if (!isVerified) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (adminOnly && user?.role !== "admin") {
+    return <Navigate to="/home" replace />;
+  }
+
+  if (!adminOnly && user?.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return (
+    <>
+      <TopNavigationBar />
+      {children || <Outlet />}
+    </>
+  );
 };
 
 export default PrivateRoute;

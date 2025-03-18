@@ -17,7 +17,7 @@ export const fetchSortedRecipes = async (sortValue, page, pageSize = 10) => {
       ...getAuthConfig(),
     });
 
-    console.log("DATA:", response.data);
+    // console.log("DATA:", response.data);
     return response.data;
   } catch (error) {
     displayErrorToast(error);
@@ -46,7 +46,7 @@ export const fetchFilteredRecipes = createAsyncThunk(
         filters,
         getAuthConfig()
       );
-      console.log("Filter Response:", response.data);
+      //console.log("Filter Response:", response.data);
       return response.data;
     } catch (error) {
       displayErrorToast(error);

@@ -42,6 +42,7 @@ import {
 import { logout } from "../../redux/reducers/authSlice";
 import { useNavigate } from "react-router-dom";
 import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
+import AutoCompleteSearch from "../AutoCompleteSearch/AutoCompleteSearch";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
@@ -72,7 +73,7 @@ const TopNavigationBar = () => {
   };
   const cuisineTypes = useSelector(cuisinesSelector);
 
-  console.log("CuisineTypes:", cuisineTypes);
+  //console.log("CuisineTypes:", cuisineTypes);
 
   React.useEffect(() => {
     dispatch(fetchCuisines());
@@ -147,7 +148,7 @@ const TopNavigationBar = () => {
       icon: <LocalDining />,
       hasSubmenu: true,
     },
-    { label: "Favourites", link: "/favourites", icon: <Favorite /> },
+    // { label: "Favourites", link: "/favourites", icon: <Favorite /> },
     { label: "Community", link: "/forum", icon: <Forum /> },
   ];
 
@@ -180,7 +181,7 @@ const TopNavigationBar = () => {
               </IconButton>
 
               <Box display="flex" justifyContent="center">
-                <img src="../logo.png" alt="Logo" width={130} height={60} />
+                <img src="/logo.png" alt="Logo" width={130} height={60} />
               </Box>
             </Box>
           )}
@@ -196,7 +197,7 @@ const TopNavigationBar = () => {
           )}
           {(isMobile || isDesktop) && (
             <Box display="flex" justifyContent="center">
-              <img src="../logo.png" alt="Logo" width={130} height={60} />
+              <img src="/logo.png" alt="Logo" width={130} height={60} />
             </Box>
           )}
 
@@ -319,36 +320,37 @@ const TopNavigationBar = () => {
 
           {/* Search Bar */}
           {!isMobile && (
-            <TextField
-              variant="outlined"
-              size="small"
-              placeholder="Search..."
-              sx={{
-                width: isMobile ? 250 : 350,
-                bgcolor: "transparent",
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.secondary.dark,
-                    borderRadius: 20,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.secondary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.secondary.main,
-                  },
-                },
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <Search
-                      sx={{ color: theme.palette.secondary.dark, mr: 1 }}
-                    />
-                  ),
-                },
-              }}
-            />
+            // <TextField
+            //   variant="outlined"
+            //   size="small"
+            //   placeholder="Search..."
+            //   sx={{
+            //     width: isMobile ? 250 : 350,
+            //     bgcolor: "transparent",
+            //     "& .MuiOutlinedInput-root": {
+            //       "& fieldset": {
+            //         borderColor: theme.palette.secondary.dark,
+            //         borderRadius: 20,
+            //       },
+            //       "&:hover fieldset": {
+            //         borderColor: theme.palette.secondary.main,
+            //       },
+            //       "&.Mui-focused fieldset": {
+            //         borderColor: theme.palette.secondary.main,
+            //       },
+            //     },
+            //   }}
+            //   slotProps={{
+            //     input: {
+            //       startAdornment: (
+            //         <Search
+            //           sx={{ color: theme.palette.secondary.dark, mr: 1 }}
+            //         />
+            //       ),
+            //     },
+            //   }}
+            // />
+            <AutoCompleteSearch />
           )}
 
           {/* User Profile Avatar */}
@@ -367,36 +369,37 @@ const TopNavigationBar = () => {
         </Box>
         <Box display="flex" justifyContent="center" alignItems="center">
           {isMobile && (
-            <TextField
-              variant="outlined"
-              size="small"
-              placeholder="Search..."
-              sx={{
-                width: 350,
-                bgcolor: "transparent",
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": {
-                    borderColor: theme.palette.secondary.dark,
-                    borderRadius: 20,
-                  },
-                  "&:hover fieldset": {
-                    borderColor: theme.palette.secondary.main,
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: theme.palette.secondary.main,
-                  },
-                },
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <Search
-                      sx={{ color: theme.palette.secondary.dark, mr: 1 }}
-                    />
-                  ),
-                },
-              }}
-            />
+            // <TextField
+            //   variant="outlined"
+            //   size="small"
+            //   placeholder="Search..."
+            //   sx={{
+            //     width: 350,
+            //     bgcolor: "transparent",
+            //     "& .MuiOutlinedInput-root": {
+            //       "& fieldset": {
+            //         borderColor: theme.palette.secondary.dark,
+            //         borderRadius: 20,
+            //       },
+            //       "&:hover fieldset": {
+            //         borderColor: theme.palette.secondary.main,
+            //       },
+            //       "&.Mui-focused fieldset": {
+            //         borderColor: theme.palette.secondary.main,
+            //       },
+            //     },
+            //   }}
+            //   slotProps={{
+            //     input: {
+            //       startAdornment: (
+            //         <Search
+            //           sx={{ color: theme.palette.secondary.dark, mr: 1 }}
+            //         />
+            //       ),
+            //     },
+            //   }}
+            // />
+            <AutoCompleteSearch />
           )}
         </Box>
       </AppBar>
@@ -413,7 +416,7 @@ const TopNavigationBar = () => {
         }}
       >
         <Box display="flex" justifyContent="center" py={2}>
-          <img src="../logo.png" alt="Logo" width={130} height={60} />
+          <img src="/logo.png" alt="Logo" width={130} height={60} />
         </Box>
 
         <Divider />
@@ -652,6 +655,8 @@ const TopNavigationBar = () => {
         MenuListProps={{ "aria-labelledby": "basic-button" }}
       >
         <MenuItem onClick={() => navigate("/profile")}>My Profile</MenuItem>
+        <MenuItem>Saved Recipes</MenuItem>
+        <MenuItem>Generated Recipes</MenuItem>
         <MenuItem onClick={accountLogout}>Logout</MenuItem>
       </Menu>
     </>

@@ -60,148 +60,104 @@ const Recipes = () => {
   };
 
   React.useEffect(() => {
-    if (filters) {
+    if (filters && Object.keys(filters).length > 0) {
       dispatch(fetchFilteredRecipes(filters, page, pageSize));
     } else {
+      console.log("BECAUSE OF THIS:");
       dispatch(fetchRecipes({ sortValue, page, pageSize }));
     }
-  }, [filters, page, sortValue, dispatch]);
+  }, [filters, page, dispatch]);
+
+  // sort changes
+  React.useEffect(() => {
+    if (
+      (!filters || Object.keys(filters).length === 0) &&
+      sortValue !== "all"
+    ) {
+      console.log("BECAUSE OF NO FILTERS:");
+      dispatch(fetchRecipes({ sortValue, page, pageSize }));
+    }
+  }, [sortValue, dispatch]);
 
   console.log("Recipes:", recipes);
   return (
-    <React.Fragment>
-      <TopNavigationBar />
-      <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
-        <Grid container direction="column" spacing={3}>
-          {/* Breadcrumbs and Sort/Filter Section */}
-          {/* <Grid
-            item
-            container
-            justifyContent="space-between"
-            alignItems="center"
-            px={3}
-          >
-            <Breadcrumbs aria-label="breadcrumb" sx={{ marginTop: 4 }}>
-              <Link
-                color="text.secondary"
-                //href="/recipes"
-                sx={{ textDecoration: "none", cursor: "pointer" }}
-              >
-                Recipes
-              </Link>
-              <Link
-                color="text.secondary"
-                //href="/recipes"
-                sx={{
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  textTransform: "capitalize",
-                }}
-              >
-                Sort by {sortValue}
-              </Link>
-            </Breadcrumbs>
-            <Box
-              display="flex"
-              justifyContent={isMobile ? "center" : "flex-end"}
-              width="100%"
-              mt={isMobile ? 7 : 3}
-            >
-              <Stack direction={isMobile ? "column" : "row"} spacing={3}>
-                <FormControl sx={{ width: "150px", maxWidth: "225px" }}>
-                  <InputLabel id="sort-label">Sort By</InputLabel>
-                  <Select
-                    labelId="sort-label"
-                    id="sort-select"
-                    label="Sort By"
-                    size="small"
-                    value={sortValue}
-                    onChange={(e) => handleSortChange(e, page, pageSize)}
-                  >
-                    <MenuItem value="all" selected>
-                      Most Recent
-                    </MenuItem>
-                    <MenuItem value="popular">Most Popular</MenuItem>
-                    <MenuItem value="mostViewed">Most Viewed</MenuItem>
-                    <MenuItem value="personalized">Personalized</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Box>
-          </Grid> */}
+    <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
+      <Grid container direction="column" spacing={3}>
+        <Grid item spacing={1} xs={11} md={8} lg={6}>
           <FilterSort page={page} pageSize={pageSize} />
-          {/* Recipe Cards Grid */}
-          <Grid
-            item
-            container
-            spacing={4}
-            justifyContent="center"
-            alignContent="center"
-            justifyItems="center"
-            alignItems="center"
-          >
-            {loading
-              ? Array(4)
-                  .fill(0)
-                  .map((_, index) => (
-                    <Grid item key={`skeleton-${index}`} md={12} lg={6}>
-                      <RecipeCardSkeleton />
-                    </Grid>
-                  ))
-              : hasRecipes
-              ? recipes.map((recipe) => (
-                  <Grid item key={recipe._id} xs={11} sm={10} lg={6}>
-                    <RecipeCard recipe={recipe} />
+        </Grid>
+
+        {/* Recipe Cards Grid */}
+        <Grid
+          item
+          container
+          spacing={4}
+          justifyContent="center"
+          alignContent="center"
+          justifyItems="center"
+          alignItems="center"
+        >
+          {loading
+            ? Array(4)
+                .fill(0)
+                .map((_, index) => (
+                  <Grid item key={`skeleton-${index}`} md={12} lg={6}>
+                    <RecipeCardSkeleton />
                   </Grid>
                 ))
-              : null}
-          </Grid>
-
-          {/* No Results UI */}
-          {showNoResults && (
-            <Grid item container justifyContent="center" mt={6} mb={10}>
-              <Stack
-                spacing={3}
-                alignItems="center"
-                sx={{ maxWidth: 500, textAlign: "center" }}
-              >
-                <SearchOff
-                  sx={{ fontSize: 80, color: "text.secondary", opacity: 0.7 }}
-                />
-                <Typography variant="h5" color="text.primary">
-                  No recipes found
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  We couldn't find any recipes that match your current filters.
-                  Try adjusting your filters or exploring different categories.
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  sx={{ mt: 2, borderRadius: 2, textTransform: "none", px: 4 }}
-                  onClick={() => window.location.reload()}
-                >
-                  Clear All Filters
-                </Button>
-              </Stack>
-            </Grid>
-          )}
-
-          {/* Pagination - only show when we have recipes */}
-          {hasRecipes && (
-            <Grid item container justifyContent="center" mt={4} mb={6}>
-              <Pagination
-                count={pagination?.totalPages || 1}
-                page={page}
-                color="primary"
-                size="large"
-                onChange={handlePageChange}
-              />
-            </Grid>
-          )}
+            : hasRecipes
+            ? recipes.map((recipe) => (
+                <Grid item key={recipe._id} xs={11} sm={10} lg={6}>
+                  <RecipeCard recipe={recipe} />
+                </Grid>
+              ))
+            : null}
         </Grid>
-      </Box>
-    </React.Fragment>
+
+        {/* No Results UI */}
+        {showNoResults && (
+          <Grid item container justifyContent="center" mt={6} mb={10}>
+            <Stack
+              spacing={3}
+              alignItems="center"
+              sx={{ maxWidth: 500, textAlign: "center" }}
+            >
+              <SearchOff
+                sx={{ fontSize: 80, color: "text.secondary", opacity: 0.7 }}
+              />
+              <Typography variant="h5" color="text.primary">
+                No recipes found
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                We couldn't find any recipes that match your current filters.
+                Try adjusting your filters or exploring different categories.
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ mt: 2, borderRadius: 2, textTransform: "none", px: 4 }}
+                onClick={() => window.location.reload()}
+              >
+                Clear All Filters
+              </Button>
+            </Stack>
+          </Grid>
+        )}
+
+        {/* Pagination - only show when we have recipes */}
+        {hasRecipes && (
+          <Grid item container justifyContent="center" mt={4} mb={6}>
+            <Pagination
+              count={pagination?.totalPages || 1}
+              page={page}
+              color="primary"
+              size="large"
+              onChange={handlePageChange}
+            />
+          </Grid>
+        )}
+      </Grid>
+    </Box>
   );
 };
 

@@ -15,136 +15,57 @@ import {
   useMediaQuery,
   Paper,
   Fade,
-  Chip,
-  alpha,
 } from "@mui/material";
 import ImageIcon from "@mui/icons-material/Image";
-import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
+
 import theme from "../../theme/theme";
-import {
-  ContentContainer,
-  VisuallyHiddenInput,
-} from "../../styles/ContainerStyles";
+import { VisuallyHiddenInput } from "../../styles/ContainerStyles";
 import { Close, CloudUpload, Add } from "@mui/icons-material";
 import { useCreatePost } from "../../hooks/community/useCreatePost";
-import { isResetSelector, userSelector } from "../../redux/selectors/selectors";
+import {
+  isResetSelector,
+  postSelector,
+  userSelector,
+} from "../../redux/selectors/selectors";
 import { useSelector } from "react-redux";
-
-// Custom HashtagInput component
-const HashtagInput = ({ tags = [], setTags }) => {
-  const [inputValue, setInputValue] = useState("");
-
-  const handleInputChange = (e) => {
-    setInputValue(e.target.value);
-  };
-
-  const handleInputKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      addTag();
-    }
-  };
-
-  const addTag = () => {
-    // Extract hashtag from input (remove # if present)
-    const tag = inputValue.trim().replace(/^#/, "");
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setInputValue("");
-    }
-  };
-
-  const deleteTag = (tagToDelete) => {
-    setTags(tags.filter((tag) => tag !== tagToDelete));
-  };
-
-  return (
-    <Box>
-      <Typography variant="body2" color="text.secondary" mb={1}>
-        Add hashtags
-      </Typography>
-      <Box display="flex" alignItems="center" mb={2}>
-        <TextField
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleInputKeyDown}
-          placeholder=" Add your hashtags"
-          size="small"
-          fullWidth
-          InputProps={{
-            startAdornment: <Typography color="primary">#</Typography>,
-            sx: {
-              borderRadius: 2,
-              "&:hover": {
-                boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-              },
-            },
-          }}
-        />
-        <IconButton onClick={addTag} color="primary">
-          <Add />
-        </IconButton>
-      </Box>
-
-      <Box display="flex" flexWrap="wrap" gap={1}>
-        {tags.map((tag, index) => (
-          <Chip
-            key={index}
-            label={`#${tag}`}
-            onDelete={() => deleteTag(tag)}
-            sx={{
-              background: alpha(theme.palette.primary.main, 0.08),
-              color: theme.palette.primary.main,
-              "& .MuiChip-deleteIcon": {
-                color: theme.palette.primary.main,
-              },
-            }}
-            variant="outlined"
-            size="small"
-          />
-        ))}
-      </Box>
-    </Box>
-  );
-};
+import HashtagInput from "./HashtagInput";
 
 const AddPost = () => {
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const user = useSelector(userSelector);
   const isResetState = useSelector(isResetSelector);
-  const [tags, setTags] = useState([]);
 
   const {
     showPostForm,
     images,
-    post,
     handleImageUpload,
     removeImage,
     handlePostFieldOnChange,
-    createNewPost,
     openDialogue,
     closeDialogue,
+    createPost,
   } = useCreatePost();
 
-  // Modify your createNewPost function to include tags
+  const post = useSelector(postSelector);
+
   const handleCreatePost = (e) => {
     e.preventDefault();
-    // Update this to include tags in your form submission
-    const postWithTags = { ...post, tags };
-    // Then call your original createNewPost with modified data
-    // Or you can update this based on your actual implementation
-    console.log("Creating post with tags:", postWithTags);
-    createNewPost(e);
+    console.log("Creating post with tags:", post);
+    createPost();
   };
 
+  React.useEffect(() => {
+    console.log("Current Post Updates:", post);
+  }, [post]);
+
   return (
-    <ContentContainer>
+    <Box>
       <Paper
         elevation={3}
         sx={{
           display: "flex",
           alignItems: "center",
-          bgcolor: "#FFFFF7",
+          bgcolor: "#fff",
           borderRadius: 15,
           px: 2,
           py: 1,
@@ -161,9 +82,8 @@ const AddPost = () => {
             width: 40,
             height: 40,
             mr: 2,
-            border: "2px solid",
-            borderColor: "primary.light",
           }}
+          src={user?.userImg || "../avatar.png"}
         />
 
         <InputBase
@@ -215,7 +135,7 @@ const AddPost = () => {
       >
         <Box
           component="form"
-          onSubmit={handleCreatePost}
+          onSubmit={createPost}
           sx={{
             display: "flex",
             flexDirection: "column",
@@ -268,9 +188,8 @@ const AddPost = () => {
                     width: 48,
                     height: 48,
                     mr: 2,
-                    border: "2px solid",
-                    borderColor: "primary.light",
                   }}
+                  src={user?.userImg || "../avatar.png"}
                 />
                 <Box>
                   <Typography
@@ -344,7 +263,7 @@ const AddPost = () => {
                     backgroundColor: "white",
                   }}
                 >
-                  <HashtagInput tags={tags} setTags={setTags} />
+                  <HashtagInput />
                 </Paper>
               </Box>
 
@@ -462,7 +381,7 @@ const AddPost = () => {
           </DialogActions>
         </Box>
       </Dialog>
-    </ContentContainer>
+    </Box>
   );
 };
 

@@ -7,7 +7,8 @@ const {
   getUserProfileById,
   getCurrentUserProfile,
 } = require("../controllers/userController");
-const authenticateToken = require("../middlewares/authVerification");
+const authenticateToken =
+  require("../middlewares/authVerification").authenticateToken;
 
 const router = express.Router();
 

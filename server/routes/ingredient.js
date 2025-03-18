@@ -1,6 +1,7 @@
 const express = require("express");
 
-const authenticateToken = require("../middlewares/authVerification");
+const authenticateToken =
+  require("../middlewares/authVerification").authenticateToken;
 const { fetchAllIngredients } = require("../controllers/ingredientController");
 
 const router = express.Router();

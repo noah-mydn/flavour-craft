@@ -10,14 +10,15 @@ const {
   getRecipeById,
   filterRecipes,
   filterPersonalizedRecipe,
-  searchRecipes,
+
   getPersonalizedRecipes,
   generateRecipe,
   getMostViewedRecipes,
   getRecipeOfTheDay,
   getTimeBasedRecipe,
 } = require("../controllers/recipesController");
-const authenticateToken = require("../middlewares/authVerification");
+const authenticateToken =
+  require("../middlewares/authVerification").authenticateToken;
 
 const router = express.Router();
 
@@ -36,7 +37,7 @@ router.post(
   authenticateToken,
   filterPersonalizedRecipe
 );
-router.post("/search", authenticateToken, searchRecipes);
+
 router.get("/:id", authenticateToken, getRecipeById);
 router.put("/:id/view", authenticateToken, trackRecipeViews);
 router.post("/:id/save", authenticateToken, saveRecipe);

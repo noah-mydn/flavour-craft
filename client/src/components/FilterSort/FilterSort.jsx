@@ -16,6 +16,8 @@ import {
   Chip,
   TextField,
   Tooltip,
+  Breadcrumbs,
+  Link,
 } from "@mui/material";
 import {
   FilterAlt,
@@ -34,7 +36,10 @@ import {
 } from "../../redux/selectors/selectors";
 import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
 import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
-import { fetchFilteredRecipes } from "../../redux/apiClients/recipeAPI";
+import {
+  fetchFilteredRecipes,
+  fetchRecipes,
+} from "../../redux/apiClients/recipeAPI";
 import { setFilters } from "../../redux/reducers/recipesSlice";
 
 const FilterSort = ({ page, pageSize }) => {
@@ -93,11 +98,11 @@ const FilterSort = ({ page, pageSize }) => {
 
   const handleFilterRecipes = () => {
     setFiltersOpen(false);
-    console.log("Selected Cuisines:", selectedCuisines);
-    console.log("Selected Tags:", selectedTags);
-    console.log("Selected Dietary Preferences:", selectedDietaryPreferences);
-    console.log("Cooking Time Operator:", cookingTimeOperator);
-    console.log("Cooking Time Value:", cookingTimeValue);
+    // console.log("Selected Cuisines:", selectedCuisines);
+    // console.log("Selected Tags:", selectedTags);
+    // console.log("Selected Dietary Preferences:", selectedDietaryPreferences);
+    // console.log("Cooking Time Operator:", cookingTimeOperator);
+    // console.log("Cooking Time Value:", cookingTimeValue);
 
     let payload = {};
 
@@ -114,9 +119,25 @@ const FilterSort = ({ page, pageSize }) => {
       payload.cookingTime = `${cookingTimeOperator} ${cookingTimeValue}`;
     }
 
-    console.log("Payload:", payload);
+    //console.log("Payload:", payload);
     dispatch(setFilters(payload));
     dispatch(fetchFilteredRecipes(payload, page, pageSize));
+  };
+
+  const handleSortRecipe = (event) => {
+    //console.log("SORT OPTION:", event.target.value);
+    const selectedSort = event.target.value;
+    setSortOption(selectedSort);
+
+    //console.log("Sort Option Selected:", selectedSort);
+
+    dispatch(
+      fetchRecipes({
+        sortValue: selectedSort,
+        page,
+        pageSize,
+      })
+    );
   };
 
   const totalActiveFilters =
@@ -126,7 +147,7 @@ const FilterSort = ({ page, pageSize }) => {
     (cookingTimeValue === "" || cookingTimeOperator === "" ? 0 : 1);
 
   return (
-    <Box sx={{ mt: 3, px: { xs: 1, sm: 2 } }}>
+    <Box sx={{ mt: 3 }}>
       <Paper
         elevation={0}
         sx={{
@@ -140,7 +161,7 @@ const FilterSort = ({ page, pageSize }) => {
         {/* Top row with sort options and filter toggle */}
         <Grid container spacing={2} alignItems="center" sx={{ p: 2 }}>
           {isMobile ? (
-            // Mobile layout: Sort on left, Filter on right
+            // Mobile layout
             <>
               <Grid item xs={6}>
                 <FormControl size="small" fullWidth variant="outlined">
@@ -180,10 +201,10 @@ const FilterSort = ({ page, pageSize }) => {
               </Grid>
             </>
           ) : (
-            // Desktop/tablet layout: Both sort and filter on right
+            // Desktop/tablet layout
             <>
-              <Grid item xs={12} sm={7}></Grid>
-              <Grid item xs={12} sm={5}>
+              <Grid item xs={12} sm={5}></Grid>
+              <Grid item xs={12} sm={7}>
                 <Stack
                   direction="row"
                   justifyContent="flex-end"
@@ -197,7 +218,7 @@ const FilterSort = ({ page, pageSize }) => {
                   >
                     <Select
                       value={sortOption}
-                      onChange={(e) => setSortOption(e.target.value)}
+                      onChange={handleSortRecipe}
                       displayEmpty
                       sx={{ borderRadius: 2 }}
                     >

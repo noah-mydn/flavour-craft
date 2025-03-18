@@ -45,7 +45,24 @@ export const dietaryErrorSelector = (state) => state.dietary.dietaryError;
 export const selectedDietaryOptionSelector = (state) =>
   state.cuisine.selectedDietaryOption;
 
-//Post
-const post = (state) => state.post.post;
-export const postSelector = post;
+//Post (create)
+export const postSelector = (state) => state.post;
+export const tagsSelector = (state) => state.post.tags;
 export const isResetSelector = (state) => state.post.isResetState;
+//Post Lists
+export const postListSelector = (state) => state.postList.posts;
+export const postsLoadingSelector = (state) => state.postList.loading;
+export const postsErrorSelector = (state) => state.postList.error;
+//Post (edit,delete)
+export const postByIdSelector = (state) => state.postList.postById;
+export const postLoadingSelector = (state) => state.postList.postLoading;
+export const postErrorSelector = (state) => state.postList.postError;
+//Comments
+export const commentsSelector = (state) => state.postList.comments;
+export const commentsLoadingSelector = (state) =>
+  state.postList.commentsLoading;
+export const commentsErrorSelector = (state) => state.postList.commentsError;
+//Comment
+export const commentSelector = (state) => state.postList.comment;
+export const commentLoadingSelector = (state) => state.postList.commentLoading;
+export const commentErrorSelector = (state) => state.postList.commentError;

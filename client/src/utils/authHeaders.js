@@ -1,11 +1,13 @@
-export const getAuthConfig = () => {
+export const getAuthConfig = (isFormData = false) => {
   let token = sessionStorage.getItem("accessToken");
 
-  return {
-    headers: {
-      // ✅ Wrap headers inside a "headers" object
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+  const headers = {
+    Authorization: `Bearer ${token}`,
   };
+
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return { headers };
 };

@@ -160,7 +160,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
         <Grid container spacing={4}>
           {/* Profile Image */}
           <Grid item xs={12} display="flex" justifyContent="center">
-            <Box sx={{ position: "relative" }}>
+            <Box sx={{ position: "relative", pt: 2 }}>
               <Avatar
                 src={profileImage}
                 alt={`${formData.firstName} ${formData.lastName}`}

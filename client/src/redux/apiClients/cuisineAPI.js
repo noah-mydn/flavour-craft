@@ -12,7 +12,7 @@ export const fetchCuisines = createAsyncThunk(
         `${process.env.REACT_APP_BASE_API}/preferences/cuisines`,
         getAuthConfig()
       );
-      console.log(response.data.cuisines);
+      //console.log(response.data.cuisines);
       return response.data.cuisines;
     } catch (error) {
       displayErrorToast(error);

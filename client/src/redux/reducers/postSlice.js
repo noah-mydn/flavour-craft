@@ -14,25 +14,24 @@ const postSlice = createSlice({
   initialState,
   reducers: {
     setPost: (state, action) => {
-      return { ...state, ...action.payload };
+      Object.assign(state, action.payload);
     },
     addTag: (state, action) => {
-      state.tags = [...state.tags, action.payload];
+      if (!state.tags.includes(action.payload)) {
+        state.tags.push(action.payload);
+      }
     },
     removeTag: (state, action) => {
       state.tags = state.tags.filter((tag) => tag !== action.payload);
     },
     updatePostField: (state, action) => {
-      const { name, value } = action.payload;
-      state[name] = value;
+      state[action.payload.name] = action.payload.value;
     },
     addImages: (state, action) => {
-      state.images = [...state.images, ...action.payload];
+      state.images.push(...action.payload);
     },
     deleteImage: (state, action) => {
-      state.images = state.images.filter(
-        (_, index) => index !== action.payload
-      );
+      state.images = state.images.filter((img) => img.id !== action.payload);
     },
     clearPost: () => initialState,
   },

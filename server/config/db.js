@@ -19,14 +19,13 @@ const connectDB = async () => {
 
     Recipe.find({}).then((recipes) => {
       recipes.forEach((recipe) => {
-        // Example formula for trending score: views * 0.5 + saves * 1.5 + average ratings * 2
+        //trending score calculation
         const trendingScore =
           recipe.views * 0.5 + recipe.saves * 1.5 + recipe.ratings.average * 2;
 
-        // Update the recipe with the new trendingScore
+        // Update  recipe with the new trendingScore
         recipe.trendingScore = trendingScore;
 
-        // Save the updated recipe
         recipe.save().catch((err) => {
           console.error(`Failed to update recipe: ${recipe.name}`, err);
         });
@@ -41,16 +40,23 @@ const connectDB = async () => {
     // }));
     // await Cuisine.insertMany(cuisineDocs);
 
-    await Recipe.updateMany(
-      {},
-      {
-        $set: {
-          thumbnail:
-            "https://res.cloudinary.com/dek6ihfme/image/upload/v1741418937/recipe-thumbnail-fallback_yhxyqo.png",
-        },
-      }
-    );
-    console.log("All recipe thumbnails removed!");
+    // const result = await Users.updateMany(
+    //   { role: { $exists: false } },
+    //   { $set: { role: "user" } }
+    // );
+
+    // console.log(`Migration complete: ${result.modifiedCount} users updated.`);
+
+    // await Recipe.updateMany(
+    //   {},
+    //   {
+    //     $set: {
+    //       thumbnail:
+    //         "https://res.cloudinary.com/dek6ihfme/image/upload/v1741418937/recipe-thumbnail-fallback_yhxyqo.png",
+    //     },
+    //   }
+    // );
+    // console.log("All recipe thumbnails removed!");
 
     // Set new default thumbnail
   } catch (err) {
