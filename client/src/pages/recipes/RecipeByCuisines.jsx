@@ -54,37 +54,35 @@ const RecipesByCuisines = () => {
   }, [cuisineType, dispatch, page, 10]);
 
   return (
-    <React.Fragment>
-      <TopNavigationBar />
-      <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
-        <Grid container direction="column" spacing={3}>
-          {/* Breadcrumbs and Sort/Filter Section */}
-          <Grid
-            item
-            container
-            justifyContent="space-between"
-            alignItems="center"
-            px={3}
-          >
-            <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
-              <Link
-                color="text.secondary"
-                to="/recipes"
-                sx={{ textDecoration: "none", cursor: "pointer" }}
-              >
-                Recipes
-              </Link>
-              <Link
-                color="secondary.dark"
-                sx={{
-                  textDecoration: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {cuisineType.charAt(0).toUpperCase() + cuisineType.slice(1)}
-              </Link>
-            </Breadcrumbs>
-            {/* <Box
+    <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
+      <Grid container direction="column" spacing={3}>
+        {/* Breadcrumbs and Sort/Filter Section */}
+        <Grid
+          item
+          container
+          justifyContent="space-between"
+          alignItems="center"
+          px={3}
+        >
+          <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
+            <Link
+              color="text.secondary"
+              to="/recipes"
+              sx={{ textDecoration: "none", cursor: "pointer" }}
+            >
+              Recipes
+            </Link>
+            <Link
+              color="secondary.dark"
+              sx={{
+                textDecoration: "none",
+                cursor: "pointer",
+              }}
+            >
+              {cuisineType.charAt(0).toUpperCase() + cuisineType.slice(1)}
+            </Link>
+          </Breadcrumbs>
+          {/* <Box
               display="flex"
               justifyContent={isMobile ? "center" : "flex-end"}
               width="100%"
@@ -111,45 +109,44 @@ const RecipesByCuisines = () => {
                 </FormControl>
               </Stack>
             </Box> */}
-          </Grid>
-
-          {/* Recipe Cards Grid */}
-          <Grid
-            item
-            container
-            spacing={4}
-            justifyContent="center"
-            alignContent="center"
-            justifyItems="center"
-            alignItems="center"
-          >
-            {loading
-              ? Array(4)
-                  .fill(0)
-                  .map((_, index) => (
-                    <Grid item key={`skeleton-${index}`} md={12} lg={6}>
-                      <RecipeCardSkeleton />
-                    </Grid>
-                  ))
-              : recipes?.map((recipe) => (
-                  <Grid item key={recipe._id} xs={10} lg={6}>
-                    <RecipeCard recipe={recipe} />
-                  </Grid>
-                ))}
-          </Grid>
-
-          {/* Pagination */}
-          <Grid item container justifyContent="center">
-            <Pagination
-              count={pagination?.totalPages || 1}
-              color="primary"
-              size="large"
-              onChange={handlePageChange}
-            />
-          </Grid>
         </Grid>
-      </Box>
-    </React.Fragment>
+
+        {/* Recipe Cards Grid */}
+        <Grid
+          item
+          container
+          spacing={4}
+          justifyContent="center"
+          alignContent="center"
+          justifyItems="center"
+          alignItems="center"
+        >
+          {loading
+            ? Array(4)
+                .fill(0)
+                .map((_, index) => (
+                  <Grid item key={`skeleton-${index}`} md={12} lg={6}>
+                    <RecipeCardSkeleton />
+                  </Grid>
+                ))
+            : recipes?.map((recipe) => (
+                <Grid item key={recipe._id} xs={10} lg={6}>
+                  <RecipeCard recipe={recipe} />
+                </Grid>
+              ))}
+        </Grid>
+
+        {/* Pagination */}
+        <Grid item container justifyContent="center">
+          <Pagination
+            count={pagination?.totalPages || 1}
+            color="primary"
+            size="large"
+            onChange={handlePageChange}
+          />
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 

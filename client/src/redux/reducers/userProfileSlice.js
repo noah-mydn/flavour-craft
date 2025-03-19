@@ -30,6 +30,38 @@ const userProfileSlice = createSlice({
     updateDietaryRestrictions: (state, action) => {
       state.dietaryRestrictions = action.payload;
     },
+    rateRecipes: (state, action) => {
+      const { recipeId, rating } = action.payload;
+      if (state.profile?.ratedRecipes) {
+        const recipeIndex = state.profile.ratedRecipes.findIndex(
+          (recipe) => recipe.recipeId === recipeId
+        );
+        if (recipeIndex !== -1) {
+          console.log(
+            "Previous rating:",
+            state.profile.ratedRecipes[recipeIndex].rating
+          );
+          state.profile.ratedRecipes[recipeIndex].rating = rating;
+          console.log(
+            "New rating:",
+            state.profile.ratedRecipes[recipeIndex].rating
+          );
+        } else {
+          state.profile.ratedRecipes.push({ recipeId, rating });
+        }
+      }
+    },
+    saveRecipe: (state, action) => {
+      state.profile.savedRecipes.push(action.payload);
+    },
+    removeRecipe: (state, action) => {
+      const recipeIndex = state.savedRecipes.findIndex(
+        (recipe) => recipe.recipeId === action.payload
+      );
+      if (recipeIndex !== -1) {
+        state.profile.savedRecipes.splice(recipeIndex, 1);
+      }
+    },
     clearUserProfile: () => initialState,
   },
   extraReducers: (builder) => {
@@ -62,6 +94,9 @@ export const {
   updateCuisinePreferences,
   updateDietaryRestrictions,
   clearUserProfile,
+  rateRecipes,
+  saveRecipe,
+  removeRecipe,
 } = userProfileSlice.actions;
 
 export default userProfileSlice.reducer;

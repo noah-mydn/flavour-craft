@@ -2,13 +2,19 @@ import axios from "axios";
 import { displayErrorToast } from "../utils/toastUtil";
 import { getAuthConfig } from "../utils/authHeaders";
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   getCurrentUserProfile,
   toggleSavedRecipe,
 } from "../redux/apiClients/userAPI";
 import { fetchRecipes } from "../redux/apiClients/recipeAPI";
+import {
+  rateRecipes,
+  removeRecipe,
+  saveRecipe,
+} from "../redux/reducers/userProfileSlice";
+import { profileSelector } from "../redux/selectors/selectors";
 
 export const useRecipe = () => {
   const [sortValue, setSortValue] = React.useState("all");
@@ -18,6 +24,7 @@ export const useRecipe = () => {
 
   const [recipe, setRecipe] = React.useState(null);
   const [recipeLoading, setRecipeLoading] = React.useState(false);
+  const profile = useSelector(profileSelector);
 
   const fetchTrendingRecipes = async () => {
     try {
@@ -48,13 +55,37 @@ export const useRecipe = () => {
     }
   };
 
-  const saveRecipe = async (recipeId) => {
+  const handleSaveRecipe = async (recipeId) => {
     try {
       await dispatch(toggleSavedRecipe(recipeId)).unwrap();
-      await dispatch(getCurrentUserProfile()).unwrap();
+      if (profile?.savedRecipes?.includes(recipeId)) {
+        dispatch(saveRecipe(recipeId));
+      } else {
+        dispatch(removeRecipe(recipeId));
+      }
       return true;
     } catch (error) {
       return false;
+    }
+  };
+
+  const rateRecipe = async (recipeId, rating) => {
+    const payload = {
+      rating: rating,
+    };
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BASE_API}/recipes/${recipeId}/rate`,
+        payload,
+        getAuthConfig()
+      );
+      if (response.data.status === 200) {
+        dispatch(rateRecipes({ recipeId, rating: rating }));
+      }
+
+      console.log(response.data);
+    } catch (error) {
+      displayErrorToast(error);
     }
   };
 
@@ -75,7 +106,8 @@ export const useRecipe = () => {
     recipe,
     fetchRecipeInfo,
     fetchTrendingRecipes,
-    saveRecipe,
+    handleSaveRecipe,
+    rateRecipe,
     recipeLoading,
     filterRecipeOption,
   };

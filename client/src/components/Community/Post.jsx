@@ -1,13 +1,16 @@
-import { Box, useTheme } from "@mui/material";
+import { Box, IconButton, useTheme } from "@mui/material";
 import React from "react";
 import { ContentContainer, Wrapper } from "../../styles/ContainerStyles";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { fetchComments, fetchPostById } from "../../redux/apiClients/postsAPI";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 
 import DetailedPostCard from "./DetailedPostCard";
 
 const Post = () => {
+  const navigate = useNavigate();
+
   const dispatch = useDispatch();
 
   const postId = useParams().postId;

@@ -8,6 +8,15 @@ exports.createPost = async (req, res) => {
     const { topic, description, tags } = req.body;
     const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
+    //check topic, descriptions are there
+    if (!topic) {
+      return res
+        .status(400)
+        .json({ message: "You need to have a topic title" });
+    }
+    if (!description) {
+      return res.status(400).json({ message: "You need to add description" });
+    }
     const newPost = new Post({
       author: user,
       topic,
@@ -31,14 +40,27 @@ exports.createPost = async (req, res) => {
 };
 
 exports.getAllPosts = async (req, res) => {
+  let { page, pageSize } = req.query;
+  page = parseInt(page) || 1;
+  pageSize = parseInt(pageSize) || 10;
+
+  const skip = (page - 1) * pageSize;
   try {
     const posts = await Post.find()
       .sort({ createdAt: -1 })
-      .populate("author", "firstName lastName userImg");
-    //.populate("comments.user", "firstName");
+      .populate("author", "firstName lastName userImg")
+      .skip(skip)
+      .limit(pageSize);
+
+    const totalCount = await Post.countDocuments();
+
     res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
       posts: posts,
     });
   } catch (error) {
@@ -51,6 +73,11 @@ exports.getAllPosts = async (req, res) => {
 };
 
 exports.getTrendingPosts = async (req, res) => {
+  let { page, pageSize } = req.query;
+  page = parseInt(page) || 1;
+  pageSize = parseInt(pageSize) || 10;
+
+  const skip = (page - 1) * pageSize;
   const day = new Date();
   day.setHours(day.getHours() - 24);
   try {
@@ -66,12 +93,20 @@ exports.getTrendingPosts = async (req, res) => {
         },
       },
       { $sort: { netVoteCount: -1 } },
-    ]);
+    ])
+      .skip(skip)
+      .limit(pageSize);
+
+    const totalCount = await Post.countDocuments({ createdAt: { $gte: day } });
 
     res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
       posts: posts,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -83,14 +118,26 @@ exports.getTrendingPosts = async (req, res) => {
 };
 
 exports.getPopularPosts = async (req, res) => {
+  let { page, pageSize } = req.query;
+  page = parseInt(page) || 1;
+  pageSize = parseInt(pageSize) || 10;
+
+  const skip = (page - 1) * pageSize;
   try {
     const posts = await Post.aggregate([
       { $addFields: { upVoteCount: { $size: "$upvotes" } } },
       { $sort: { upVoteCount: -1 } },
-    ]);
+    ])
+      .skip(skip)
+      .limit(pageSize);
+    const totalCount = await Post.countDocuments();
     res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
       posts: posts,
     });
   } catch (error) {
@@ -103,6 +150,11 @@ exports.getPopularPosts = async (req, res) => {
 };
 
 exports.getPostsByTags = async (req, res) => {
+  let { page, pageSize } = req.query;
+  page = parseInt(page) || 1;
+  pageSize = parseInt(pageSize) || 10;
+
+  const skip = (page - 1) * pageSize;
   try {
     const tags = req.query.tags.split(",");
     const posts = await Post.aggregate([
@@ -112,11 +164,17 @@ exports.getPostsByTags = async (req, res) => {
         },
       },
       { $sort: { netVoteCount: -1 } },
-    ]);
+    ])
+      .skip(skip)
+      .limit(pageSize);
+    const totalCount = await Post.countDocuments({ tags: { $in: tags } });
+
     res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
       posts: posts,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
     });
   } catch (error) {
     res.status(500).json({
@@ -276,7 +334,7 @@ exports.updateComment = async (req, res) => {
       });
     }
 
-    if (comment.author.toString() !== userId.toString()) {
+    if (comment.author._id.toString() !== userId.toString()) {
       return res.status(403).json({
         status: 403,
         message: "You are not authorized to edit this comment",
@@ -310,10 +368,10 @@ exports.deleteComment = async (req, res) => {
         message: "Comment not found",
       });
     }
-    if (comment.userId != req.user.userId) {
+    if (comment.author._id != req.user.userId) {
       console.log(req);
       return res.status(403).json({
-        commentedUser: comment.userId,
+        commentedUser: comment.author._id,
         loggedUser: req.user.userId,
         status: 403,
         message: "You are not authorized to delete this comment",

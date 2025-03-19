@@ -1,4 +1,4 @@
-const socket = require("./config/socket");
+//const socket = require("./config/socket");
 const express = require("express");
 const passport = require("passport");
 const session = require("express-session");
@@ -63,18 +63,18 @@ app.get("/auth/google/callback", (req, res, next) => {
 
 const server = http.createServer(app);
 
-const io = socket.init(server);
-io.on("connection", (socket) => {
-  console.log("a new client connected");
+// const io = socket.init(server);
+// io.on("connection", (socket) => {
+//   console.log("a new client connected");
 
-  socket.on("joinRoom", (userId) => {
-    socket.join(userId);
-    console.log(`User ${userId} has joined the room`);
-  });
-  socket.on("disconnect", () => {
-    console.log("a user disconnected");
-  });
-});
+//   socket.on("joinRoom", (userId) => {
+//     socket.join(userId);
+//     console.log(`User ${userId} has joined the room`);
+//   });
+//   socket.on("disconnect", () => {
+//     console.log("a user disconnected");
+//   });
+// });
 
 // Start the server
 const PORT = process.env.PORT || 8080;

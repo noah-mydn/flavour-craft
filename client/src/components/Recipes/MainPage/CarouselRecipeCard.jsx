@@ -109,7 +109,7 @@ const CarouselRecpieCard = ({ recipe, width }) => {
       >
         <StarIcon sx={{ color: "#FFD700", fontSize: 16, mr: 0.5 }} />
         <Typography variant="body2" fontWeight="medium">
-          {recipe?.ratings?.average}
+          {recipe?.ratings?.average.toFixed(1)}
         </Typography>
       </Box>
 

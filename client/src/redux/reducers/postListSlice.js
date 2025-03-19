@@ -20,6 +20,7 @@ const postListSlice = createSlice({
     comments: [],
     commentsLoading: false,
     commentsError: null,
+    pagination: null,
     //post
     postById: null,
     postLoading: false,
@@ -48,7 +49,8 @@ const postListSlice = createSlice({
       })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.loading = false;
-        state.posts = action.payload;
+        state.posts = action.payload.posts;
+        state.pagination = action.payload.pagination;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.loading = false;
@@ -76,6 +78,7 @@ const postListSlice = createSlice({
         if (post) {
           post.comments.push(action.payload.newComment);
         }
+        state.commentsLoading = false;
       })
       .addCase(addComment.rejected, (state, action) => {
         state.commentsLoading = false;
@@ -113,6 +116,16 @@ const postListSlice = createSlice({
       //edit comment
       .addCase(editComment.pending, (state) => {
         state.commentLoading = true;
+        state.commentError = null;
+      })
+
+      .addCase(editComment.fulfilled, (state, action) => {
+        state.comments.find((comment) => {
+          if (comment._id === action.payload._id) {
+            comment.content = action.payload.content;
+          }
+        });
+        state.commentLoading = false;
         state.commentError = null;
       })
 

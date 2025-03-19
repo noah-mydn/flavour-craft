@@ -63,7 +63,7 @@ export const googleAuth = createAsyncThunk(
 
       sessionStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
-      sessionStorage.setItem("user", JSON.stringify(response.data.user));
+      sessionStorage.setItem("auth", JSON.stringify(response.data.user));
 
       return {
         user: response.data.user,

@@ -82,7 +82,7 @@ const TopNavigationBar = () => {
   const recipeSubMenuItems = [
     { label: "All Recipes", link: "/recipes" },
     { label: "Generate Recipes", link: "/generate" },
-    { label: "Recipes by Cuisine", link: "/recipes/cuisine", hasSubmenu: true },
+    { label: "Recipes by Cuisine", link: "", hasSubmenu: true },
   ];
 
   const showUserMenu = (event) => {
@@ -655,8 +655,12 @@ const TopNavigationBar = () => {
         MenuListProps={{ "aria-labelledby": "basic-button" }}
       >
         <MenuItem onClick={() => navigate("/profile")}>My Profile</MenuItem>
-        <MenuItem>Saved Recipes</MenuItem>
-        <MenuItem>Generated Recipes</MenuItem>
+        <MenuItem onClick={() => navigate("/recipes/me/saved")}>
+          Saved Recipes
+        </MenuItem>
+        <MenuItem onClick={() => navigate("/recipes/me/generated")}>
+          Generated Recipes
+        </MenuItem>
         <MenuItem onClick={accountLogout}>Logout</MenuItem>
       </Menu>
     </>

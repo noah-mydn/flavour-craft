@@ -11,9 +11,37 @@ const editUserProfile = async (req, res) => {
     const { userId } = req.params;
     const updateData = req.body;
 
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-    });
+    // Validate userId format
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    // Only allow first name, last name, dietary/cuisine prefs edit
+    const allowedFields = [
+      "firstName",
+      "lastName",
+      "dietaryPreferences",
+      "cuisinePreferences",
+    ];
+    const filteredUpdateData = Object.fromEntries(
+      Object.entries(updateData).filter(
+        ([key, value]) => allowedFields.includes(key) && value !== undefined
+      )
+    );
+
+    // If no valid fields are provided, return an error
+    if (Object.keys(filteredUpdateData).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No valid fields provided for update" });
+    }
+
+    // Update user
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      filteredUpdateData,
+      { new: true }
+    );
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });

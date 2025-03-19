@@ -13,7 +13,6 @@ import {
   ListItem,
   ListItemText,
   Container,
-  Paper,
   IconButton,
   Tabs,
   Tab,
@@ -29,26 +28,44 @@ import theme from "../../theme/theme";
 import { useParams } from "react-router-dom";
 import cuisineFlags from "../../constants/flags";
 import { useSelector } from "react-redux";
-import { profileSelector, userSelector } from "../../redux/selectors/selectors";
+import { profileSelector } from "../../redux/selectors/selectors";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
 
 const RecipeDetail = () => {
   const recipeId = useParams()?.recipeId;
-  const user = useSelector(userSelector);
   const profile = useSelector(profileSelector);
-  const { fetchRecipeInfo, recipe, saveRecipe, recipeLoading } = useRecipe();
+
+  const {
+    fetchRecipeInfo,
+    recipe,
+    handleSaveRecipe,
+    recipeLoading,
+    rateRecipe,
+  } = useRecipe();
   const [activeTab, setActiveTab] = useState(0);
 
-  const [saved, setSaved] = React.useState(
-    profile?.savedRecipes?.includes(recipeId)
-  );
+  const [rate, setRate] = useState(0);
 
   React.useEffect(() => {
-    setSaved(profile?.savedRecipes?.includes(recipeId));
-  }, [recipeId]);
+    const initialRating = profile?.ratedRecipes.find(
+      (recipe) => recipe.recipeId === recipeId
+    )?.rating;
 
-  const handleSaveRecipe = () => {
-    saveRecipe(recipeId);
+    setRate(initialRating || 0);
+  }, [profile, recipeId]);
+
+  const [saved, setSaved] = React.useState(false);
+
+  React.useEffect(() => {
+    const saved = profile?.savedRecipes?.includes(recipeId);
+    console.log("RECIPE SAVED:", saved);
+
+    setSaved(saved);
+  }, [profile, recipeId]);
+
+  const likeRecipe = () => {
+    handleSaveRecipe(recipeId);
+
     setSaved(!saved);
   };
 
@@ -59,7 +76,11 @@ const RecipeDetail = () => {
     setActiveTab(newValue);
   };
 
-  const handleRateRecipe = () => {};
+  const handleRateRecipe = (event) => {
+    rateRecipe(recipeId, event.target.value).then(() => {
+      fetchRecipeInfo(recipeId);
+    });
+  };
 
   React.useEffect(() => {
     if (recipeId) {
@@ -154,7 +175,7 @@ const RecipeDetail = () => {
                   <Box sx={{ position: "absolute", top: 30, right: 10 }}>
                     <IconButton
                       size="small"
-                      onClick={handleSaveRecipe}
+                      onClick={likeRecipe}
                       sx={{
                         color: "white",
                       }}
@@ -232,9 +253,9 @@ const RecipeDetail = () => {
                       sx={{ display: "flex", alignItems: "center", my: 2.2 }}
                     >
                       <Rating
-                        value={recipe?.ratings?.average}
-                        readOnly
-                        precision={0.5}
+                        value={rate}
+                        precision={1}
+                        max={5}
                         sx={{ color: "#FFD700" }}
                         onChange={handleRateRecipe}
                       />

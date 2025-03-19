@@ -7,10 +7,13 @@ const BASE_URL = process.env.REACT_APP_BASE_API + "/posts";
 
 export const fetchPosts = createAsyncThunk(
   "posts/fetchPosts",
-  async (_, { rejectWithValue }) => {
+  async ({ page, pageSize }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${BASE_URL}`, getAuthConfig());
-      return response.data.posts;
+      const response = await axios.get(
+        `${BASE_URL}?page=${page}&pageSize=${pageSize}`,
+        getAuthConfig()
+      );
+      return response.data;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response.data);
@@ -121,20 +124,21 @@ export const removeComment = createAsyncThunk(
 //Update Comment
 export const editComment = createAsyncThunk(
   "posts/updateComment",
-  async ({ postId, commentId, comment }, { rejectWithValue }) => {
+  async ({ postId, commentId, content }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
         `${BASE_URL}/${postId}/comment/${commentId}`,
-        { content: comment },
+        { content },
         getAuthConfig()
       );
-      return response.data.post;
+      return response.data.updatedComment;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response.data);
     }
   }
 );
+
 //Get All Commments
 export const fetchComments = createAsyncThunk(
   "posts/fetchComments",

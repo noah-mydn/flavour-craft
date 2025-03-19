@@ -287,8 +287,10 @@ export const ActionButton = styled(Box)(({ theme, active }) => ({
 }));
 
 export const GradientCard = styled(Card)(({ theme }) => ({
+  width: "100%",
+  marginBottom: "1rem",
   borderRadius: 16,
-  background: "white",
+  background: theme.palette.common.white,
   position: "relative",
   transition: "all 0.3s ease",
   overflow: "visible",

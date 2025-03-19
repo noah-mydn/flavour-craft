@@ -1,7 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { googleAuth, login, register } from "../apiClients/authAPI";
 
-const storedUser = JSON.parse(sessionStorage.getItem("userData")) || null;
+const storedUser =
+  JSON.parse(sessionStorage.getItem("userData")) ||
+  JSON.parse(sessionStorage.getItem("auth")) ||
+  null;
 const storedAccessToken = sessionStorage.getItem("accessToken") || null;
 const storedRefreshToken = localStorage.getItem("refreshToken") || null;
 
@@ -33,7 +36,7 @@ const authSlice = createSlice({
       sessionStorage.removeItem("accessToken");
 
       console.log("Removing auth from sessionStorage");
-      //sessionStorage.removeItem("auth");
+      sessionStorage.removeItem("auth");
       sessionStorage.removeItem("userData");
 
       console.log("Removing refreshToken from localStorage");

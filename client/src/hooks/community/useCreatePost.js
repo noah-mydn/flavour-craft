@@ -13,6 +13,7 @@ import {
   clearPost,
 } from "../../redux/reducers/postSlice";
 import { convertBlobsToFiles } from "../../utils/blobToFile";
+import { fetchPosts } from "../../redux/apiClients/postsAPI";
 
 export const useCreatePost = () => {
   const user = useSelector(userSelector);
@@ -20,6 +21,7 @@ export const useCreatePost = () => {
   const dispatch = useDispatch();
 
   const [showPostForm, setShowPostForm] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
   const [images, setImages] = React.useState([]);
   const [tagInputVal, setTagInputVal] = React.useState("");
 
@@ -66,9 +68,8 @@ export const useCreatePost = () => {
     console.log("POST:", post);
   }, []);
 
-  const createPost = async (e) => {
-    e.preventDefault();
-
+  const createPost = async () => {
+    setUploading(true);
     const formData = new FormData();
     formData.append("topic", post?.topic);
     formData.append("description", post?.description);
@@ -95,14 +96,17 @@ export const useCreatePost = () => {
         getAuthConfig(true)
       );
       console.log(response);
+      if (response.data.status === 201) {
+        dispatch(fetchPosts(1, 10));
+      }
       displaySuccessToast(response?.data?.message);
-      setTimeout(() => {
-        closeDialogue();
-      }, 2000);
+
+      closeDialogue();
     } catch (error) {
       console.error(error);
       displayErrorToast(error);
     } finally {
+      setUploading(false);
       dispatch(clearPost());
     }
   };
@@ -112,6 +116,7 @@ export const useCreatePost = () => {
     images,
     post,
     tagInputVal,
+    uploading,
     setTagInputVal,
     handlePostFieldOnChange,
     handleImageUpload,

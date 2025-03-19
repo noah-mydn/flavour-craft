@@ -27,13 +27,16 @@ import {
   postSelector,
   userSelector,
 } from "../../redux/selectors/selectors";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import HashtagInput from "./HashtagInput";
+import { clearTags } from "../../redux/reducers/postSlice";
+import { fetchPosts } from "../../redux/apiClients/postsAPI";
 
 const AddPost = () => {
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const user = useSelector(userSelector);
   const isResetState = useSelector(isResetSelector);
+  const dispatch = useDispatch();
 
   const {
     showPostForm,
@@ -44,6 +47,7 @@ const AddPost = () => {
     openDialogue,
     closeDialogue,
     createPost,
+    uploading,
   } = useCreatePost();
 
   const post = useSelector(postSelector);
@@ -59,7 +63,7 @@ const AddPost = () => {
   }, [post]);
 
   return (
-    <Box>
+    <Box width="100%">
       <Paper
         elevation={3}
         sx={{
@@ -135,7 +139,7 @@ const AddPost = () => {
       >
         <Box
           component="form"
-          onSubmit={createPost}
+          onSubmit={handleCreatePost}
           sx={{
             display: "flex",
             flexDirection: "column",
@@ -216,6 +220,7 @@ const AddPost = () => {
                   value={post?.topic}
                   onChange={handlePostFieldOnChange}
                   fullWidth
+                  required
                   variant="outlined"
                   InputProps={{
                     sx: {
@@ -238,6 +243,7 @@ const AddPost = () => {
                   placeholder="What are you cooking today? Share your recipe, tips, or food adventure..."
                   name="description"
                   value={post?.description}
+                  required
                   onChange={handlePostFieldOnChange}
                   variant="outlined"
                   InputProps={{
@@ -363,6 +369,7 @@ const AddPost = () => {
               type="submit"
               variant="contained"
               color="primary"
+              disabled={uploading}
               sx={{
                 borderRadius: 2,
                 px: 4,
@@ -376,7 +383,7 @@ const AddPost = () => {
                 transition: "all 0.2s",
               }}
             >
-              Post
+              {uploading ? "Posting..." : "Post"}
             </Button>
           </DialogActions>
         </Box>

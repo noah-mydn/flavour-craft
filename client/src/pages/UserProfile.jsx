@@ -217,31 +217,34 @@ const UserProfile = () => {
                             mt: 1,
                           }}
                         >
-                          {user?.cuisinePreferences?.map((cuisine, index) => (
-                            <Chip
-                              key={cuisine._id}
-                              label={cuisine.name}
-                              //color="primary"
-                              //variant="outlined"
+                          {user?.cuisinePreferences?.length > 0 ? (
+                            <Box
                               sx={{
-                                borderRadius: 15,
-                                color: "#fff",
-                                background: theme.palette.secondary.dark,
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mt: 1,
                               }}
-                            />
-                          ))}
-                          <Chip
-                            label="Add"
-                            icon={<Add color="secondary.dark" />}
-                            variant="outlined"
-                            sx={{
-                              fontWeight: "bold",
-                              borderRadius: 100,
-                              color: theme.palette.secondary.dark,
-                              border: `1px solid ${theme.palette.secondary.dark}`,
-                            }}
-                            onClick={() => {}}
-                          />
+                            >
+                              {user?.dietaryRestrictions?.map((diet, index) => (
+                                <Chip
+                                  key={diet._id}
+                                  label={diet.name}
+                                  //color="primary"
+                                  //variant="outlined"
+                                  sx={{
+                                    borderRadius: 15,
+                                    color: "#fff",
+                                    background: theme.palette.secondary.dark,
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              No cuisines preferences is set.
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
 
@@ -271,18 +274,6 @@ const UserProfile = () => {
                                 }}
                               />
                             ))}
-                            <Chip
-                              label="Add"
-                              icon={<Add color="secondary.dark" />}
-                              variant="outlined"
-                              sx={{
-                                fontWeight: "bold",
-                                borderRadius: 100,
-                                color: theme.palette.secondary.dark,
-                                border: `1px solid ${theme.palette.secondary.dark}`,
-                              }}
-                              onClick={() => {}}
-                            />
                           </Box>
                         ) : (
                           <Typography variant="body2" color="text.secondary">
@@ -379,7 +370,7 @@ const UserProfile = () => {
                             color: theme.palette.primary.main,
                             textDecoration: "underline",
                           }}
-                          to="recipes/generate/my-recipes"
+                          to="/recipes/me/generated"
                         >
                           &nbsp;here
                         </Link>
@@ -413,7 +404,7 @@ const UserProfile = () => {
                             color: theme.palette.primary.main,
                             textDecoration: "underline",
                           }}
-                          to="recipes/saved"
+                          to="/recipes/me/saved"
                         >
                           &nbsp;here
                         </Link>

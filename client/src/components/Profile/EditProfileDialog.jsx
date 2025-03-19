@@ -207,6 +207,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   fullWidth
+                  size="small"
                   margin="normal"
                   variant="outlined"
                 />
@@ -216,6 +217,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                   name="lastName"
                   label="Last Name"
                   value={formData.lastName}
+                  size="small"
                   onChange={handleInputChange}
                   fullWidth
                   margin="normal"
@@ -229,6 +231,8 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                   value={formData.email}
                   onChange={handleInputChange}
                   fullWidth
+                  size="small"
+                  disabled
                   margin="normal"
                   variant="outlined"
                   type="email"
@@ -243,6 +247,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
               Dietary Restrictions
             </Typography>
             <Autocomplete
+              size="small"
               multiple
               id="dietary-restrictions"
               options={dietaryOptions}
@@ -258,6 +263,9 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                     label={option.name}
                     {...getTagProps({ index })}
                     sx={{
+                      "& .MuiChip-deleteIcon": {
+                        color: "#fff",
+                      },
                       borderRadius: 15,
                       color: "#fff",
                       background: theme.palette.secondary.dark,
@@ -284,6 +292,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
               Cuisine Preferences
             </Typography>
             <Autocomplete
+              size="small"
               multiple
               id="cuisine-preferences"
               options={cuisineOptions}
@@ -299,6 +308,9 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                     label={option.name}
                     {...getTagProps({ index })}
                     sx={{
+                      "& .MuiChip-deleteIcon": {
+                        color: "#fff",
+                      },
                       borderRadius: 15,
                       color: "#fff",
                       background: theme.palette.secondary.dark,

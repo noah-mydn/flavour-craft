@@ -49,9 +49,9 @@ const PostImageGallery = ({ images }) => {
               src={image}
               alt={`Post image ${index + 1}`}
               sx={{
-                width: "100%",
-                height: 180,
-                objectFit: "cover",
+                width: "60%",
+                height: "auto",
+                objectFit: "contain",
                 borderRadius: 1,
                 cursor: "pointer",
                 transition: "all 0.3s ease",

@@ -86,9 +86,19 @@ const CommentSection = ({ postId }) => {
     dispatch(clearComment());
   };
 
-  const handleSaveEdit = (commentId) => {
+  const handleSaveEdit = (commentItem) => {
+    console.log("This is commentItem:", commentItem);
+    dispatch(setComment(commentItem));
+
     if (comment?.content?.trim()) {
-      dispatch(editComment({ commentId, content: comment.content }));
+      console.log("After saving it to state cmmt:", comment);
+      dispatch(
+        editComment({
+          postId,
+          commentId: comment._id,
+          content: comment.content,
+        })
+      );
       dispatch(clearComment());
     }
   };
@@ -96,8 +106,11 @@ const CommentSection = ({ postId }) => {
   const confirmDelete = () => {
     if (comment?._id) {
       dispatch(removeComment({ postId, commentId: comment._id }));
-      setDeleteDialogOpen(false);
+      if (!commentLoading) {
+        setDeleteDialogOpen(false);
+      }
       dispatch(clearComment());
+      dispatch(fetchComments(postId));
     }
   };
 
@@ -106,6 +119,7 @@ const CommentSection = ({ postId }) => {
     if (newComment.trim()) {
       dispatch(addComment({ postId, comment: newComment }));
       setNewComment("");
+      dispatch(fetchComments(postId));
     }
   };
 
@@ -306,7 +320,7 @@ const CommentSection = ({ postId }) => {
                             size="small"
                             variant="contained"
                             disableElevation
-                            onClick={() => handleSaveEdit(commentItem._id)}
+                            onClick={() => handleSaveEdit(commentItem)}
                             startIcon={<CheckIcon fontSize="small" />}
                             disabled={commentLoading}
                             sx={{
@@ -315,7 +329,7 @@ const CommentSection = ({ postId }) => {
                               textTransform: "none",
                             }}
                           >
-                            Save
+                            {commentLoading ? "Saving..." : "Save"}
                           </Button>
                         </Box>
                       </Box>
@@ -463,7 +477,7 @@ const CommentSection = ({ postId }) => {
               ml: 1,
             }}
           >
-            Delete
+            {commentLoading ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>

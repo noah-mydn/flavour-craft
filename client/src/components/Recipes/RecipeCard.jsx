@@ -101,7 +101,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
         >
           <StarIcon sx={{ color: "#FFD700", fontSize: 16, mr: 0.5 }} />
           <Typography variant="body2" fontWeight="medium">
-            {recipe?.ratings?.average}
+            {recipe?.ratings?.average.toFixed(1)}
           </Typography>
         </Box>
 
@@ -202,7 +202,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
               component="span"
               sx={{ fontWeight: 500 }}
             >
-              {recipe?.cuisineTypes[0] || "Unknown"}
+              {(recipe?.cuisineTypes && recipe?.cuisineTypes[0]) || "Unknown"}
             </Typography>
           </Stack>
 

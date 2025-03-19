@@ -185,15 +185,6 @@ const AnimatedRoutes = () => {
         <Route path=":postId" element={<Post />} />
       </Route>
 
-      {/* <Route
-        path="/recipes/:recipeId"
-        element={
-          <PrivateRoute>
-            <RecipeDetail isMobile={isMobile} />
-          </PrivateRoute>
-        }
-      /> */}
-
       <Route
         path="/profile"
         element={
