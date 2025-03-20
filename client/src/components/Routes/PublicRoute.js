@@ -1,12 +1,17 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { isVerifiedSelector } from "../../redux/selectors/selectors";
 
 const PublicRoute = ({ children }) => {
   const isVerified = useSelector(isVerifiedSelector);
+  const location = useLocation();
 
-  return isVerified ? <Navigate to="/home" replace /> : children;
+  if (isVerified && location.pathname === "/auth") {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
 };
 
 export default PublicRoute;

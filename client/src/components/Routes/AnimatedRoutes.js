@@ -36,6 +36,7 @@ import Post from "../Community/Post";
 import { Main } from "../Main/Main";
 import SavedRecipes from "../../pages/recipes/SavedRecipes";
 import GeneratedRecipes from "../../pages/recipes/GeneratedRecipes";
+import Preferences from "../Preferences/Preferences";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
@@ -158,6 +159,15 @@ const AnimatedRoutes = () => {
         element={
           <PublicRoute>
             <TermsAndConditions isMobile={isMobile} isTablet={isTablet} />
+          </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/pref"
+        element={
+          <PublicRoute>
+            <Preferences />
           </PublicRoute>
         }
       />

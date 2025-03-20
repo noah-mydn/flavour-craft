@@ -45,3 +45,41 @@ export const toggleSavedRecipe = createAsyncThunk(
     }
   }
 );
+
+export const setDietaryPreferences = createAsyncThunk(
+  "userProfile/setDietaryPreferences",
+  async ({ dietaryOptions }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_API}/user/set/dietaryOptions`,
+        { dietaryOptions: dietaryOptions },
+        getAuthConfig()
+      );
+      return response.data.data;
+    } catch (error) {
+      displayErrorToast(error);
+      return rejectWithValue(
+        error.response?.data || "Error setting dietary preferences"
+      );
+    }
+  }
+);
+
+export const setCuisinePreferences = createAsyncThunk(
+  "userProfile/setCuisinePreferences",
+  async ({ cuisineTypes }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_API}/user/set/cuisineTypes`,
+        { cuisineTypes: cuisineTypes },
+        getAuthConfig()
+      );
+      return response.data.data;
+    } catch (error) {
+      displayErrorToast(error);
+      return rejectWithValue(
+        error.response?.data || "Error setting dietary preferences"
+      );
+    }
+  }
+);

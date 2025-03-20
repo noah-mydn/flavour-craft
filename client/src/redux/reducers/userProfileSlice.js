@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   getCurrentUserProfile,
+  setCuisinePreferences,
+  setDietaryPreferences,
   toggleSavedRecipe,
 } from "../apiClients/userAPI";
 
@@ -85,6 +87,36 @@ const userProfileSlice = createSlice({
       })
       .addCase(toggleSavedRecipe.rejected, (state, action) => {
         state.status = "failed";
+      })
+      .addCase(setDietaryPreferences.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(setDietaryPreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        //store only Ids
+        state.profile.dietaryPreferences = action.payload.map(
+          (item) => item.id
+        );
+      })
+      .addCase(setDietaryPreferences.rejected, (state, action) => {
+        console.error("Dietary Preferences Fetch Failed:", action.payload);
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(setCuisinePreferences.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(setCuisinePreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        //store only Ids
+        state.profile.cuisinePreferences = action.payload.map(
+          (item) => item.id
+        );
+      })
+      .addCase(setCuisinePreferences.rejected, (state, action) => {
+        console.error("Cuisine Preferences Fetch Failed:", action.payload);
+        state.isLoading = false;
+        state.error = action.payload;
       });
   },
 });

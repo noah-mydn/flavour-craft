@@ -226,19 +226,21 @@ const UserProfile = () => {
                                 mt: 1,
                               }}
                             >
-                              {user?.dietaryRestrictions?.map((diet, index) => (
-                                <Chip
-                                  key={diet._id}
-                                  label={diet.name}
-                                  //color="primary"
-                                  //variant="outlined"
-                                  sx={{
-                                    borderRadius: 15,
-                                    color: "#fff",
-                                    background: theme.palette.secondary.dark,
-                                  }}
-                                />
-                              ))}
+                              {user?.cuisinePreferences?.map(
+                                (cuisine, index) => (
+                                  <Chip
+                                    key={cuisine?._id}
+                                    label={cuisine?.name}
+                                    //color="primary"
+                                    //variant="outlined"
+                                    sx={{
+                                      borderRadius: 15,
+                                      color: "#fff",
+                                      background: theme.palette.secondary.dark,
+                                    }}
+                                  />
+                                )
+                              )}
                             </Box>
                           ) : (
                             <Typography variant="body2" color="text.secondary">
