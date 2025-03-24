@@ -19,7 +19,7 @@ export const displaySuccessToast = (message) => {
 };
 
 export const displayInfoToast = (message) => {
-  toast.info(message, {
+  toast.success(message, {
     icon: "📝",
   });
 };

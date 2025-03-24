@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcrypt");
 const User = require("../models/Users");
 const Post = require("../models/community/Posts");
 const Comment = require("../models/community/Comments");
@@ -8,20 +9,24 @@ const { default: mongoose } = require("mongoose");
 
 const editUserProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.userId;
     const updateData = req.body;
 
     // Validate userId format
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
       return res.status(400).json({ message: "Invalid user ID format" });
     }
-
-    // Only allow first name, last name, dietary/cuisine prefs edit
+    // Handle profile picture upload
+    if (req.file) {
+      updateData.userImg = req.file.path;
+    }
+    // Only allow particular fields
     const allowedFields = [
       "firstName",
       "lastName",
       "dietaryPreferences",
       "cuisinePreferences",
+      "userImg",
     ];
     const filteredUpdateData = Object.fromEntries(
       Object.entries(updateData).filter(
@@ -47,6 +52,8 @@ const editUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    delete updatedUser.password;
+
     return res.status(200).json({
       status: 200,
       message: "User profile updated successfully",
@@ -61,27 +68,81 @@ const editUserProfile = async (req, res) => {
 
 const deleteUserProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.userId;
+    const { password } = req.body;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!password) {
+      return res.status(400).json({ message: "Password is required." });
     }
 
+    const user = await User.findById(userId).select("+password"); // Retrieve password
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect password." });
+    }
+
+    // Delete related data (posts, comments, notifications, etc.)
     await Post.deleteMany({ userId });
     await Comment.deleteMany({ userId });
     await Notification.deleteMany({ userId });
 
+    // Delete user profile
     await User.findByIdAndDelete(userId);
 
     return res.status(200).json({
       status: 200,
-      message: "User profile updated successfully",
+      message: "User profile deleted successfully.",
     });
   } catch (err) {
     res
       .status(500)
       .json({ message: "Error deleting user profile", error: err.message });
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Both old and new passwords are required." });
+    }
+
+    const user = await User.findById(userId).select("+password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect old password." });
+    }
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        message: "New password must be different from the old password.",
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while updating the password." });
   }
 };
 
@@ -221,6 +282,7 @@ const getCurrentUserProfile = async (req, res) => {
 module.exports = {
   editUserProfile,
   deleteUserProfile,
+  updatePassword,
   addDietaryPreferences,
   addCuisinePreferences,
   getUserProfileById,

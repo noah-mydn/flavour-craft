@@ -23,7 +23,6 @@ import {
   Create,
   Settings,
   GridView,
-  Add,
   FoodBank,
 } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
@@ -32,6 +31,8 @@ import { profileSelector } from "../redux/selectors/selectors";
 import { Link, useNavigate } from "react-router-dom";
 import EditProfileDialog from "../components/Profile/EditProfileDialog";
 import { getCurrentUserProfile } from "../redux/apiClients/userAPI";
+import { formatDate } from "../utils/timeFormatter";
+import AccountSettingsDialog from "../components/Profile/AccountSettings";
 
 const UserProfile = () => {
   const theme = useTheme();
@@ -41,6 +42,7 @@ const UserProfile = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [tabValue, setTabValue] = React.useState(0);
   const [editProfileOpen, setEditProfileOpen] = React.useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = React.useState(false);
 
   React.useEffect(() => {
     dispatch(getCurrentUserProfile());
@@ -51,20 +53,17 @@ const UserProfile = () => {
     setTabValue(newValue);
   };
 
-  // Format date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   const handleEditProfileClose = (refreshData) => {
     setEditProfileOpen(false);
     if (refreshData) {
       dispatch(getCurrentUserProfile());
+    }
+  };
+
+  const handleAccountSettingsClose = (refreshData) => {
+    setAccountSettingsOpen(false);
+    if (refreshData) {
+      navigate("/login");
     }
   };
 
@@ -456,6 +455,7 @@ const UserProfile = () => {
                       variant="text"
                       fullWidth
                       startIcon={<Settings />}
+                      onClick={() => setAccountSettingsOpen(true)}
                       sx={{
                         justifyContent: "flex-start",
                         borderRadius: 2,
@@ -475,6 +475,13 @@ const UserProfile = () => {
         <EditProfileDialog
           open={editProfileOpen}
           onClose={handleEditProfileClose}
+          user={user}
+        />
+      )}
+      {accountSettingsOpen && (
+        <AccountSettingsDialog
+          open={accountSettingsOpen}
+          onClose={handleAccountSettingsClose}
           user={user}
         />
       )}

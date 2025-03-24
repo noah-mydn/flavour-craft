@@ -88,17 +88,19 @@ const RecipeDetail = () => {
     }
   }, []);
 
+  const isAdmin = profile?.role === "admin";
+
   return (
     <Box
-      mx={isMobile || isTablet ? 0 : 8}
-      py={isMobile || isTablet ? 0 : 4}
-      my={isMobile || isTablet ? 0 : 3}
+      mx={isAdmin ? 0 : isMobile || isTablet ? 0 : 8}
+      py={isAdmin ? 0 : isMobile || isTablet ? 0 : 4}
+      my={isAdmin ? 0 : isMobile || isTablet ? 0 : 3}
     >
-      <Container maxWidth="lg" sx={{ mt: 16, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: isAdmin ? 0 : 16, mb: 4 }}>
         <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
           <Link
             color="text.secondary"
-            href="/recipes"
+            href={profile?.role === "admin" ? "/admin/recipes" : "/recipes"}
             sx={{ textDecoration: "none", cursor: "pointer" }}
           >
             Recipes
@@ -160,10 +162,10 @@ const RecipeDetail = () => {
                       component="img"
                       sx={{
                         width: "100%",
-                        maxWidth: "350px",
+                        //maxWidth: "350px",
                         height: "auto",
-                        borderRadius: 2,
-                        objectFit: "contain",
+                        //borderRadius: 2,
+                        objectFit: "cover",
                       }}
                       alt={recipe?.name}
                       src={recipe?.thumbnail}
@@ -172,25 +174,27 @@ const RecipeDetail = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6} position="relative">
-                  <Box sx={{ position: "absolute", top: 30, right: 10 }}>
-                    <IconButton
-                      size="small"
-                      onClick={likeRecipe}
-                      sx={{
-                        color: "white",
-                      }}
-                    >
-                      {saved ? (
-                        <Favorite color="primary" />
-                      ) : (
-                        <FavoriteBorderOutlined
-                          sx={{
-                            color: theme.palette.primary.light,
-                          }}
-                        />
-                      )}
-                    </IconButton>
-                  </Box>
+                  {!isAdmin && (
+                    <Box sx={{ position: "absolute", top: 30, right: 10 }}>
+                      <IconButton
+                        size="small"
+                        onClick={likeRecipe}
+                        sx={{
+                          color: "white",
+                        }}
+                      >
+                        {saved ? (
+                          <Favorite color="primary" />
+                        ) : (
+                          <FavoriteBorderOutlined
+                            sx={{
+                              color: theme.palette.primary.light,
+                            }}
+                          />
+                        )}
+                      </IconButton>
+                    </Box>
+                  )}
                   <Box mt={5}>
                     <Typography variant="h4" component="h1" gutterBottom>
                       {recipe?.name}
@@ -256,6 +260,7 @@ const RecipeDetail = () => {
                         value={rate}
                         precision={1}
                         max={5}
+                        readOnly={isAdmin}
                         sx={{ color: "#FFD700" }}
                         onChange={handleRateRecipe}
                       />
@@ -309,7 +314,7 @@ const RecipeDetail = () => {
               </Grid>
 
               {/* Stepper for Ingredients and Instructions */}
-              <Box>
+              <Box mt={3}>
                 {/* Tab Headers */}
                 <Tabs
                   value={activeTab}

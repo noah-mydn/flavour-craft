@@ -60,9 +60,13 @@ const FilterSort = ({ page, pageSize }) => {
   const dietaryOptions = useSelector(dietaryOptionsSelector);
 
   React.useEffect(() => {
-    dispatch(fetchCuisines());
-    dispatch(fetchDietaryOptions());
-  }, [dispatch]);
+    if (!cuisineOptions.length) {
+      dispatch(fetchCuisines());
+    }
+    if (!dietaryOptions.length) {
+      dispatch(fetchDietaryOptions());
+    }
+  }, [dispatch, cuisineOptions, dietaryOptions]);
 
   const tagOptions = [
     "Breakfast",

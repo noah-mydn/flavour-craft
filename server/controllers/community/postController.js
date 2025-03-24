@@ -219,26 +219,43 @@ exports.getPostById = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
+    const userId = req.user.userId;
     const { topic, description, tags } = req.body;
-    let updatedFields = { topic, description, tags };
-    if (req.file) {
-      updatedFields.image = req.file.path;
-    }
-    const post = await Post.findByIdAndUpdate(
-      req.params.postId,
-      updatedFields,
-      { new: true }
-    );
+    const postId = req.params.postId;
+
+    // Find the existing post
+    const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({
         status: 404,
         message: "Post not found",
       });
     }
-    res.status(204).json({
-      status: 204,
+
+    // Check if the user is the author
+    if (post.author.toString() !== userId) {
+      return res.status(403).json({
+        status: 403,
+        message: "You do not have permission to update this post",
+      });
+    }
+
+    let updatedFields = { topic, description, tags };
+
+    // Handle multiple images
+    if (req.files && req.files.length > 0) {
+      updatedFields.images = req.files.map((file) => file.path);
+    }
+
+    // Update the post
+    const updatedPost = await Post.findByIdAndUpdate(postId, updatedFields, {
+      new: true,
+    });
+
+    res.status(200).json({
+      status: 200,
       message: "Post updated successfully",
-      post: post,
+      post: updatedPost,
     });
   } catch (error) {
     res.status(500).json({
@@ -251,16 +268,41 @@ exports.updatePost = async (req, res) => {
 
 exports.deletePost = async (req, res) => {
   try {
-    const post = await Post.findByIdAndDelete(req.params.postId);
+    const userId = req.user.userId;
+    const post = await Post.findById(req.params.postId);
+
     if (!post) {
       return res.status(404).json({
         status: 404,
         message: "Post not found",
       });
     }
+
+    // Check if the user is the author
+    if (post.author.toString() !== userId) {
+      return res.status(403).json({
+        status: 403,
+        message: "You do not have permission to delete this post",
+      });
+    }
+
+    // First, find and delete all related comments
+    const comments = await Comment.find({ postId: req.params.postId });
+
+    for (const comment of comments) {
+      // Delete notifications related to this comment
+      await Notification.deleteMany({ commentId: comment._id });
+    }
+
+    // Delete all comments related to the post
+    await Comment.deleteMany({ postId: req.params.postId });
+
+    // Now delete the post
+    await Post.findByIdAndDelete(req.params.postId);
+
     res.status(200).json({
       status: 200,
-      message: "Post deleted successfully",
+      message: "Post and related comments & notifications deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -309,6 +351,12 @@ exports.addComment = async (req, res) => {
     res.status(201).json({
       status: 201,
       message: "Comment added successfully",
+      comment: {
+        postId,
+        _id: newComment._id,
+        content: newComment.content,
+        author,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -390,6 +438,8 @@ exports.deleteComment = async (req, res) => {
     res.status(200).json({
       status: 200,
       message: "Comment deleted successfully",
+      postId,
+      commentId,
     });
   } catch (error) {
     res.status(500).json({
@@ -462,6 +512,7 @@ exports.upvotePost = async (req, res) => {
       status: 200,
       message: "Liked this post",
       postId: post._id,
+      userId: req.user.userId,
       upvotes: post.upvotes.length,
     });
   } catch (error) {

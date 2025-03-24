@@ -63,6 +63,7 @@ export const useRecipe = () => {
       } else {
         dispatch(removeRecipe(recipeId));
       }
+
       return true;
     } catch (error) {
       return false;

@@ -34,6 +34,9 @@ import {
 } from "../redux/apiClients/recipeAPI";
 import FilterSort from "../components/FilterSort/FilterSort";
 import { SearchOff } from "@mui/icons-material";
+import { setSortType } from "../redux/reducers/recipesSlice";
+import { fetchCuisines } from "../redux/apiClients/cuisineAPI";
+import { fetchDietaryOptions } from "../redux/apiClients/dietaryAPI";
 
 const Recipes = () => {
   const theme = useTheme();
@@ -62,6 +65,7 @@ const Recipes = () => {
   React.useEffect(() => {
     if (filters && Object.keys(filters).length > 0) {
       dispatch(fetchFilteredRecipes(filters, page, pageSize));
+      dispatch(setSortType(null));
     } else {
       console.log("BECAUSE OF THIS:");
       dispatch(fetchRecipes({ sortValue, page, pageSize }));

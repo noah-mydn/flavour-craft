@@ -17,5 +17,49 @@ const cloudinaryStorage = new CloudinaryStorage({
   },
 });
 
+const profilePicStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "flavourCraft_profiles",
+    allowedFormats: ["jpg", "png", "jpeg"],
+    transformation: [
+      {
+        width: 300,
+        height: 300,
+        crop: "fill",
+      },
+    ],
+  },
+});
+
+const recipeThumbnailStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "flavourCraft_recipes",
+    allowedFormats: ["jpg", "png", "jpeg"],
+    transformation: [
+      {
+        width: 400,
+        height: 400,
+        crop: "fill",
+      },
+    ],
+  },
+});
+
 const cloudinaryUpload = multer({ storage: cloudinaryStorage });
-module.exports = { cloudinaryUpload };
+const profilePicUpload = multer({ storage: profilePicStorage });
+const recipeImgUpload = multer({
+  storage: recipeThumbnailStorage,
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.match(/^image\/(jpeg|jpg|png)$/)) {
+      return cb(
+        new Error("Only image files (jpg, jpeg, png) are allowed!"),
+        false
+      );
+    }
+    cb(null, true);
+  },
+});
+
+module.exports = { cloudinaryUpload, profilePicUpload, recipeImgUpload };

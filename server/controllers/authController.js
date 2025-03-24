@@ -90,6 +90,7 @@ const login = async (req, res) => {
         lastName: user.lastName,
         username: user.username,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -105,59 +106,15 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:8080/auth/google/callback",
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      console.log("Profile:", profile);
-      try {
-        //console.log("Google profile:", profile);
-        const existingUser = await User.findOne({
-          email: profile.emails[0].value,
-        });
-
-        if (existingUser) {
-          //console.log("Existing user found:", existingUser);
-          return done(null, existingUser);
-        }
-
-        // Creating a new user
-        const newUser = new User({
-          firstName: profile.name.givenName,
-          lastName: profile.name.familyName || profile.name.givenName,
-          email: profile.emails[0].value,
-          password: null,
-          userImg: profile.photos[0]
-            ? profile.photos[0].value
-            : "upload/avatar.png",
-        });
-
-        console.log("Creating new user:", newUser);
-        const savedUser = await newUser.save();
-        console.log("User saved successfully:", savedUser);
-        return done(null, savedUser);
-      } catch (error) {
-        console.error("Error during Google Auth:", error);
-        return done(error, false);
-      }
-    }
-  )
-);
-
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`,
+      callbackURL: process.env.BACKEND_URL + "/auth/google/callback",
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user exists
         let user = await User.findOne({ email: profile.emails[0].value });
 
         if (!user) {
-          // Create new user if doesn't exist
+          // Create new user if not found
           user = await User.create({
             firstName:
               profile.name.givenName || profile.displayName.split(" ")[0],
@@ -167,14 +124,24 @@ passport.use(
             email: profile.emails[0].value,
             googleId: profile.id,
             profileImage: profile.photos[0]?.value || "",
-            // Set a random password or handle this differently based on your requirements
             password:
               Math.random().toString(36).slice(-8) +
               Math.random().toString(36).slice(-8),
           });
-        } else if (!user.googleId) {
-          // If user exists but doesn't have googleId (maybe they registered with email)
+        } else {
+          // Only update firstName and lastName if they haven't been modified manually
+          if (
+            user.firstName === profile.name.givenName &&
+            user.lastName === profile.name.familyName
+          ) {
+            user.firstName = profile.name.givenName;
+            user.lastName = profile.name.familyName;
+          }
+
+          // Always update Google ID & profile image
           user.googleId = profile.id;
+          user.profileImage = profile.photos[0]?.value || user.profileImage;
+
           await user.save();
         }
 
@@ -220,9 +187,7 @@ passport.use(
           user = await User.create({
             firstName:
               profile.name.givenName || profile.displayName.split(" ")[0],
-            lastName:
-              profile.name.familyName ||
-              profile.displayName.split(" ").slice(1).join(" "),
+            lastName: profile.name?.familyName || profile.name.givenName,
             email: profile.emails[0].value,
             googleId: profile.id,
             // Set other required fields with default values as needed

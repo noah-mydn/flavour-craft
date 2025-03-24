@@ -42,7 +42,7 @@ const PostImageGallery = ({ images }) => {
     <>
       {/* Images grid */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        {images.map((image, index) => (
+        {images?.map((image, index) => (
           <Grid item xs={6} key={index}>
             <Box
               component="img"
@@ -51,9 +51,10 @@ const PostImageGallery = ({ images }) => {
               sx={{
                 width: "60%",
                 height: "auto",
-                objectFit: "contain",
+                objectFit: "cover",
                 borderRadius: 1,
                 cursor: "pointer",
+                background: "transparent",
                 transition: "all 0.3s ease",
                 "&:hover": {
                   transform: "scale(1.03)",

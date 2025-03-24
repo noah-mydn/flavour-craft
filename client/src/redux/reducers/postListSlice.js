@@ -7,27 +7,24 @@ import {
   removeComment,
   editComment,
   addComment,
+  deletePost,
 } from "../apiClients/postsAPI";
 
 const postListSlice = createSlice({
   name: "postList",
   initialState: {
-    //posts
     posts: [],
     loading: false,
     error: null,
-    //comments
     comments: [],
     commentsLoading: false,
     commentsError: null,
     pagination: null,
-    //post
     postById: null,
     postLoading: false,
     postError: null,
-    //comment
     comment: null,
-    commentMode: null, // 'edit' or 'delete'
+    commentMode: null,
     commentLoading: false,
     commentError: null,
   },
@@ -35,6 +32,11 @@ const postListSlice = createSlice({
     setComment: (state, action) => {
       state.comment = action.payload.comment;
       state.commentMode = action.payload.mode;
+    },
+    setComments: (state, action) => {
+      state.comments = action.payload.comments;
+      state.commentsLoading = false;
+      state.commentsError = null;
     },
     clearComment: (state) => {
       state.comment = null;
@@ -54,9 +56,8 @@ const postListSlice = createSlice({
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.error.message || "Something went wrong";
       })
-      //fetch post by id
       .addCase(fetchPostById.pending, (state) => {
         state.postLoading = true;
         state.postError = null;
@@ -67,39 +68,52 @@ const postListSlice = createSlice({
       })
       .addCase(fetchPostById.rejected, (state, action) => {
         state.postLoading = false;
-        state.postError = action.error.message;
+        state.postError = action.error.message || "Something went wrong";
       })
       .addCase(addComment.pending, (state) => {
         state.commentsLoading = true;
         state.commentsError = null;
       })
       .addCase(addComment.fulfilled, (state, action) => {
-        const post = state.posts.find((p) => p._id === action.payload._id);
-        if (post) {
-          post.comments.push(action.payload.newComment);
-        }
-        state.commentsLoading = false;
+        state.commentLoading = false;
+        state.comments = [...(state.comments || []), action.payload];
       })
       .addCase(addComment.rejected, (state, action) => {
-        state.commentsLoading = false;
-        state.commentsError = action.error.message;
+        state.commentLoading = false;
+        state.commentError = action.error.message || "Something went wrong";
+      })
+      .addCase(removeComment.pending, (state) => {
+        state.commentLoading = true;
+        state.commentsLoading = true;
+        state.commentError = null;
       })
       .addCase(removeComment.fulfilled, (state, action) => {
-        const post = state.posts.find((p) => p._id === action.payload._id);
-        if (post) {
-          post.comments = post.comments.filter(
-            (comment) => comment._id !== action.meta.arg.commentId
-          );
-        }
+        state.commentLoading = false;
+
+        state.comments.filter((comment) => {
+          return comment.id !== action.payload;
+        });
+        state.commentsLoading = true;
       })
-      //like post
+      .addCase(removeComment.rejected, (state, action) => {
+        state.commentLoading = false;
+        state.commentError = action.payload;
+      })
       .addCase(likePost.fulfilled, (state, action) => {
+        const { postId, userId } = action.payload;
         state.posts = state.posts.map((post) =>
-          post._id === action.payload._id ? action.payload : post
+          post._id === postId
+            ? {
+                ...post,
+                upvotes: post.upvotes.includes(userId)
+                  ? post.upvotes.filter((id) => id !== userId)
+                  : [...post.upvotes, userId],
+              }
+            : post
         );
       })
       .addCase(likePost.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.error.message || "Something went wrong";
       })
       .addCase(fetchComments.pending, (state) => {
         state.commentsLoading = true;
@@ -111,30 +125,39 @@ const postListSlice = createSlice({
       })
       .addCase(fetchComments.rejected, (state, action) => {
         state.commentsLoading = false;
-        state.commentsError = action.error.message;
+        state.commentsError = action.error.message || "Something went wrong";
       })
-      //edit comment
       .addCase(editComment.pending, (state) => {
         state.commentLoading = true;
         state.commentError = null;
       })
-
       .addCase(editComment.fulfilled, (state, action) => {
-        state.comments.find((comment) => {
-          if (comment._id === action.payload._id) {
-            comment.content = action.payload.content;
-          }
-        });
         state.commentLoading = false;
-        state.commentError = null;
+        state.comments = state.comments.map((comment) =>
+          comment._id === action.payload._id
+            ? { ...comment, content: action.payload.content }
+            : comment
+        );
       })
-
       .addCase(editComment.rejected, (state, action) => {
         state.commentLoading = false;
-        state.commentError = action.error.message;
+        state.commentError = action.error.message || "Something went wrong";
+      })
+      .addCase(deletePost.pending, (state, action) => {
+        state.postLoading = true;
+        state.postError = null;
+      })
+      .addCase(deletePost.fulfilled, (state, action) => {
+        state.postLoading = false;
+        state.posts = state.posts.filter((post) => post._id !== action.payload);
+        state.postError = null;
+      })
+      .addCase(deletePost.rejected, (state, action) => {
+        state.postLoading = false;
+        state.postError = action.error.message || "Something went wrong";
       });
   },
 });
 
-export const { setComment, clearComment } = postListSlice.actions;
+export const { setComment, clearComment, setComments } = postListSlice.actions;
 export default postListSlice.reducer;

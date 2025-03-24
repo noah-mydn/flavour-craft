@@ -16,14 +16,22 @@ const {
   getMostViewedRecipes,
   getRecipeOfTheDay,
   getTimeBasedRecipe,
+  deleteRecipe,
+  deleteRecipesInBatch,
+  uploadRecipeThumbnail,
+  searchRecipe,
 } = require("../controllers/recipesController");
+const { adminAuth } = require("../middlewares/authVerification");
+const { recipeImgUpload } = require("../middlewares/multer");
 const authenticateToken =
   require("../middlewares/authVerification").authenticateToken;
 
 const router = express.Router();
 
-router.post("/batch-generate", authenticateToken, generateRecipesInBatch);
+router.post("/search", adminAuth, searchRecipe);
+router.post("/batch-generate", adminAuth, generateRecipesInBatch);
 router.post("/generate", authenticateToken, generateRecipe);
+router.delete("/delete", adminAuth, deleteRecipesInBatch);
 router.post("/recommend", authenticateToken, getTimeBasedRecipe);
 router.get("/all", authenticateToken, getAllRecipes);
 router.get("/trending", authenticateToken, getTrendingRecipes);
@@ -39,6 +47,13 @@ router.post(
 );
 
 router.get("/:id", authenticateToken, getRecipeById);
+router.delete("/:id", adminAuth, deleteRecipe);
+router.put(
+  "/:id/upload",
+  recipeImgUpload.single("thumbnail"),
+  adminAuth,
+  uploadRecipeThumbnail
+);
 router.put("/:id/view", authenticateToken, trackRecipeViews);
 router.post("/:id/save", authenticateToken, saveRecipe);
 router.post("/:id/rate", authenticateToken, rateRecipe);

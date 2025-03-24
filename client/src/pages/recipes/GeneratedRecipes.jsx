@@ -51,12 +51,15 @@ const GeneratedRecipes = () => {
       );
 
       const results = await Promise.all(fetchPromises);
-
+      //console.log(results);
       // Filter successful recipes
-      const successfulRecipes = results.filter(Boolean);
+      const successfulRecipes = results
+        ?.filter((res) => res?.payload)
+        ?.map((res) => res.payload);
+      //console.log(successfulRecipes);
       setRecipes(successfulRecipes);
     } catch (error) {
-      console.error("Failed to fetch generated recipes:", error);
+      console.error("Failed to fetch saved recipes:", error);
     }
   };
 

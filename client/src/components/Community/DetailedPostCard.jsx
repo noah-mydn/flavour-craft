@@ -18,24 +18,56 @@ import {
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { QuestionAnswerTwoTone } from "@mui/icons-material";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   commentsSelector,
   postByIdSelector,
+  postListSelector,
+  postLoadingSelector,
   postsLoadingSelector,
+  profileSelector,
 } from "../../redux/selectors/selectors";
 
 import PostAuthorInfo from "../DetailedPost/PostAuthorInfo";
 import CommentSection from "../DetailedPost/CommentSection";
 import PostImageGallery from "../DetailedPost/PostImageGallery";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import {
+  fetchPostById,
+  fetchPosts,
+  likePost,
+} from "../../redux/apiClients/postsAPI";
+import { usePostDetail } from "../../hooks/community/usePostDetail";
 
-const DetailedPostCard = ({ postId }) => {
+const DetailedPostCard = () => {
   const theme = useTheme();
-  const post = useSelector(postByIdSelector);
-  const loading = useSelector(postsLoadingSelector);
+  const dispatch = useDispatch();
+  const profile = useSelector(profileSelector);
+  const loading = useSelector(postLoadingSelector);
   const comments = useSelector(commentsSelector);
   const [liked, setLiked] = useState(false);
+  const postId = useParams().postId;
+  const { getPostByPostId, detailPost } = usePostDetail();
+
+  const handleLikePost = async () => {
+    await dispatch(likePost(postId));
+    setLiked(!liked);
+  };
+
+  React.useEffect(() => {
+    getPostByPostId(postId);
+  }, [postId]);
+
+  React.useEffect(() => {
+    dispatch(fetchPosts({ page: 1, pageSize: 100 }));
+  }, []);
+
+  React.useEffect(() => {
+    let alreadyLiked = detailPost?.upvotes?.includes(profile?._id);
+    console.log("Post Liked:", alreadyLiked);
+
+    setLiked(alreadyLiked);
+  }, [detailPost]);
 
   return (
     <React.Fragment>
@@ -57,16 +89,16 @@ const DetailedPostCard = ({ postId }) => {
             color: theme.palette.secondary.dark,
           }}
         >
-          {post?.topic}
+          {detailPost?.topic}
         </Link>
       </Breadcrumbs>
       <DetailCard>
         <CardContent sx={{ position: "relative", zIndex: 1, p: 2.5 }}>
           {/* Author and post content */}
-          <PostAuthorInfo post={post} loading={loading} />
+          <PostAuthorInfo post={detailPost} loading={loading} />
 
           {/* Images section */}
-          {!loading && <PostImageGallery images={post?.images} />}
+          {!loading && <PostImageGallery images={detailPost?.images} />}
 
           {/* Tags section */}
           <Box display="flex" flexWrap="wrap" gap={1} mt={1} mb={2}>
@@ -74,7 +106,7 @@ const DetailedPostCard = ({ postId }) => {
               ? [...Array(3)].map((_, i) => (
                   <Skeleton key={i} variant="rounded" width={60} height={25} />
                 ))
-              : post?.tags.map((tag, idx) => (
+              : detailPost?.tags.map((tag, idx) => (
                   <AnimatedChip
                     key={idx}
                     label={`#${tag}`}
@@ -102,11 +134,11 @@ const DetailedPostCard = ({ postId }) => {
                 ))
               ) : (
                 <>
-                  <ActionButton active={liked} onClick={() => setLiked(!liked)}>
+                  <ActionButton active={liked} onClick={handleLikePost}>
                     <Fade in={liked}>
                       <FavoriteIcon
                         fontSize="small"
-                        sx={{ color: theme.palette.primary.main, mr: 0.75 }}
+                        sx={{ color: theme.palette.primary.main }}
                       />
                     </Fade>
                     <Fade in={!liked}>
@@ -120,9 +152,10 @@ const DetailedPostCard = ({ postId }) => {
                     </Fade>
                     <Typography
                       variant="body2"
+                      color={liked ? "primary" : "textPrimary"}
                       sx={{ fontSize: "0.8rem", fontWeight: liked ? 600 : 500 }}
                     >
-                      {post?.upvotes?.length}
+                      {detailPost?.upvotes?.length}
                     </Typography>
                   </ActionButton>
                   <ActionButton>
@@ -137,7 +170,7 @@ const DetailedPostCard = ({ postId }) => {
                       variant="body2"
                       sx={{ fontSize: "0.8rem", fontWeight: 500 }}
                     >
-                      {comments?.length || post?.comments?.length}
+                      {comments?.length || detailPost?.comments?.length}
                     </Typography>
                   </ActionButton>
                 </>

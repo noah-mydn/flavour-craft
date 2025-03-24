@@ -27,20 +27,24 @@ import { useRecipe } from "../../hooks/useRecipe";
 const RecipeCard = ({ recipe, recipeId }) => {
   const navigate = useNavigate();
   const profile = useSelector(profileSelector);
-  const { saveRecipe } = useRecipe();
+  const { handleSaveRecipe } = useRecipe();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
-  const [saved, setSaved] = React.useState(
-    profile?.savedRecipes?.includes(recipe._id)
-  );
+  const [saved, setSaved] = React.useState(false);
 
   React.useEffect(() => {
-    setSaved(profile?.savedRecipes?.includes(recipe._id));
-  }, [profile]);
+    const saved = profile?.savedRecipes?.includes(recipe?._id);
+    console.log("RECIPE SAVED:", saved);
 
-  const handleSaveRecipe = () => {
-    saveRecipe(recipe?._id);
+    setSaved(saved);
+  }, [profile, recipe]);
+
+  const likeRecipe = () => {
+    let success = handleSaveRecipe(recipe?._id);
+    if (success) {
+      setSaved(!saved);
+    }
   };
 
   return (
@@ -241,7 +245,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
             right: 8,
           }}
         >
-          <IconButton size="small" onClick={handleSaveRecipe}>
+          <IconButton size="small" onClick={likeRecipe}>
             {saved ? (
               <Favorite color="primary" />
             ) : (

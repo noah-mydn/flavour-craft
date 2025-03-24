@@ -58,8 +58,9 @@ export const updatePost = createAsyncThunk(
 
 export const deletePost = createAsyncThunk(
   "posts/deletePost",
-  async (postId, { rejectWithValue }) => {
+  async ({ postId }, { rejectWithValue }) => {
     try {
+      console.log("API POSTID:", postId);
       await axios.delete(`${BASE_URL}/${postId}`, getAuthConfig());
       return postId;
     } catch (error) {
@@ -80,14 +81,13 @@ export const likePost = createAsyncThunk(
         getAuthConfig()
       );
 
-      return response.data.post;
+      return response.data;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response.data);
     }
   }
 );
-//Add Comments and if success fetch all comments to reload
 
 export const addComment = createAsyncThunk(
   "posts/addComment",
@@ -98,7 +98,7 @@ export const addComment = createAsyncThunk(
         { content: comment },
         getAuthConfig()
       );
-      return response.data.post;
+      return response.data.comment;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response.data);
@@ -114,7 +114,7 @@ export const removeComment = createAsyncThunk(
         `${BASE_URL}/${postId}/comment/${commentId}`,
         getAuthConfig()
       );
-      return response.data.post;
+      return response.data;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response.data);

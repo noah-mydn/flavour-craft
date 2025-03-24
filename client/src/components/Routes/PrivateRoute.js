@@ -1,10 +1,9 @@
-import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   isVerifiedSelector,
   userSelector,
 } from "../../redux/selectors/selectors";
+import { Navigate, Outlet } from "react-router-dom";
 import TopNavigationBar from "../Navigations/TopNavigationBar";
 
 const PrivateRoute = ({ adminOnly = false, children }) => {
@@ -15,17 +14,19 @@ const PrivateRoute = ({ adminOnly = false, children }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (adminOnly && user?.role !== "admin") {
-    return <Navigate to="/home" replace />;
-  }
-
-  if (!adminOnly && user?.role === "admin") {
-    return <Navigate to="/admin" replace />;
+  if (user?.role === "admin") {
+    if (!adminOnly) {
+      return <Navigate to="/admin" replace />;
+    }
+  } else {
+    if (adminOnly) {
+      return <Navigate to="/home" replace />;
+    }
   }
 
   return (
     <>
-      <TopNavigationBar />
+      {!adminOnly && <TopNavigationBar />}
       {children || <Outlet />}
     </>
   );

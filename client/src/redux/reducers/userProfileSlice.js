@@ -4,6 +4,7 @@ import {
   setCuisinePreferences,
   setDietaryPreferences,
   toggleSavedRecipe,
+  updateUserProfile,
 } from "../apiClients/userAPI";
 
 const initialState = {
@@ -115,6 +116,17 @@ const userProfileSlice = createSlice({
       })
       .addCase(setCuisinePreferences.rejected, (state, action) => {
         console.error("Cuisine Preferences Fetch Failed:", action.payload);
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(updateUserProfile.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.profile = action.payload;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

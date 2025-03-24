@@ -39,11 +39,11 @@ export const fetchRecipes = createAsyncThunk(
 
 export const fetchFilteredRecipes = createAsyncThunk(
   "recipes/fetchFilteredRecipes",
-  async (filters, { rejectWithValue }) => {
+  async ({ filters, page, pageSize }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
-        `${BASE_URL}/filter`,
-        filters,
+      const response = await axios.get(
+        `${BASE_URL}/${filters}?page=${page}&pageSize=${pageSize}`,
+
         getAuthConfig()
       );
       //console.log("Filter Response:", response.data);
@@ -61,6 +61,39 @@ export const fetchRecipeById = createAsyncThunk(
     try {
       const response = await axios.get(`${BASE_URL}/${id}`, getAuthConfig());
       return response.data.recipe;
+    } catch (error) {
+      displayErrorToast(error);
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const deleteRecipe = createAsyncThunk(
+  "recipes/deleteRecipe",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${BASE_URL}/${id}`, getAuthConfig());
+      console.log("DELETE RESPONSE:", response);
+      return response.data;
+    } catch (error) {
+      displayErrorToast(error);
+      return rejectWithValue(error);
+    }
+  }
+);
+
+export const searchRecipe = createAsyncThunk(
+  "recipes/searchRecipe",
+  async ({ query, page, pageSize }, { rejectWithValue }) => {
+    console.log("PAGE:", page);
+    console.log("PAGE SIZE:", pageSize);
+    try {
+      let url =
+        page && pageSize
+          ? `${BASE_URL}/search?page=${page}&pageSize=${pageSize}`
+          : `${BASE_URL}/search`;
+      const response = await axios.post(url, { query }, getAuthConfig());
+      return response.data;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error);

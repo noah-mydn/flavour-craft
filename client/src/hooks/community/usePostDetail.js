@@ -4,7 +4,11 @@ import { getAuthConfig } from "../../utils/authHeaders";
 import { displayErrorToast, displaySuccessToast } from "../../utils/toastUtil";
 import { useDispatch, useSelector } from "react-redux";
 
-import { postSelector, userSelector } from "../../redux/selectors/selectors";
+import {
+  postByIdSelector,
+  postSelector,
+  userSelector,
+} from "../../redux/selectors/selectors";
 import {
   updatePostField,
   addImages,
@@ -13,10 +17,13 @@ import {
   clearPost,
 } from "../../redux/reducers/postSlice";
 import { convertBlobsToFiles } from "../../utils/blobToFile";
-import { fetchPosts } from "../../redux/apiClients/postsAPI";
+import {
+  deletePost,
+  fetchPostById,
+  fetchPosts,
+} from "../../redux/apiClients/postsAPI";
 
-export const useCreatePost = () => {
-  const user = useSelector(userSelector);
+export const usePostDetail = () => {
   const post = useSelector(postSelector);
   const dispatch = useDispatch();
 
@@ -25,12 +32,7 @@ export const useCreatePost = () => {
   const [images, setImages] = React.useState([]);
   const [tagInputVal, setTagInputVal] = React.useState("");
 
-  const openDialogue = () => {
-    setShowPostForm(true);
-  };
-  const closeDialogue = () => {
-    setShowPostForm(false);
-  };
+  const [detailPost, setDetailPost] = React.useState(null);
 
   const handlePostFieldOnChange = (e) => {
     const { name, value } = e.target;
@@ -51,24 +53,88 @@ export const useCreatePost = () => {
 
     setImages((prevImages) => [...prevImages, ...imageUrls]);
 
-    dispatch(addImages(imageUrls)); // Dispatch addImages action
+    dispatch(addImages(imageUrls));
   };
 
   const removeImage = (index) => {
     setImages(images.filter((_, i) => i !== index));
-
     dispatch(deleteImage(index));
   };
 
-  React.useEffect(() => {
-    console.log("POST:", post);
-  }, [post]);
+  const getPostByPostId = async (postId) => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_API}/posts/${postId}`,
+        getAuthConfig()
+      );
+      console.log(response.data.post);
+      setDetailPost(response.data.post);
+    } catch (error) {
+      console.log(error);
+      displayErrorToast(error);
+    }
+  };
 
-  React.useEffect(() => {
-    console.log("POST:", post);
-  }, []);
+  const removePost = async (postId, onSuccess) => {
+    try {
+      const result = await dispatch(deletePost({ postId })).unwrap();
+      if (onSuccess) {
+        displaySuccessToast("Post deleted!");
+        onSuccess(result);
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+    }
+  };
 
-  const createPost = async () => {
+  const editPost = async (postId, onSuccess) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("topic", post?.topic);
+      formData.append("description", post?.description);
+
+      // Append each tag
+      post?.tags.forEach((tag, index) => {
+        formData.append(`tags[${index}]`, tag);
+      });
+
+      // Convert blob URLs to File objects
+      const imageFiles = await convertBlobsToFiles(post?.images);
+
+      // Append valid images
+      imageFiles.forEach((file) => {
+        if (file) formData.append("images", file);
+        else {
+          formData.append("images", []);
+        }
+      });
+
+      console.log("FormData:", formData);
+
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_API}/posts/${postId}`,
+        formData,
+        getAuthConfig(true)
+      );
+
+      console.log(response);
+      if (response.data.status === 200) {
+        if (onSuccess) {
+          dispatch(setPost(null));
+          await dispatch(fetchPostById(postId)).unwrap();
+          onSuccess();
+        }
+      }
+    } catch (error) {
+      console.error("Error editing post:", error);
+      displayErrorToast(error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const createPost = async (onSuccess) => {
     setUploading(true);
     const formData = new FormData();
     formData.append("topic", post?.topic);
@@ -99,9 +165,10 @@ export const useCreatePost = () => {
       if (response.data.status === 201) {
         dispatch(fetchPosts(1, 10));
       }
+      onSuccess();
+      dispatch(setPost(null));
+      setImages([]);
       displaySuccessToast(response?.data?.message);
-
-      closeDialogue();
     } catch (error) {
       console.error(error);
       displayErrorToast(error);
@@ -117,12 +184,15 @@ export const useCreatePost = () => {
     post,
     tagInputVal,
     uploading,
+    detailPost,
     setTagInputVal,
     handlePostFieldOnChange,
     handleImageUpload,
     removeImage,
+    getPostByPostId,
     createPost,
-    openDialogue,
-    closeDialogue,
+    editPost,
+    removePost,
+    setImages,
   };
 };

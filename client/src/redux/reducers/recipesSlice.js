@@ -3,6 +3,7 @@ import {
   fetchFilteredRecipes,
   fetchRecipeById,
   fetchRecipes,
+  searchRecipe,
 } from "../apiClients/recipeAPI";
 
 const initialState = {
@@ -27,6 +28,8 @@ const recipesSlice = createSlice({
   reducers: {
     setRecipes(state, action) {
       state.recipes = action.payload.recipes;
+    },
+    setPagination(state, action) {
       state.pagination = action.payload.pagination;
     },
     setSortType(state, action) {
@@ -91,11 +94,31 @@ const recipesSlice = createSlice({
       .addCase(fetchRecipeById.rejected, (state, action) => {
         state.recipeLoading = false;
         state.recipeError = action.payload;
+      })
+      .addCase(searchRecipe.pending, (state) => {
+        state.recipesLoading = true;
+        state.recipesError = null;
+      })
+      .addCase(searchRecipe.fulfilled, (state, action) => {
+        console.log("ACTION:", action.payload);
+        state.recipesLoading = false;
+        state.recipes = action.payload.recipes;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(searchRecipe.rejected, (state, action) => {
+        state.recipesLoading = false;
+        state.recipesError = action.payload;
       });
   },
 });
 
-export const { setRecipes, addRecipe, deleteRecipe, setSortType, setFilters } =
-  recipesSlice.actions;
+export const {
+  setRecipes,
+  addRecipe,
+  deleteRecipe,
+  setSortType,
+  setFilters,
+  setPagination,
+} = recipesSlice.actions;
 
 export default recipesSlice.reducer;

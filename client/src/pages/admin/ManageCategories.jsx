@@ -14,16 +14,15 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  DialogContentText,
   TextField,
   IconButton,
   Chip,
-  Snackbar,
-  Alert,
   CircularProgress,
-  Switch,
-  FormControlLabel,
-  Divider,
-  Grid,
+  useTheme,
+  alpha,
+  useMediaQuery,
+  TablePagination,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -32,307 +31,374 @@ import {
   Check as CheckIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
-
-// Mock data - replace with actual API calls
-const mockCategories = [
-  { id: 1, name: "Vegetarian", type: "dietary", active: true },
-  { id: 2, name: "Vegan", type: "dietary", active: true },
-  { id: 3, name: "Gluten-Free", type: "dietary", active: true },
-  { id: 4, name: "Italian", type: "cuisine", active: true },
-  { id: 5, name: "Mexican", type: "cuisine", active: true },
-  { id: 6, name: "Japanese", type: "cuisine", active: false },
-];
+import { useDispatch, useSelector } from "react-redux";
+import {
+  cuisinesSelector,
+  dietaryOptionsSelector,
+} from "../../redux/selectors/selectors";
+import { useCategory } from "../../hooks/admin/useCategory";
+import PageHeader from "../../components/Admin/PageHeader";
+import { DetailCard } from "../../styles/ContainerStyles";
 
 const ManageCategories = () => {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState({
-    name: "",
-    type: "dietary",
-    active: true,
-  });
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-  const [selectedType, setSelectedType] = useState("all");
+  // Redux state selectors
+  const cuisines = useSelector(cuisinesSelector);
+  const dietaryOptions = useSelector(dietaryOptionsSelector);
+  const cuisineLoading = useSelector((state) => state.cuisine.cuisineLoading);
+  const dietaryLoading = useSelector((state) => state.dietary.dietaryLoading);
+  const cuisinePagination = useSelector((state) => state.cuisine.pagination);
+  const dietaryPagination = useSelector((state) => state.dietary.pagination);
+
+  // Use custom hook with all the logic extracted
+  const {
+    cuisineManagement,
+    dietaryManagement,
+    handleCategoryTypeChange,
+    dialogManagement,
+    deleteManagement,
+    paginationManagement,
+    filterManagement,
+  } = useCategory();
+
+  const { fetchAllCuisines } = cuisineManagement;
+  const { fetchAllDietaryOptions } = dietaryManagement;
+  const {
+    openDialog,
+    editMode,
+    currentCategory,
+    setCurrentCategory,
+    handleOpenDialog,
+    handleCloseDialog,
+    handleInputChange,
+    handleSaveCategory,
+  } = dialogManagement;
+  const {
+    deleteConfirmOpen,
+    handleOpenDeleteConfirm,
+    handleCloseDeleteConfirm,
+    handleConfirmDelete,
+  } = deleteManagement;
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } =
+    paginationManagement;
+  const { selectedType, setSelectedType, filterCategories } = filterManagement;
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Compute loading state
+  const loading = cuisineLoading || dietaryLoading;
+
+  // Combine categories for display
+  const categories = [
+    ...cuisines.map((cuisine) => ({
+      id: cuisine?._id || cuisine?.id,
+      name: cuisine?.name,
+      type: "cuisine",
+    })),
+    ...dietaryOptions.map((option) => ({
+      id: option?._id || option?.id,
+      name: option?.name,
+      type: "dietary",
+    })),
+  ];
+
+  // Calculate total for pagination
+  const getTotalCount = () => {
+    if (selectedType === "cuisine") {
+      return cuisinePagination?.total || 0;
+    } else {
+      return dietaryPagination?.total || 0;
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchAllCuisines(1, rowsPerPage);
+    fetchAllDietaryOptions(1, rowsPerPage);
+  }, [rowsPerPage]);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCategories(mockCategories);
-      setLoading(false);
-    }, 800);
+    fetchAllCuisines(1, rowsPerPage);
+    fetchAllDietaryOptions(1, rowsPerPage);
   }, []);
 
-  const handleOpenDialog = (isEdit = false, category = null) => {
-    setEditMode(isEdit);
-    setCurrentCategory(category || { name: "", type: "dietary", active: true });
-    setOpenDialog(true);
+  // Calculate display index based on pagination
+  const getDisplayIndex = (index) => {
+    return page * rowsPerPage + index + 1;
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, checked } = e.target;
-    setCurrentCategory({
-      ...currentCategory,
-      [name]: name === "active" ? checked : value,
-    });
-  };
-
-  const handleSaveCategory = () => {
-    if (!currentCategory.name.trim()) {
-      setSnackbar({
-        open: true,
-        message: "Category name cannot be empty",
-        severity: "error",
-      });
-      return;
-    }
-
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      if (editMode) {
-        setCategories(
-          categories.map((cat) =>
-            cat.id === currentCategory.id ? currentCategory : cat
-          )
-        );
-        setSnackbar({
-          open: true,
-          message: "Category updated successfully",
-          severity: "success",
-        });
-      } else {
-        const newCategory = {
-          ...currentCategory,
-          id: Math.max(...categories.map((c) => c.id), 0) + 1,
-        };
-        setCategories([...categories, newCategory]);
-        setSnackbar({
-          open: true,
-          message: "Category added successfully",
-          severity: "success",
-        });
-      }
-      setLoading(false);
-      handleCloseDialog();
-    }, 600);
-  };
-
-  const handleDeleteCategory = (id) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setCategories(categories.filter((cat) => cat.id !== id));
-        setSnackbar({
-          open: true,
-          message: "Category deleted successfully",
-          severity: "success",
-        });
-        setLoading(false);
-      }, 600);
-    }
-  };
-
-  const handleToggleActive = (id, currentActive) => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setCategories(
-        categories.map((cat) =>
-          cat.id === id ? { ...cat, active: !currentActive } : cat
-        )
-      );
-      setSnackbar({
-        open: true,
-        message: `Category ${
-          currentActive ? "deactivated" : "activated"
-        } successfully`,
-        severity: "success",
-      });
-      setLoading(false);
-    }, 400);
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
-
-  const filteredCategories =
-    selectedType === "all"
-      ? categories
-      : categories.filter((cat) => cat.type === selectedType);
+  // Filter categories
+  const filteredCategories = filterCategories(categories);
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, margin: "0 auto" }}>
+    <Box sx={{ p: { xs: 0, md: 3 }, maxWidth: 1200, margin: "0 auto" }}>
       <Box
         sx={{
           display: "flex",
+          flexDirection: isMobile ? "column" : "row",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? 2 : 0,
           mb: 3,
         }}
       >
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 500 }}>
-          Manage Categories
-        </Typography>
+        <PageHeader
+          title="Category Management"
+          description="Manage categories regarding cuisine types, lifestyles, dietary preferences or health conditions "
+        />
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog(false)}
           sx={{
-            backgroundColor: "#2e7d32",
-            "&:hover": { backgroundColor: "#1b5e20" },
+            backgroundColor: "primary",
+            "&:hover": { backgroundColor: "primary.dark" },
+            alignSelf: isMobile ? "stretch" : "auto",
           }}
+          fullWidth={isMobile}
         >
           Add Category
         </Button>
       </Box>
 
-      <Paper sx={{ mb: 3, p: 2, borderRadius: 2 }}>
+      <DetailCard sx={{ mb: 3, p: 2, borderRadius: 2 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
           Filter Categories
         </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Chip
-            label="All Categories"
-            onClick={() => setSelectedType("all")}
-            color={selectedType === "all" ? "primary" : "default"}
-            sx={{ px: 1 }}
-          />
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+          {/* Removed the "All Categories" Chip */}
           <Chip
             label="Dietary Options"
             onClick={() => setSelectedType("dietary")}
-            color={selectedType === "dietary" ? "primary" : "default"}
-            sx={{ px: 1 }}
+            //color={selectedType === "dietary" ? "secondary" : "default"}
+            sx={{
+              px: 1,
+              mb: { xs: 1, md: 0 },
+              color: selectedType === "dietary" ? "#fff" : "#222",
+              background:
+                selectedType === "dietary"
+                  ? theme.palette.primary.main
+                  : "default",
+              "&:hover": {
+                backgroundColor: theme.palette.primary.main,
+                color: "#eee",
+              },
+            }}
           />
           <Chip
             label="Cuisines"
             onClick={() => setSelectedType("cuisine")}
-            color={selectedType === "cuisine" ? "primary" : "default"}
-            sx={{ px: 1 }}
+            sx={{
+              px: 1,
+              mb: { xs: 1, md: 0 },
+              color: selectedType === "cuisine" ? "#fff" : "#222",
+              background:
+                selectedType === "cuisine"
+                  ? theme.palette.primary.main
+                  : "default",
+              "&:hover": {
+                backgroundColor: theme.palette.primary.main,
+                color: "#eee",
+              },
+            }}
           />
         </Box>
-      </Paper>
+      </DetailCard>
 
       {loading && categories.length === 0 ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-          <CircularProgress />
+          <CircularProgress size={36} />
         </Box>
       ) : (
-        <TableContainer
-          component={Paper}
-          sx={{ borderRadius: 2, boxShadow: 3 }}
-        >
-          <Table>
-            <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "bold" }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredCategories.length > 0 ? (
-                filteredCategories.map((category) => (
-                  <TableRow
-                    key={category.id}
-                    sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
+        <DetailCard>
+          <TableContainer
+            sx={{
+              overflowX: "auto",
+            }}
+          >
+            <Table sx={{ minWidth: isMobile ? 270 : 650 }}>
+              <TableHead
+                sx={{
+                  backgroundColor: theme.palette.primary.main,
+                }}
+              >
+                <TableRow s>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                      padding: isMobile ? "5px" : "10px",
+                      fontSize: isMobile ? "0.8rem" : "inherit",
+                      color: "#fff",
+                    }}
                   >
-                    <TableCell>{category.id}</TableCell>
-                    <TableCell>{category.name}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={
-                          category.type === "dietary"
-                            ? "Dietary Option"
-                            : "Cuisine"
-                        }
-                        size="small"
-                        sx={{
-                          backgroundColor:
-                            category.type === "dietary" ? "#e3f2fd" : "#fff8e1",
-                          color:
-                            category.type === "dietary" ? "#1565c0" : "#ff8f00",
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        icon={category.active ? <CheckIcon /> : <CloseIcon />}
-                        label={category.active ? "Active" : "Inactive"}
-                        size="small"
-                        sx={{
-                          backgroundColor: category.active
-                            ? "#e8f5e9"
-                            : "#ffebee",
-                          color: category.active ? "#2e7d32" : "#c62828",
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenDialog(true, category)}
-                          sx={{ backgroundColor: "#e3f2fd" }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteCategory(category.id)}
-                          sx={{ backgroundColor: "#ffebee" }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color={category.active ? "error" : "success"}
-                          onClick={() =>
-                            handleToggleActive(category.id, category.active)
-                          }
-                          sx={{
-                            backgroundColor: category.active
-                              ? "#ffebee"
-                              : "#e8f5e9",
-                          }}
-                        >
-                          {category.active ? (
-                            <CloseIcon fontSize="small" />
-                          ) : (
-                            <CheckIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                    <Typography variant="body1" color="textSecondary">
-                      No categories found. Click "Add Category" to create one.
-                    </Typography>
+                    Index
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                      padding: isMobile ? "5px" : "10px",
+                      fontSize: isMobile ? "0.8rem" : "inherit",
+                      color: "#fff",
+                    }}
+                  >
+                    Name
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                      padding: isMobile ? "5px" : "10px",
+                      fontSize: isMobile ? "0.8rem" : "inherit",
+                      color: "#fff",
+                    }}
+                  >
+                    Type
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                      padding: isMobile ? "5px" : "10px",
+                      fontSize: isMobile ? "0.8rem" : "inherit",
+                      color: "#fff",
+                    }}
+                  >
+                    Actions
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {filteredCategories.length > 0 ? (
+                  filteredCategories.map((category, index) => (
+                    <TableRow
+                      key={category.id}
+                      sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
+                    >
+                      <TableCell
+                        sx={{
+                          padding: isMobile ? "5px" : "10px",
+                          fontSize: isMobile ? "0.8rem" : "inherit",
+                          pl: isMobile ? 1 : 3,
+                        }}
+                      >
+                        {getDisplayIndex(index)}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          padding: isMobile ? "5px" : "10px",
+                          fontSize: isMobile ? "0.8rem" : "inherit",
+                          maxWidth: isMobile ? "120px" : "auto",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {category.name}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          padding: isMobile ? "5px" : "10px",
+                          fontSize: isMobile ? "0.8rem" : "inherit",
+                        }}
+                      >
+                        <Chip
+                          label={
+                            category.type === "dietary" ? "Dietary" : "Cuisine"
+                          }
+                          size="small"
+                          sx={{
+                            maxWidth: isMobile ? "80px" : "auto",
+                            //fontSize: isMobile ? "0.7rem" : "0.75rem",
+                            backgroundColor:
+                              category.type === "dietary"
+                                ? "#e8f5e9"
+                                : "#e3f2fd",
+
+                            color:
+                              category.type === "dietary"
+                                ? "#2e7d32"
+                                : "#1565c0",
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          padding: isMobile ? "5px" : "16px",
+                          fontSize: isMobile ? "0.8rem" : "inherit",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <Box sx={{ display: "flex", gap: 0.5 }}>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleOpenDialog(true, category)}
+                            sx={{
+                              backgroundColor: "#e3f2fd",
+                              padding: isMobile ? 0.5 : 1,
+                            }}
+                          >
+                            <EditIcon
+                              color="success"
+                              fontSize={isMobile ? "small" : "medium"}
+                            />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() =>
+                              handleOpenDeleteConfirm(
+                                category.id,
+                                category.type
+                              )
+                            }
+                            sx={{
+                              backgroundColor: "#ffebee",
+                              padding: isMobile ? 0.5 : 1,
+                            }}
+                          >
+                            <DeleteIcon
+                              color="error"
+                              fontSize={isMobile ? "small" : "medium"}
+                            />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                      <Typography variant="body1" color="textSecondary">
+                        No categories found. Click "Add Category" to create one.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Pagination */}
+          <TablePagination
+            component="div"
+            count={getTotalCount()}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{
+              borderTop: "1px solid #e0e0e0",
+              ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                {
+                  fontSize: isMobile ? "0.75rem" : "inherit",
+                },
+            }}
+          />
+        </DetailCard>
       )}
 
       {/* Category Dialog */}
@@ -341,9 +407,29 @@ const ManageCategories = () => {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle sx={{ borderBottom: "1px solid #e0e0e0", pb: 2 }}>
+        <DialogTitle
+          sx={{
+            borderBottom: "1px solid #e0e0e0",
+            pb: 2,
+            position: "relative",
+          }}
+        >
           {editMode ? "Edit Category" : "Add New Category"}
+          {isMobile && (
+            <IconButton
+              aria-label="close"
+              onClick={handleCloseDialog}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <Box
@@ -354,6 +440,7 @@ const ManageCategories = () => {
               label="Category Name"
               name="name"
               fullWidth
+              size="small"
               value={currentCategory.name}
               onChange={handleInputChange}
               autoFocus
@@ -361,75 +448,111 @@ const ManageCategories = () => {
               variant="outlined"
             />
 
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: 2,
+                alignItems: isMobile ? "flex-start" : "center",
+              }}
+            >
               <Typography variant="body1">Category Type:</Typography>
-              <Chip
-                label="Dietary Option"
-                onClick={() =>
-                  setCurrentCategory({ ...currentCategory, type: "dietary" })
-                }
-                color={
-                  currentCategory.type === "dietary" ? "primary" : "default"
-                }
-                clickable
-              />
-              <Chip
-                label="Cuisine"
-                onClick={() =>
-                  setCurrentCategory({ ...currentCategory, type: "cuisine" })
-                }
-                color={
-                  currentCategory.type === "cuisine" ? "primary" : "default"
-                }
-                clickable
-              />
-            </Box>
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={currentCategory.active}
-                  onChange={handleInputChange}
-                  name="active"
-                  color="success"
+              <Box sx={{ display: "flex", gap: 1, mt: isMobile ? 1 : 0 }}>
+                <Chip
+                  label="Dietary Option"
+                  onClick={() => {
+                    const updatedCategory = {
+                      ...currentCategory,
+                      type: "dietary",
+                    };
+                    setCurrentCategory(updatedCategory);
+                    handleCategoryTypeChange({ target: { value: "dietary" } });
+                  }}
+                  color={
+                    currentCategory?.type === "dietary" ? "info" : "default"
+                  }
+                  clickable
                 />
-              }
-              label={`Category is ${
-                currentCategory.active ? "active" : "inactive"
-              }`}
-            />
+                <Chip
+                  label="Cuisine"
+                  onClick={() => {
+                    const updatedCategory = {
+                      ...currentCategory,
+                      type: "cuisine",
+                    };
+                    setCurrentCategory(updatedCategory);
+                    handleCategoryTypeChange({ target: { value: "cuisine" } });
+                  }}
+                  color={
+                    currentCategory?.type === "cuisine" ? "info" : "default"
+                  }
+                  clickable
+                />
+              </Box>
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e0e0e0" }}>
-          <Button onClick={handleCloseDialog} color="inherit" sx={{ mr: 1 }}>
-            Cancel
-          </Button>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: "1px solid #e0e0e0",
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? 1 : 0,
+          }}
+        >
+          {!isMobile && (
+            <Button onClick={handleCloseDialog} color="inherit" sx={{ mr: 1 }}>
+              Cancel
+            </Button>
+          )}
           <Button
             onClick={handleSaveCategory}
             variant="contained"
             color="primary"
-            disabled={!currentCategory.name.trim()}
+            disabled={!currentCategory.name.trim() || loading}
+            fullWidth={isMobile}
           >
-            {editMode ? "Update" : "Add"} Category
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : editMode ? (
+              "Update"
+            ) : (
+              "Add"
+            )}{" "}
+            Category
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleCloseDeleteConfirm}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this category? This action cannot be
+            undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteConfirm} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

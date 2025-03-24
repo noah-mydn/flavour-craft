@@ -79,7 +79,7 @@ const AdminSidebar = ({ open, onToggle }) => {
       sx={{
         flexShrink: 0,
         "& .MuiDrawer-paper": {
-          width: isMobile ? "90%" : 240,
+          width: isMobile ? "75%" : 240,
           boxSizing: "border-box",
           overflow: "hidden",
         },

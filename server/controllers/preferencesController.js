@@ -15,7 +15,7 @@ exports.updateCuisineAndDietaryDb = async () => {
           const formattedCuisine = cuisine
             .trim()
             .toLowerCase()
-            .replace(/\b\w/g, (char) => char.toUpperCase()); // Convert to Title Case
+            .replace(/\b\w/g, (char) => char.toUpperCase());
           cuisineSet.add(formattedCuisine);
         });
       }
@@ -166,27 +166,75 @@ exports.addNewCuisineType = async (req, res) => {
   }
 };
 
-// Get all dietary options
+// Get all dietary options with optional pagination
 exports.getDietaryOptions = async (req, res) => {
   try {
-    const dietaryOptions = await DietaryOption.find();
-    res.status(200).json({ status: 200, dietaryOptions });
+    const { page, pageSize } = req.query;
+
+    let query = DietaryOption.find();
+
+    if (page && pageSize) {
+      const pageNumber = parseInt(page, 10) || 1;
+      const limit = parseInt(pageSize, 10) || 10;
+      const skip = (pageNumber - 1) * limit;
+
+      query = query.skip(skip).limit(limit);
+    }
+
+    const dietaryOptions = await query;
+    const total = await DietaryOption.countDocuments();
+
+    res.status(200).json({
+      status: 200,
+      dietaryOptions,
+      pagination: {
+        total,
+        page: page ? parseInt(page, 10) : null,
+        pageSize: pageSize ? parseInt(pageSize, 10) : null,
+      },
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: 500, message: "Error fetching dietary options.", error });
+    res.status(500).json({
+      status: 500,
+      message: "Error fetching dietary options.",
+      error,
+    });
   }
 };
 
-// Get all cuisine types
+// Get all cuisine types with optional pagination
 exports.getCuisineTypes = async (req, res) => {
   try {
-    const cuisines = await Cuisine.find();
-    res.status(200).json({ status: 200, cuisines });
+    const { page, pageSize } = req.query;
+
+    let query = Cuisine.find();
+
+    if (page && pageSize) {
+      const pageNumber = parseInt(page, 10) || 1;
+      const limit = parseInt(pageSize, 10) || 10;
+      const skip = (pageNumber - 1) * limit;
+
+      query = query.skip(skip).limit(limit);
+    }
+
+    const cuisines = await query;
+    const total = await Cuisine.countDocuments();
+
+    res.status(200).json({
+      status: 200,
+      cuisines,
+      pagination: {
+        total,
+        page: page ? parseInt(page, 10) : null,
+        pageSize: pageSize ? parseInt(pageSize, 10) : null,
+      },
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: 500, message: "Error fetching cuisine types.", error });
+    res.status(500).json({
+      status: 500,
+      message: "Error fetching cuisine types.",
+      error,
+    });
   }
 };
 

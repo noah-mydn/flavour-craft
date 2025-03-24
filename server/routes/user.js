@@ -6,13 +6,21 @@ const {
   addCuisinePreferences,
   getUserProfileById,
   getCurrentUserProfile,
+  updatePassword,
 } = require("../controllers/userController");
+const { profilePicUpload } = require("../middlewares/multer");
 const authenticateToken =
   require("../middlewares/authVerification").authenticateToken;
 
 const router = express.Router();
 
-router.post("/edit", authenticateToken, editUserProfile);
+router.put(
+  "/edit",
+  profilePicUpload.single("userImg"),
+  authenticateToken,
+  editUserProfile
+);
+router.put("/update-password", authenticateToken, updatePassword);
 router.post("/delete", authenticateToken, deleteUserProfile);
 router.put("/set/dietaryOptions", authenticateToken, addDietaryPreferences);
 router.put("/set/cuisineTypes", authenticateToken, addCuisinePreferences);

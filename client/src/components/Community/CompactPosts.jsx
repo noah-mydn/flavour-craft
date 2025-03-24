@@ -3,7 +3,6 @@ import { Box, Grid, Pagination, alpha, useTheme } from "@mui/material";
 
 import { ContentContainer } from "../../styles/ContainerStyles";
 
-import AddPost from "./AddPost";
 import PostCard from "./PostCard";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -11,6 +10,7 @@ import {
   postsPaginationSelector,
 } from "../../redux/selectors/selectors";
 import { fetchPosts } from "../../redux/apiClients/postsAPI";
+import AddPost from "./AddPost";
 
 const CompactPosts = () => {
   const theme = useTheme();
@@ -36,7 +36,7 @@ const CompactPosts = () => {
           <AddPost />
         </Grid>
 
-        <Grid item xs={12} justifyItems="center" alignContent="center">
+        <Grid item xs={12} alignContent="center">
           {postsList?.map((post) => (
             <PostCard key={post._id} post={post} />
           ))}

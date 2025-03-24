@@ -18,37 +18,76 @@ const cohere = new CohereClient({
 });
 
 const generateRecipesInBatch = async (req, res) => {
+  if (req.user?.role !== "admin") {
+    return;
+  }
+  const { tags, cuisines, dietaryOptions, count } = req.body;
+
   try {
     const prompt = `
-      Generate 2 breakfast and brunch recipes using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects.
-      Cuisine types include:  Japanese.
-      Any of these Dietary types: Shellfish-Free, Diabetes-Friendly, Low-Sodium, Kidney-Friendly, Vegan,
-      tag include breakfast, brunch, drinks, baking, etc more,
-      description should be image promptable precise description, instructions should be detailed and step-by-step
-      Schema:
-      {
-        "name": "String (Recipe name)",
-        "ingredients": [
-          {
-            "name": "String (Ingredient name)",
-            "quantity": "String",
-            "substitute": ["String"]
-          }
-        ],
-        "shortDescription": "String", 
-        "dietaryPreferences": ["String"],
-        "cuisineTypes": ["String"],
-        "tags": ["String"] 
-        "cookingInstructions": ["String"] ,
-        "nutritionalInfo": {
-          "calories": "String",
-          "protein": "String",
-          "carbs": "String",
-          "fat": "String"
-        },
-        "cookingTime": "String"
-      }
-    `;
+    Generate ${count} recipes under any of ${tags.join(
+      ","
+    )} using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects.
+  
+    Any of these Cuisine types: ${cuisines.join(",")}.
+    Any of these Dietary types: ${dietaryOptions.join(",")}.
+  
+    STRICT VALIDATION RULES:
+    -If given cuisine type is all, analyze the origin of the recipe and label its cuisine, do not label it as All.
+    - **Verify all ingredients align with dietary labels**:
+      - Vegan recipes **CANNOT** contain any meat, dairy, eggs, honey, or animal-derived products.
+      - Vegetarian recipes **CANNOT** contain meat, poultry, or fish.
+      - Halal recipes **CANNOT** contain pork, alcohol, or non-halal meat.
+      - Kosher recipes **MUST** only contain kosher-certified ingredients.
+      - Gluten-free recipes **CANNOT** contain wheat, barley, or rye.
+      - Nut-Free recipes **CANNOT** contain any type of nuts.
+      - Soy-Free recipes **CANNOT** contain soybeans, soy sauce, tofu, miso, or any soy-derived products.
+      - Strict dietary validation - **No mislabeling allowed**.
+    
+    - **Ingredient Substitutions:**
+      - If an ingredient violates a dietary restriction, **replace it ONLY with a nutritionally and functionally similar alternative**.
+      - Example:
+        - **Miso paste (soy-based) → Chickpea miso**, NOT vegetable broth.
+        - **Smoked sausage (pork) → Chicken sausage (for halal/kosher)**.
+        - **Soy sauce → Coconut aminos (for soy-free)**.
+      - If a compliant substitute is unavailable, **exclude the ingredient**.
+  
+    - **Recipe Quality:**
+      - Provide a **precise and image-promptable** description for each recipe.
+      - Ensure **detailed, step-by-step** cooking instructions.
+    
+    - **Nutritional Information: (for a single serving estimate)**
+      - Macronutrients **must be stated in grams (g)** for calories, protein, carbs, and fat for a single serving value.
+      - Estimation should be closely related to actual value. do not generate impossible and faulty values.
+      - Only if macronutrient values cannot be estimated, use **"Varies"** . Do not use otherwise.
+    
+    - **Output Format:**
+      - The response must be a structured JSON array.
+  
+    Schema:
+    {
+      "name": "String (Recipe name)",
+      "ingredients": [
+        {
+          "name": "String (Ingredient name)",
+          "quantity": "String",
+          "substitute": ["String"]
+        }
+      ],
+      "shortDescription": "String", 
+      "dietaryPreferences": ["String"],
+      "cuisineTypes": ["String"],
+      "tags": ["String"],
+      "cookingInstructions": ["String"],
+      "nutritionalInfo": {
+        "calories": "String",
+        "protein": "String",
+        "carbs": "String",
+        "fat": "String"
+      },
+      "cookingTime": "String"
+    }
+  `;
 
     // Call Cohere API for recipe generation
     const stream = await cohere.chatStream({
@@ -281,6 +320,70 @@ Return **ONLY JSON**, nothing else.
     return res.status(500).json({
       status: 500,
       message: `Error generating recipe, ${error.message}`,
+    });
+  }
+};
+
+const uploadRecipeThumbnail = async (req, res) => {
+  const recipeId = req.params.id;
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: 400, message: "No file uploaded" });
+    }
+    const imageUrl = req.file.path;
+    const updatedRecipe = await Recipe.findByIdAndUpdate(
+      recipeId,
+      { $set: { thumbnail: imageUrl } },
+      { new: true }
+    );
+    if (!updatedRecipe) {
+      return res.status(404).json({ status: 404, message: "Recipe not found" });
+    }
+    return res.status(200).json({ status: 200, data: updatedRecipe });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: `Error uploading recipe thumbnail, ${error.message}`,
+    });
+  }
+};
+
+const deleteRecipesInBatch = async (req, res) => {
+  const recipeIds = req.body.recipeIds;
+  try {
+    if (!recipeIds || recipeIds.length === 0) {
+      return res
+        .status(400)
+        .json({ status: 400, message: "No recipe IDs provided" });
+    }
+
+    await Recipe.deleteMany({ _id: { $in: recipeIds } });
+    return res
+      .status(200)
+      .json({ status: 200, data: "Recipes deleted successfully" });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: `Error deleting recipes, ${error.message}`,
+    });
+  }
+};
+
+const deleteRecipe = async (req, res) => {
+  const recipeId = req.params.id;
+  try {
+    const recipe = await Recipe.findById(recipeId);
+    if (!recipe) {
+      return res.status(404).json({ status: 404, message: "Recipe not found" });
+    }
+    await Recipe.findByIdAndDelete(recipeId);
+    return res
+      .status(200)
+      .json({ status: 200, data: "Recipe deleted successfully", recipeId });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: `Error deleting recipe, ${error.message}`,
     });
   }
 };
@@ -907,6 +1010,42 @@ const getTimeBasedRecipe = async (req, res) => {
   }
 };
 
+const searchRecipe = async (req, res) => {
+  try {
+    const { query } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const skip = (page - 1) * pageSize;
+
+    const recipes = await Recipe.find({
+      $or: [{ name: { $regex: query, $options: "i" } }],
+    })
+      .skip(skip)
+      .limit(pageSize);
+
+    const totalRecipes = await Recipe.countDocuments({
+      $or: [{ name: { $regex: query, $options: "i" } }],
+    });
+
+    res.json({
+      pagination: {
+        totalRecipes,
+        currentPage: page,
+        totalPages: Math.ceil(totalRecipes / pageSize),
+      },
+      recipes,
+    });
+  } catch (error) {
+    console.error("Error searching recipes:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   generateRecipesInBatch,
   trackRecipeViews,
@@ -923,4 +1062,8 @@ module.exports = {
   generateRecipe,
   getRecipeOfTheDay,
   getTimeBasedRecipe,
+  uploadRecipeThumbnail,
+  deleteRecipesInBatch,
+  deleteRecipe,
+  searchRecipe,
 };

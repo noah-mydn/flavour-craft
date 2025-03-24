@@ -235,6 +235,7 @@ const AnimatedRoutes = () => {
       >
         <Route index element={<Dashboard />} />
         <Route path="recipes" element={<RecipeImageManagement />} />
+        <Route path="recipes/:recipeId" element={<RecipeDetail />} />
         <Route path="generator" element={<RecipeGenerator />} />
         <Route path="reported" element={<ReportedContent />} />
         <Route path="categories" element={<ManageCategories />} />
