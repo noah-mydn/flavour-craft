@@ -29,9 +29,6 @@ const authSlice = createSlice({
   initialState: initialState,
   reducers: {
     logout: (state) => {
-      state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
       console.log("Removing accessToken from sessionStorage");
       sessionStorage.removeItem("accessToken");
 
@@ -41,6 +38,9 @@ const authSlice = createSlice({
 
       console.log("Removing refreshToken from localStorage");
       localStorage.removeItem("refreshToken");
+      state.user = null;
+      state.accessToken = null;
+      state.refreshToken = null;
       window.location.href = "/auth";
     },
     setIsVerified: (state, action) => {

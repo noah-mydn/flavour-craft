@@ -5,6 +5,9 @@ import {
   updateUserProfile,
 } from "../redux/apiClients/userAPI";
 import { convertBlobsToFiles } from "../utils/blobToFile";
+import { displayErrorToast, displaySuccessToast } from "../utils/toastUtil";
+import { getAuthConfig } from "../utils/authHeaders";
+import axios from "axios";
 
 const useProfile = (user) => {
   const dispatch = useDispatch();
@@ -22,6 +25,18 @@ const useProfile = (user) => {
   const [profileImage, setProfileImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  // Delete account state
+
+  const [confirmDeleteError, setConfirmDeleteError] = useState("");
+  const [password, setPassword] = useState("");
 
   // Sync state with user data
   useEffect(() => {
@@ -55,7 +70,6 @@ const useProfile = (user) => {
   const handleAutocompleteChange = (name, value) => {
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
-
   // Submit Profile Update
   const handleSubmit = async (onSuccess) => {
     setLoading(true);
@@ -99,15 +113,72 @@ const useProfile = (user) => {
       setLoading(false);
     }
   };
+  const handleChangePassword = async (onSuccess) => {
+    setLoading(true);
+    try {
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_API}/user/update-password`,
+        {
+          oldPassword: passwordData?.currentPassword,
+          newPassword: passwordData?.newPassword,
+        },
+        getAuthConfig()
+      );
+      console.log(response.data);
+      if (response.data) {
+        onSuccess();
+        displaySuccessToast(response.data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      displayErrorToast(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+  const deleteAccount = async (onSuccess) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BASE_API}/user/delete`,
+        {
+          password: password,
+        },
+        getAuthConfig()
+      );
+      console.log(response.data);
+      if (response?.data?.status === 200) {
+        onSuccess();
+        displaySuccessToast(response?.data?.message);
+      }
+    } catch (error) {
+      console.error("Delete account failed:", error);
+      displayErrorToast(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
+    password,
+    passwordData,
     profileData,
     profileImage,
+    confirmDeleteError,
+    setConfirmDeleteError,
     loading,
     handleInputChange,
     handleImageChange,
     handleAutocompleteChange,
     handleSubmit,
+    handleChangePassword,
+    handlePasswordChange,
+    deleteAccount,
+    setPassword,
   };
 };
 

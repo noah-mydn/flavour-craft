@@ -16,6 +16,7 @@ import {
   Tab,
   Tabs,
   useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 import {
@@ -24,16 +25,14 @@ import {
   LockReset,
   DeleteForever,
 } from "@mui/icons-material";
-import { useDispatch } from "react-redux";
-// Import these functions from your API client file
-// import { updatePassword, deleteAccount } from '../redux/apiClients/userAPI';
+import useProfile from "../../hooks/useProfile";
+import { useAuth } from "../../hooks/useAuth";
 
 const AccountSettingsDialog = ({ open, onClose, user }) => {
   const theme = useTheme();
-  const dispatch = useDispatch();
-  const [password, setPassword] = useState("");
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [tabValue, setTabValue] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [showPassword, setShowPassword] = useState({
     current: false,
@@ -41,27 +40,24 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
     confirm: false,
   });
 
-  // Password change state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const {
+    confirmDeleteError,
+    setConfirmDeleteError,
+    loading,
+    handleChangePassword,
+    handlePasswordChange,
+    deleteAccount,
+    passwordData,
+    password,
+    setPassword,
+  } = useProfile();
 
-  // Delete account state
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const [confirmDeleteError, setConfirmDeleteError] = useState("");
+  const { accountLogout } = useAuth();
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
-    // Reset messages and errors when changing tabs
     setMessage({ type: "", text: "" });
     setConfirmDeleteError("");
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTogglePasswordVisibility = (field) => {
@@ -69,10 +65,8 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
   };
 
   const handleUpdatePassword = async () => {
-    // Validation
     if (!passwordData.currentPassword) {
       setMessage({ type: "error", text: "Current password is required" });
-      return;
     }
 
     if (passwordData.newPassword.length < 8) {
@@ -87,59 +81,28 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
       setMessage({ type: "error", text: "New passwords do not match" });
       return;
     }
+    handleChangePassword(onClose);
+  };
 
-    try {
-      setLoading(true);
-
-      // Simulate API call success for now
-      setTimeout(() => {
-        setMessage({ type: "success", text: "Password updated successfully" });
-        setPasswordData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error.response?.data?.message || "Failed to update password",
-      });
-      setLoading(false);
-    }
+  const accountDeleteSuccess = () => {
+    setTimeout(() => {
+      accountLogout();
+    }, [1000]);
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmation !== password) {
-      setConfirmDeleteError(
-        "Please enter your password to confirm account deletion"
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      setTimeout(() => {
-        setLoading(false);
-        onClose(true);
-      }, 1500);
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error.response?.data?.message || "Failed to delete account",
-      });
-      setLoading(false);
-    }
+    deleteAccount(accountDeleteSuccess);
   };
+
+  // Check if user is admin
+  const isAdmin = user?.role === "admin";
 
   return (
     <Dialog
       open={open}
       onClose={() => !loading && onClose(false)}
-      maxWidth="sm"
-      fullWidth
+      fullScreen={fullScreen}
+      fullWidth="md"
     >
       <DialogTitle
         variant="h5"
@@ -149,23 +112,26 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
         Account Settings
       </DialogTitle>
 
-      <Tabs
-        value={tabValue}
-        onChange={handleTabChange}
-        variant="fullWidth"
-        sx={{ borderBottom: 1, borderColor: "divider" }}
-      >
-        <Tab
-          icon={<LockReset fontSize="small" />}
-          iconPosition="start"
-          label="Change Password"
-        />
-        <Tab
-          icon={<DeleteForever fontSize="small" />}
-          iconPosition="start"
-          label="Delete Account"
-        />
-      </Tabs>
+      {/* Only show tabs if user is not admin */}
+      {!isAdmin && (
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={{ borderBottom: 1, borderColor: "divider" }}
+        >
+          <Tab
+            icon={<LockReset fontSize="small" />}
+            iconPosition="start"
+            label="Change Password"
+          />
+          <Tab
+            icon={<DeleteForever fontSize="small" />}
+            iconPosition="start"
+            label="Delete Account"
+          />
+        </Tabs>
+      )}
 
       <DialogContent>
         {message.text && (
@@ -178,11 +144,14 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           </Alert>
         )}
 
-        {tabValue === 0 && (
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <Typography variant="subtitle1" fontWeight="medium">
-              Update your password
-            </Typography>
+        {/* Always show password change for admin users */}
+        {(tabValue === 0 || isAdmin) && (
+          <Stack spacing={3} sx={{ mt: isAdmin ? 3 : 1 }}>
+            {isAdmin && (
+              <Typography variant="subtitle1" fontWeight="bold">
+                Update your password
+              </Typography>
+            )}
 
             <TextField
               label="Current Password"
@@ -200,9 +169,9 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
                       edge="end"
                     >
                       {showPassword.current ? (
-                        <VisibilityOff />
-                      ) : (
                         <Visibility />
+                      ) : (
+                        <VisibilityOff />
                       )}
                     </IconButton>
                   </InputAdornment>
@@ -225,7 +194,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
                       onClick={() => handleTogglePasswordVisibility("new")}
                       edge="end"
                     >
-                      {showPassword.new ? <VisibilityOff /> : <Visibility />}
+                      {showPassword.new ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -249,9 +218,9 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
                       edge="end"
                     >
                       {showPassword.confirm ? (
-                        <VisibilityOff />
-                      ) : (
                         <Visibility />
+                      ) : (
+                        <VisibilityOff />
                       )}
                     </IconButton>
                   </InputAdornment>
@@ -261,7 +230,8 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           </Stack>
         )}
 
-        {tabValue === 1 && (
+        {/* Only show delete account tab for non-admin users */}
+        {tabValue === 1 && !isAdmin && (
           <Stack spacing={3} sx={{ mt: 1 }}>
             <Alert severity="warning">
               Warning: This action cannot be undone. Your account and all
@@ -273,10 +243,12 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
             </Typography>
 
             <TextField
+              type="password"
               label="Confirm by typing your password"
-              value={deleteConfirmation}
-              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               fullWidth
+              required
               variant="outlined"
               error={!!confirmDeleteError}
               helperText={confirmDeleteError}
@@ -294,7 +266,8 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           Cancel
         </Button>
 
-        {tabValue === 0 ? (
+        {/* Show appropriate action button based on tab and role */}
+        {tabValue === 0 || isAdmin ? (
           <LoadingButton
             onClick={handleUpdatePassword}
             loading={loading}

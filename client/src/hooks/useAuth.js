@@ -11,7 +11,6 @@ import { login, register } from "../redux/apiClients/authAPI";
 import React from "react";
 import { setUserProfile } from "../redux/reducers/userProfileSlice";
 import { logout } from "../redux/reducers/authSlice";
-import { displayErrorToast, displaySuccessToast } from "../utils/toastUtil";
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -71,7 +70,6 @@ export const useAuth = () => {
   //Logout
   const accountLogout = () => {
     dispatch(logout());
-    navigate("/auth");
   };
 
   return {

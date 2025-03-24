@@ -174,102 +174,110 @@ const EditProfileDialog = ({ open, onClose, user }) => {
           </Grid>
 
           {/* Dietary Restrictions */}
-          <Grid item xs={12}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
-              Dietary Restrictions
-            </Typography>
-            <Autocomplete
-              size="small"
-              multiple
-              id="dietary-restrictions"
-              options={dietaryOptions}
-              getOptionLabel={(option) => option.name}
-              value={profileData?.dietaryRestrictions}
-              onChange={(event, newValue) =>
-                handleAutocompleteChange("dietaryRestrictions", newValue)
-              }
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    key={option._id}
-                    label={option.name}
-                    {...getTagProps({ index })}
-                    sx={{
-                      "& .MuiChip-deleteIcon": {
+          {user?.role !== "admin" && (
+            <Grid item xs={12}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Dietary Restrictions
+              </Typography>
+              <Autocomplete
+                size="small"
+                multiple
+                id="dietary-restrictions"
+                options={dietaryOptions}
+                getOptionLabel={(option) => option.name}
+                value={profileData?.dietaryRestrictions}
+                onChange={(event, newValue) =>
+                  handleAutocompleteChange("dietaryRestrictions", newValue)
+                }
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      key={option._id}
+                      label={option.name}
+                      {...getTagProps({ index })}
+                      sx={{
+                        "& .MuiChip-deleteIcon": {
+                          color: "#fff",
+                        },
+                        borderRadius: 15,
                         color: "#fff",
-                      },
-                      borderRadius: 15,
-                      color: "#fff",
-                      background: theme.palette.secondary.dark,
-                    }}
+                        background: theme.palette.secondary.dark,
+                      }}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="outlined"
+                    placeholder={
+                      profileData?.dietaryRestrictions.length === 0
+                        ? "Select dietary restrictions"
+                        : ""
+                    }
+                    fullWidth
+                    margin="normal"
                   />
-                ))
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="outlined"
-                  placeholder={
-                    profileData?.dietaryRestrictions.length === 0
-                      ? "Select dietary restrictions"
-                      : ""
-                  }
-                  fullWidth
-                  margin="normal"
-                />
-              )}
-              isOptionEqualToValue={(option, value) => option._id === value._id}
-            />
-          </Grid>
+                )}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
+              />
+            </Grid>
+          )}
 
           {/* Cuisine Preferences */}
-          <Grid item xs={12}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
-              Cuisine Preferences
-            </Typography>
-            <Autocomplete
-              size="small"
-              multiple
-              id="cuisine-preferences"
-              options={cuisines}
-              getOptionLabel={(option) => option.name}
-              value={profileData?.cuisinePreferences}
-              onChange={(event, newValue) =>
-                handleAutocompleteChange("cuisinePreferences", newValue)
-              }
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    key={option._id}
-                    label={option.name}
-                    {...getTagProps({ index })}
-                    sx={{
-                      "& .MuiChip-deleteIcon": {
+          {user?.role !== "admin" && (
+            <Grid item xs={12}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Cuisine Preferences
+              </Typography>
+              <Autocomplete
+                size="small"
+                multiple
+                id="cuisine-preferences"
+                options={cuisines}
+                getOptionLabel={(option) => option.name}
+                value={profileData?.cuisinePreferences}
+                onChange={(event, newValue) =>
+                  handleAutocompleteChange("cuisinePreferences", newValue)
+                }
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      key={option._id}
+                      label={option.name}
+                      {...getTagProps({ index })}
+                      sx={{
+                        "& .MuiChip-deleteIcon": {
+                          color: "#fff",
+                        },
+                        borderRadius: 15,
                         color: "#fff",
-                      },
-                      borderRadius: 15,
-                      color: "#fff",
-                      background: theme.palette.secondary.dark,
-                    }}
+                        background: theme.palette.secondary.dark,
+                      }}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="outlined"
+                    placeholder={
+                      profileData?.cuisinePreferences?.length === 0
+                        ? "Select dietary restrictions"
+                        : ""
+                    }
+                    fullWidth
+                    margin="normal"
                   />
-                ))
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="outlined"
-                  placeholder={
-                    profileData?.cuisinePreferences?.length === 0
-                      ? "Select dietary restrictions"
-                      : ""
-                  }
-                  fullWidth
-                  margin="normal"
-                />
-              )}
-              isOptionEqualToValue={(option, value) => option._id === value._id}
-            />
-          </Grid>
+                )}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
+              />
+            </Grid>
+          )}
         </Grid>
       </DialogContent>
 

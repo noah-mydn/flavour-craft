@@ -33,6 +33,7 @@ import EditProfileDialog from "../components/Profile/EditProfileDialog";
 import { getCurrentUserProfile } from "../redux/apiClients/userAPI";
 import { formatDate } from "../utils/timeFormatter";
 import AccountSettingsDialog from "../components/Profile/AccountSettings";
+import { DetailCard } from "../styles/ContainerStyles";
 
 const UserProfile = () => {
   const theme = useTheme();
@@ -170,7 +171,10 @@ const UserProfile = () => {
 
             {/* Main Content */}
             <Grid item xs={12} md={8}>
-              <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+              <DetailCard
+                elevation={0}
+                sx={{ borderRadius: 3, overflow: "hidden" }}
+              >
                 <Tabs
                   value={tabValue}
                   onChange={handleTabChange}
@@ -413,13 +417,13 @@ const UserProfile = () => {
                     </Box>
                   )}
                 </Box>
-              </Paper>
+              </DetailCard>
             </Grid>
 
             {/* Side Panel */}
             <Grid item xs={12} md={4}>
               <Stack spacing={3}>
-                <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
+                <DetailCard elevation={0} sx={{ p: 3, borderRadius: 3 }}>
                   <Typography variant="h6" fontWeight="bold" gutterBottom>
                     Quick Actions
                   </Typography>
@@ -465,7 +469,7 @@ const UserProfile = () => {
                       Account Settings
                     </Button>
                   </Stack>
-                </Paper>
+                </DetailCard>
               </Stack>
             </Grid>
           </Grid>
