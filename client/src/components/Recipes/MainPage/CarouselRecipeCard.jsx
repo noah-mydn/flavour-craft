@@ -129,8 +129,8 @@ const CarouselRecpieCard = ({ recipe, width }) => {
         alt="recipe thumbnail"
         sx={{
           objectFit: "cover",
-          backgroundColor: "#FFEFDD",
-          p: 2,
+          //backgroundColor: "#FFEFDD",
+          //p: 2,
         }}
       />
 

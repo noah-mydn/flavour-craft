@@ -15,7 +15,7 @@ router.get(
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Google OAuth callback route - this is where Google redirects after authentication
+// Google OAuth callback route
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -24,6 +24,15 @@ router.get(
   }),
   async (req, res) => {
     try {
+      const user = {
+        id: req.user._id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        username: req.user.username,
+        email: req.user.email,
+        role: req.user.role,
+        isFirstLoggedIn: req.user.isFirstLoggedIn,
+      };
       // Generate tokens from authenticated user
       const accessToken = jwt.sign(
         {

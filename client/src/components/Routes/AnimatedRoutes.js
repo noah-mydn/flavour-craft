@@ -49,10 +49,11 @@ const AnimatedRoutes = () => {
   const location = useLocation();
 
   React.useEffect(() => {
+    console.log("This runs!");
     if (user && isVerified) {
       dispatch(getCurrentUserProfile());
     }
-  }, [dispatch]);
+  }, [dispatch, user]);
 
   React.useEffect(() => {
     if (accessToken) {
@@ -110,10 +111,21 @@ const AnimatedRoutes = () => {
           localStorage.setItem("refreshToken", refreshToken);
 
           // Update Redux state
+
+          let authUser = {
+            id: userData?.user?._id,
+            firstName: userData?.user?.firstName,
+            lastName: userData?.user?.lastName,
+            username: userData?.user?.username,
+            role: userData?.user?.role,
+            email: userData?.user?.email,
+            //isFirstLoggedIn: userData?.user?.isFirstLoggedIn,
+          };
+
           dispatch({
             type: "auth/loginSuccess",
             payload: {
-              user: userData.user,
+              user: authUser,
               accessToken,
               refreshToken,
             },
@@ -163,21 +175,12 @@ const AnimatedRoutes = () => {
         }
       />
 
-      <Route
-        path="/pref"
-        element={
-          <PublicRoute>
-            <Preferences />
-          </PublicRoute>
-        }
-      />
-
       {/* Private Routes */}
       <Route
         path="/home"
         element={
           <PrivateRoute>
-            <Main />
+            <Home />
           </PrivateRoute>
         }
       />

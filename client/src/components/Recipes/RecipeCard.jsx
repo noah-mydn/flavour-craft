@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Card,
   CardMedia,
@@ -8,6 +9,7 @@ import {
   IconButton,
   Stack,
   useMediaQuery,
+  alpha,
 } from "@mui/material";
 import {
   AccessTime as AccessTimeIcon,
@@ -16,7 +18,6 @@ import {
   Favorite,
 } from "@mui/icons-material";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
-import React from "react";
 import theme from "../../theme/theme";
 import { normalizeTime } from "../../utils/timeFormatter";
 import { useDispatch, useSelector } from "react-redux";
@@ -28,15 +29,15 @@ const RecipeCard = ({ recipe, recipeId }) => {
   const navigate = useNavigate();
   const profile = useSelector(profileSelector);
   const { handleSaveRecipe } = useRecipe();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
+
+  const calculatedMaxHeight = isMobile ? 380 : isTablet ? 430 : 450;
 
   const [saved, setSaved] = React.useState(false);
 
   React.useEffect(() => {
     const saved = profile?.savedRecipes?.includes(recipe?._id);
-    console.log("RECIPE SAVED:", saved);
-
     setSaved(saved);
   }, [profile, recipe]);
 
@@ -51,8 +52,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
     <Card
       sx={{
         display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        height: isMobile ? "auto" : isTablet ? "160px" : "150px",
+        flexDirection: "column",
         borderRadius: 4,
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         position: "relative",
@@ -60,19 +60,21 @@ const RecipeCard = ({ recipe, recipeId }) => {
         background: "#FFF",
         mb: 2,
         width: "100%",
+        maxHeight: calculatedMaxHeight,
+        height: 370,
+        margin: "0 auto",
       }}
     >
       {/* Food image */}
       <Box
         sx={{
           position: "relative",
-          width: isMobile ? "100%" : isTablet ? "40%" : "35%",
-          minWidth: isMobile ? "100%" : "180px",
+          width: "100%",
+          height: 200,
         }}
       >
         <CardMedia
           component="img"
-          height={isMobile ? "200px" : "100%"}
           image={
             recipe?.thumbnail
               ? recipe?.thumbnail
@@ -109,7 +111,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
           </Typography>
         </Box>
 
-        {/* Category chip */}
+        {/* Tags chip */}
         <Box sx={{ position: "absolute", top: 10, right: 10 }}>
           {recipe?.tags?.length > 0 && (
             <Chip
@@ -120,7 +122,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
                 height: 24,
                 mr: 0.5,
                 mb: 0.5,
-                bgcolor: theme.palette.primary.main,
+                bgcolor: theme.palette.secondary.dark,
                 color: "#fff",
               }}
             />
@@ -133,9 +135,9 @@ const RecipeCard = ({ recipe, recipeId }) => {
         sx={{
           display: "flex",
           flexDirection: "column",
-          width: isMobile ? "100%" : "65%",
           position: "relative",
           p: 2,
+          flex: 1,
         }}
       >
         <CardContent sx={{ flex: "1 0 auto", p: 1 }}>
@@ -150,18 +152,16 @@ const RecipeCard = ({ recipe, recipeId }) => {
 
           {/* Time and Cuisine Type */}
           <Stack
-            direction="row"
+            direction="column"
             spacing={1}
-            alignItems="center"
             sx={{
               mb: 1,
-              display: "inline-flex",
               color: "text.secondary",
               fontWeight: 500,
             }}
           >
-            {/* Time section with clock icon */}
-            <Stack direction="row" alignItems="center" spacing={0.5}>
+            {/* Time section */}
+            <Stack direction="row" alignItems="center" spacing={1}>
               <AccessTimeIcon sx={{ fontSize: 18 }} />
               <Typography
                 variant="body2"
@@ -170,44 +170,33 @@ const RecipeCard = ({ recipe, recipeId }) => {
               >
                 {normalizeTime(recipe?.cookingTime)}
               </Typography>
-            </Stack>
 
-            {/* Vertical divider */}
-            <Box
-              sx={{
-                borderRight: "1px solid",
-                borderColor: "divider",
-                height: 24,
-                mx: 1,
-              }}
-            />
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              <MenuBookIcon sx={{ fontSize: 18 }} />
+              <Box
+                sx={{
+                  borderRight: "1px solid",
+                  borderColor: "divider",
+                  height: 24,
+                  mx: 1,
+                }}
+              />
+
+              {/* <MenuBookIcon sx={{ fontSize: 18 }} />
               <Typography
                 variant="body2"
                 component="span"
                 sx={{ fontWeight: 500 }}
               >
                 {recipe?.ingredients?.length} ingredients
+              </Typography> */}
+              {/* Cuisine Type */}
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{ fontWeight: 500, color: "text.secondary" }}
+              >
+                {(recipe?.cuisineTypes && recipe?.cuisineTypes[0]) || "Unknown"}
               </Typography>
             </Stack>
-            {/* Vertical divider */}
-            <Box
-              sx={{
-                borderRight: "1px solid",
-                borderColor: "divider",
-                height: 24,
-                mx: 1,
-              }}
-            />
-
-            <Typography
-              variant="body2"
-              component="span"
-              sx={{ fontWeight: 500 }}
-            >
-              {(recipe?.cuisineTypes && recipe?.cuisineTypes[0]) || "Unknown"}
-            </Typography>
           </Stack>
 
           {/* Dietary Preferences */}
@@ -218,19 +207,20 @@ const RecipeCard = ({ recipe, recipeId }) => {
             flexWrap="wrap"
             useFlexGap
           >
-            {recipe?.dietaryPreferences?.slice(0, 3).map((tag, index) => (
+            {recipe?.dietaryPreferences?.map((tag, index) => (
               <Chip
                 key={index}
                 label={tag}
                 size="small"
                 sx={{
                   fontSize: "0.75rem",
+                  fontWeight: "medium",
                   height: 24,
                   mr: 0.5,
                   mb: 0.5,
-                  color: "#fff",
-                  border: `1px solid ${theme.palette.secondary.dark}`,
-                  bgcolor: theme.palette.secondary.dark,
+                  color: theme.palette.info.main,
+                  // border: `1px solid ${theme.palette.secondary.dark}`,
+                  bgcolor: alpha(theme.palette.info.light, 0.1),
                 }}
               />
             ))}

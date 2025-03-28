@@ -82,6 +82,9 @@ const FilterSort = ({ page, pageSize }) => {
     "Seafood",
     "Salad",
     "Stew",
+    "Stir-Fry",
+    "Gourmet",
+    "Comfort Food",
   ];
 
   const timeOperators = [

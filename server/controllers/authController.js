@@ -38,11 +38,12 @@ const register = async (req, res) => {
       accessToken,
       refreshToken,
       user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        email: user.email,
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        username: newUser.username,
+        email: newUser.email,
+        //isFirstLoggedIn: user.isFirstLoggedIn,
       },
     });
   } catch (error) {
@@ -77,9 +78,9 @@ const login = async (req, res) => {
     );
 
     user.refreshToken = refreshToken;
+    user.isFirstLoggedIn = false;
     await user.save();
 
-    // Step 4: Send response
     res.status(200).json({
       message: "Login successful",
       accessToken,
@@ -91,6 +92,7 @@ const login = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        //isFirstLoggedIn: user.isFirstLoggedIn,
       },
     });
   } catch (error) {
@@ -179,21 +181,20 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user exists in database
+        //check existing users
         let user = await User.findOne({ email: profile.emails[0].value });
 
         if (!user) {
-          // Create new user if not found
+          // Create new user - not found
           user = await User.create({
             firstName:
               profile.name.givenName || profile.displayName.split(" ")[0],
             lastName: profile.name?.familyName || profile.name.givenName,
             email: profile.emails[0].value,
             googleId: profile.id,
-            // Set other required fields with default values as needed
           });
         } else if (!user.googleId) {
-          // If user exists but hasn't used Google auth before, update their record
+          // If user exists, but not been used - update their record
           user.googleId = profile.id;
           await user.save();
         }

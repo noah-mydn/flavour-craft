@@ -7,6 +7,7 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import theme from "../../../theme/theme";
 import CarouselRecpieCard from "./CarouselRecipeCard";
+import RecipeCard from "../RecipeCard";
 
 const NextArrow = (props) => {
   const { onClick } = props;
@@ -47,7 +48,9 @@ const PrevArrow = (props) => {
 };
 
 const Carousel = ({ recipes, heading }) => {
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isDesktop = useMediaQuery(theme.breakpoints.down("xl"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   console.log("Trending Recipes:", recipes);
 
@@ -55,7 +58,7 @@ const Carousel = ({ recipes, heading }) => {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: isMobile ? 1.5 : 5,
+    slidesToShow: isMobile ? 1.5 : isTablet ? 3.7 : isDesktop ? 4.5 : 5,
     slidesToScroll: 1,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
@@ -90,14 +93,15 @@ const Carousel = ({ recipes, heading }) => {
         color="primary.light"
         gutterBottom
         textAlign="center"
+        fontFamily={theme.typography.fontFamily[0]}
       >
         "{heading}"
       </Typography>
       <Box my={3}>
         <Slider {...settings}>
           {recipes?.map((recipe) => (
-            <Box key={recipe._id} px={1}>
-              <CarouselRecpieCard recipe={recipe} />
+            <Box key={recipe._id} px={1} py={3}>
+              <RecipeCard recipe={recipe} />
             </Box>
           ))}
         </Slider>

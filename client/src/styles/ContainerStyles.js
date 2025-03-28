@@ -110,7 +110,9 @@ export const HomeContainer = styled(Box)(({ theme }) => ({
   marginTop: "2.5rem",
 }));
 
-export const PreferenceContainer = styled(Box)(({ theme }) => ({}));
+export const PreferenceContainer = styled(Box)(({ theme, isMobile }) => ({
+  marginTop: isMobile ? "8.9rem " : "7rem",
+}));
 
 export const PreferenceOptionsContainer = styled(Box)(({ theme }) => ({
   margin: "0 auto",

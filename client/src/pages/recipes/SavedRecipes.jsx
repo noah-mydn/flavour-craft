@@ -67,7 +67,9 @@ const SavedRecipes = () => {
     fetchSavedRecipes();
   }, [profile?.savedRecipes]);
 
-  const hasNoRecipes = !recipeLoading && (!recipes || recipes.length === 0);
+  React.useEffect(() => {
+    console.log("Save Recipes Loading:", recipeLoading);
+  }, [recipeLoading]);
 
   return (
     <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
@@ -101,7 +103,7 @@ const SavedRecipes = () => {
         </Grid>
 
         {/* Show empty state when no recipes */}
-        {!recipeLoading && !profile?.savedRecipes.length === 0 ? (
+        {!recipeLoading && profile?.savedRecipes?.length === 0 ? (
           <Grid item container justifyContent="center">
             <Grid item xs={12} md={10} lg={8}>
               <Box

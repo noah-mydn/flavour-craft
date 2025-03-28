@@ -12,6 +12,7 @@ const {
 const {
   updateCuisineAndDietaryDb,
 } = require("../controllers/preferencesController");
+const mongoose = require("mongoose");
 
 const cohere = new CohereClient({
   token: process.env.COHERE_TOKEN,
@@ -376,6 +377,22 @@ const deleteRecipe = async (req, res) => {
     if (!recipe) {
       return res.status(404).json({ status: 404, message: "Recipe not found" });
     }
+    await User.updateMany(
+      {
+        $or: [
+          { savedRecipes: recipeId },
+          { myRecipeGenerations: recipeId },
+          { ratedRecipes: recipeId },
+        ],
+      },
+      {
+        $pull: {
+          savedRecipes: recipeId,
+          myRecipeGenerations: recipeId,
+          ratedRecipes: recipeId,
+        },
+      }
+    );
     await Recipe.findByIdAndDelete(recipeId);
     return res
       .status(200)
@@ -949,63 +966,104 @@ const getMostViewedRecipes = async (req, res) => {
 
 const getRecipeOfTheDay = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.user.userId;
 
-    // Fetch user preferences (e.g., dietary restrictions, liked cuisines)
-    const user = await User.findById(userId);
+    // Fetch user preferences and populate dietary and cuisine preferences
+    const user = await User.findById(userId)
+      .populate("dietaryRestrictions", "_id name") // Assuming dietaryRestrictions have "name" field
+      .populate("cuisinePreferences", "_id name");
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const { dietaryPreferences, savedRecipes, ratedRecipes } = user;
+    const {
+      dietaryRestrictions = [],
+      cuisinePreferences = [],
+      savedRecipes = [],
+      ratedRecipes = [],
+    } = user;
 
-    // Step 1: Get all recipes matching dietary preferences
-    let filteredRecipes = await Recipe.find({
-      dietaryPreferences: { $in: dietaryPreferences },
-    });
+    // Extract IDs
+    const dietaryIds = dietaryRestrictions.map((d) => d._id);
+    const cuisineIds = cuisinePreferences.map((c) => c._id);
 
-    // Step 2: Prioritize saved and highly rated recipes
-    let preferredRecipes = filteredRecipes.filter(
-      (recipe) =>
-        savedRecipes.includes(recipe._id) || ratedRecipes[recipe._id] >= 4
-    );
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split("T")[0];
 
-    let selectedRecipe;
-
-    if (preferredRecipes.length > 0) {
-      // Step 3: Randomly pick from preferred recipes
-      selectedRecipe =
-        preferredRecipes[Math.floor(Math.random() * preferredRecipes.length)];
-    } else if (filteredRecipes.length > 0) {
-      // Step 4: If no preferred recipes, randomly pick from all filtered recipes
-      selectedRecipe =
-        filteredRecipes[Math.floor(Math.random() * filteredRecipes.length)];
-    } else {
-      return res.status(404).json({ message: "No matching recipes found" });
+    // Fetch recipes matching dietary restrictions (or all if none)
+    let filteredRecipes = [];
+    if (dietaryIds.length > 0 || cuisineIds.length > 0) {
+      filteredRecipes = await Recipe.find({
+        $or: [
+          { dietaryPreferences: { $in: dietaryIds } },
+          { cuisineTypes: { $in: cuisineIds } },
+        ],
+      });
     }
 
-    // Store the selected recipe as today's recipe (optional: use Redis or cache)
-    await User.findByIdAndUpdate(userId, {
-      lastRecipeOfTheDay: selectedRecipe._id,
-    });
+    // If no recipes match preferences, fetch all recipes
+    if (!filteredRecipes || filteredRecipes.length === 0) {
+      filteredRecipes = await Recipe.find({});
+    }
+
+    if (!filteredRecipes || filteredRecipes.length === 0) {
+      return res.status(200).json({ message: "No recipes found" });
+    }
+
+    // Find user's preferred recipes (saved or rated ≥ 4)
+    const preferredRecipes = filteredRecipes.filter(
+      (recipe) =>
+        savedRecipes.includes(recipe._id.toString()) ||
+        ratedRecipes.some(
+          (r) => r.recipeId === recipe._id.toString() && r.rating >= 4
+        )
+    );
+
+    const recipePool =
+      preferredRecipes.length > 0 ? preferredRecipes : filteredRecipes;
+
+    if (recipePool.length === 0) {
+      return res.status(200).json({ message: "No suitable recipe found" });
+    }
+
+    // Generate a deterministic index for today’s recipe
+    const seed =
+      parseInt(userId.substring(0, 8), 16) +
+      parseInt(today.replace(/-/g, ""), 10);
+    const recipeIndex = seed % recipePool.length;
+
+    const selectedRecipe = recipePool[recipeIndex];
 
     res.status(200).json({
       status: 200,
       recipe: selectedRecipe,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching recipe of the day" });
+    console.error("Error in getRecipeOfTheDay:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
 const getTimeBasedRecipe = async (req, res) => {
-  const { dietaryPreferences } = req.body || [];
-  const time = getTimePeriod();
-
-  console.log("Time:", time);
-
   try {
-    const recipes = await getRecipesByTimeAndDietary(time, dietaryPreferences);
+    const userId = req.user.userId;
+
+    // Fetch user and populate dietary restrictions
+    const user = await User.findById(userId).populate(
+      "dietaryRestrictions",
+      "_id name"
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const dietaryIds = user.dietaryRestrictions.map((d) => d._id);
+
+    const time = getTimePeriod();
+    console.log("Time:", time);
+
+    const recipes = await getRecipesByTimeAndDietary(time, dietaryIds);
+
     res.status(200).json({ time, recipes });
   } catch (error) {
+    console.error("Error in getTimeBasedRecipe:", error);
     res.status(500).json({ message: "Error fetching recommended recipes" });
   }
 };
@@ -1046,6 +1104,39 @@ const searchRecipe = async (req, res) => {
   }
 };
 
+const cleanUpOrphanedRecipes = async () => {
+  try {
+    // Step 1: Fetch all existing recipe IDs from the Recipe collection
+    const allRecipeIds = await Recipe.find().select("_id");
+
+    const existingRecipeIds = allRecipeIds.map(
+      (recipe) => new mongoose.Types.ObjectId(recipe._id)
+    );
+
+    // Step 2: Update users by removing references to non-existing recipeIds from their arrays
+    await User.updateMany(
+      {
+        $or: [
+          { savedRecipes: { $nin: existingRecipeIds } },
+          { myRecipeGenerations: { $nin: existingRecipeIds } },
+          { ratedRecipes: { $nin: existingRecipeIds } },
+        ],
+      },
+      {
+        $pull: {
+          savedRecipes: { $nin: existingRecipeIds },
+          myRecipeGenerations: { $nin: existingRecipeIds },
+          ratedRecipes: { $nin: existingRecipeIds },
+        },
+      }
+    );
+
+    console.log("Orphaned recipe IDs have been cleaned up.");
+  } catch (error) {
+    console.error("Error cleaning orphaned recipe IDs:", error.message);
+  }
+};
+
 module.exports = {
   generateRecipesInBatch,
   trackRecipeViews,
@@ -1066,4 +1157,5 @@ module.exports = {
   deleteRecipesInBatch,
   deleteRecipe,
   searchRecipe,
+  cleanUpOrphanedRecipes,
 };

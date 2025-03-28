@@ -46,6 +46,7 @@ const authSlice = createSlice({
     setIsVerified: (state, action) => {
       state.isVerified = action.payload;
     },
+
     loginSuccess: (state, action) => {
       state.loading = false;
       state.user = action.payload.user;

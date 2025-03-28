@@ -8,6 +8,7 @@ const {
 const { Cuisine, DietaryOption } = require("../models/DietaryOptions");
 const Recipe = require("../models/Recipes");
 const Users = require("../models/Users");
+const { cleanUpOrphanedRecipes } = require("../controllers/recipesController");
 
 const connectDB = async () => {
   try {
@@ -58,7 +59,14 @@ const connectDB = async () => {
     // );
     // console.log("All recipe thumbnails removed!");
 
-    // Set new default thumbnail
+    // const result = await Users.updateMany(
+    //   { role: { $ne: "admin" } },
+    //   { $set: { isFirstLoggedIn: true } }
+    // );
+
+    // console.log("Migration Success:", result);
+
+    cleanUpOrphanedRecipes();
   } catch (err) {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);

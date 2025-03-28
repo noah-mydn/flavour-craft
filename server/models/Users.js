@@ -48,6 +48,7 @@ const userSchema = new mongoose.Schema({
       rating: Number,
     },
   ],
+  isFirstLoggedIn: { type: Boolean, default: true },
 });
 
 // Middleware to generate the username

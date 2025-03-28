@@ -17,6 +17,8 @@ import {
 import { profileSelector } from "../redux/selectors/selectors";
 
 export const useRecipe = () => {
+  const [timeBasedRecipes, setTimeBasedRecipes] = React.useState([]);
+  const [time, setTime] = React.useState("");
   const [sortValue, setSortValue] = React.useState("all");
   const [trendingRecipes, setTrendingRecipes] = React.useState([]);
 
@@ -25,6 +27,8 @@ export const useRecipe = () => {
   const [recipe, setRecipe] = React.useState(null);
   const [recipeLoading, setRecipeLoading] = React.useState(false);
   const profile = useSelector(profileSelector);
+  const [recipeDayLoading, setRecipeDayLoading] = React.useState(false);
+  const [recipeOfTheDay, setRecipeOfTheDay] = React.useState({});
 
   const fetchTrendingRecipes = async () => {
     try {
@@ -97,6 +101,40 @@ export const useRecipe = () => {
     dispatch(fetchRecipes({ sortValue: newSortValue, page, pageSize }));
   };
 
+  const fetchRecipeOfTheDay = async () => {
+    setRecipeDayLoading(true);
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_API}/recipes/recipe-of-the-day`,
+        getAuthConfig()
+      );
+      console.log(response.data);
+      if (response.data.status === 200) {
+        setRecipeOfTheDay(response.data.recipe);
+      }
+    } catch (error) {
+      console.log(error);
+      displayErrorToast(error);
+    }
+  };
+
+  const getTimedBasedRecipe = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_API}/recipes/recommend`,
+        getAuthConfig()
+      );
+      console.log(response.data);
+      if (response.data.status === 200) {
+        setTimeBasedRecipes(response?.data?.recipes);
+        setTime(response?.data?.time);
+      }
+    } catch (error) {
+      console.log(error);
+      displayErrorToast(error);
+    }
+  };
+
   const filterRecipeOption = {
     sortValue,
     handleSortChange,
@@ -111,5 +149,11 @@ export const useRecipe = () => {
     rateRecipe,
     recipeLoading,
     filterRecipeOption,
+    fetchRecipeOfTheDay,
+    recipeOfTheDay,
+    recipeDayLoading,
+    timeBasedRecipes,
+    time,
+    getTimedBasedRecipe,
   };
 };

@@ -21,23 +21,25 @@ import {
   cuisinesSelector,
   dietaryOptionsSelector,
 } from "../../redux/selectors/selectors";
-import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
-import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
+
 import { CookingAnimation } from "../Animation/CookingAnimation";
 import {
   setCuisinePreferences,
   setDietaryPreferences,
 } from "../../redux/apiClients/userAPI";
+import { useCategory } from "../../hooks/admin/useCategory";
 
 const Preferences = () => {
   const [step, setStep] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
+  // Use Sets to store only IDs
   const [tempDietarySelections, setTempDietarySelections] = React.useState(
     new Set()
   );
   const [tempCuisineSelections, setTempCuisineSelections] = React.useState(
     new Set()
   );
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -45,26 +47,30 @@ const Preferences = () => {
   const cuisines = useSelector(cuisinesSelector);
   const dietaryOptions = useSelector(dietaryOptionsSelector);
 
+  const { dietaryManagement, cuisineManagement } = useCategory();
+  const { fetchAllDietaryOptions } = dietaryManagement;
+  const { fetchAllCuisines } = cuisineManagement;
+
+  // Modify handler to work directly with IDs
   const handleTempDietarySelections = (option) => {
+    const optionId = typeof option === "string" ? option : option._id;
     setTempDietarySelections((prev) => {
       const newSelections = new Set(prev);
-      if (Array.from(newSelections).some((item) => item._id === option._id)) {
-        newSelections.delete(option);
-      } else {
-        newSelections.add(option);
-      }
+      newSelections.has(optionId)
+        ? newSelections.delete(optionId)
+        : newSelections.add(optionId);
       return newSelections;
     });
   };
 
+  // Modify handler to work directly with IDs
   const handleTempCuisineSelections = (cuisine) => {
+    const cuisineId = typeof cuisine === "string" ? cuisine : cuisine._id;
     setTempCuisineSelections((prev) => {
       const newSelections = new Set(prev);
-      if (Array.from(newSelections).some((item) => item._id === cuisine._id)) {
-        newSelections.delete(cuisine);
-      } else {
-        newSelections.add(cuisine);
-      }
+      newSelections.has(cuisineId)
+        ? newSelections.delete(cuisineId)
+        : newSelections.add(cuisineId);
       return newSelections;
     });
   };
@@ -94,28 +100,21 @@ const Preferences = () => {
   };
 
   const finishSetup = () => {
-    const dietarySelections = Array.from(tempDietarySelections).map(
-      (item) => item._id
-    );
-    const cuisineSelections = Array.from(tempCuisineSelections).map(
-      (item) => item._id
-    );
-
-    if (dietarySelections.length === 0 && cuisineSelections.length === 0) {
-      navigate("/home");
-      return;
-    }
+    // Convert Set to array of IDs
+    const dietarySelections = Array.from(tempDietarySelections);
+    const cuisineSelections = Array.from(tempCuisineSelections);
 
     setLoading(true);
 
     const promises = [];
-
     if (dietarySelections.length > 0) {
+      // Wrap IDs in the expected object structure
       promises.push(
         dispatch(setDietaryPreferences({ dietaryOptions: dietarySelections }))
       );
     }
     if (cuisineSelections.length > 0) {
+      // Wrap IDs in the expected object structure
       promises.push(
         dispatch(setCuisinePreferences({ cuisineTypes: cuisineSelections }))
       );
@@ -124,23 +123,22 @@ const Preferences = () => {
     Promise.all(promises).finally(() => {
       setTimeout(() => {
         setLoading(false);
+
         navigate("/home");
       }, 3000);
     });
   };
 
   React.useEffect(() => {
-    dispatch(fetchCuisines());
-    dispatch(fetchDietaryOptions());
+    fetchAllCuisines();
+    fetchAllDietaryOptions();
   }, []);
 
-  // Render loading state
   if (loading) {
     return <CookingAnimation />;
   }
-
   return (
-    <PreferenceContainer>
+    <PreferenceContainer isMobile={isMobile}>
       <Box display="flex" justifyContent="center">
         <BannerArea
           src={isMobile ? "./banner-s.png" : "banner-new.png"}
@@ -160,6 +158,7 @@ const Preferences = () => {
             ? "Choose your dietary preferences..."
             : "Choose your cuisine preferences..."}
         </Typography>
+
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div
@@ -171,9 +170,7 @@ const Preferences = () => {
             >
               <PreferenceOptionsContainer>
                 {dietaryOptions?.map((opt) => {
-                  const isSelected = Array.from(tempDietarySelections).some(
-                    (item) => item._id === opt._id
-                  );
+                  const isSelected = tempDietarySelections.has(opt._id);
                   return (
                     <SelectableChip
                       key={opt._id}
@@ -188,6 +185,7 @@ const Preferences = () => {
               </PreferenceOptionsContainer>
             </motion.div>
           )}
+
           {step === 1 && (
             <motion.div
               key="cuisine-selections"
@@ -198,9 +196,7 @@ const Preferences = () => {
             >
               <PreferenceOptionsContainer>
                 {cuisines?.map((cuisine) => {
-                  const isSelected = Array.from(tempCuisineSelections).some(
-                    (item) => item._id === cuisine._id
-                  );
+                  const isSelected = tempCuisineSelections.has(cuisine._id);
                   return (
                     <SelectableChip
                       key={cuisine._id}

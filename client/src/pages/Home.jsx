@@ -1,28 +1,26 @@
 import React from "react";
-import PropTypes from "prop-types";
-import Preferences from "../components/Preferences/Preferences";
 import { useSelector } from "react-redux";
-// import { usePreferenceContext } from "../context/PreferenceContext";
 import {
+  profileSelector,
   cuisinePrefSelector,
   dietaryRestrictionsSelectors,
 } from "../redux/selectors/selectors";
-import TopNavigationBar from "../components/Navigations/TopNavigationBar";
+import Preferences from "../components/Preferences/Preferences";
 import { Main } from "../components/Main/Main";
-import { Box } from "@mui/material";
 
 const Home = () => {
-  // const { step } = usePreferenceContext();
-  const dietaryRestrictions = useSelector(dietaryRestrictionsSelectors);
-  const cuisinePreferences = useSelector(cuisinePrefSelector);
-
-  // React.useEffect(() => {
-  //   console.log("CURRENT STEP:", step);
-  // }, [step]);
-
+  const profile = useSelector(profileSelector);
+  const dietaryPref = useSelector(dietaryRestrictionsSelectors);
+  const cuisinePref = useSelector(cuisinePrefSelector);
   return (
     <>
-      <Main />
+      {profile?.isFirstLoggedIn &&
+      dietaryPref?.length === 0 &&
+      cuisinePref?.length === 0 ? (
+        <Preferences />
+      ) : (
+        <Main />
+      )}
     </>
   );
 };

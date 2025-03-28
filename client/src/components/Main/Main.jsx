@@ -10,12 +10,19 @@ import { useRecipe } from "../../hooks/useRecipe";
 
 export const Main = () => {
   const theme = useTheme();
-  const { trendingRecipes, fetchTrendingRecipes } = useRecipe();
+  const {
+    trendingRecipes,
+    fetchTrendingRecipes,
+    fetchRecipeOfTheDay,
+    recipeOfTheDay,
+    recipeDayLoading,
+  } = useRecipe();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
   React.useEffect(() => {
     fetchTrendingRecipes();
+    fetchRecipeOfTheDay();
   }, []);
 
   const createNewPostWithHashTag = () => {};
@@ -35,7 +42,9 @@ export const Main = () => {
 
           <Carousel recipes={trendingRecipes} heading="Trending Recipes" />
 
-          <RecipeOfTheDay />
+          <Box mt={7}>
+            <RecipeOfTheDay recipe={recipeOfTheDay} />
+          </Box>
         </HomeContainer>
       </Box>
     </>

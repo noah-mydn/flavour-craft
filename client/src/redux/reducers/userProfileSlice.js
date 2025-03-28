@@ -21,6 +21,7 @@ const userProfileSlice = createSlice({
     setUserProfile: (state, action) => {
       return { ...state, ...action.payload };
     },
+
     updateCuisinePreferences: (state, action) => {
       state.cuisinePreferences = action.payload;
       const storedUserData = sessionStorage.getItem("userData");

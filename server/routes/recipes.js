@@ -32,7 +32,7 @@ router.post("/search", adminAuth, searchRecipe);
 router.post("/batch-generate", adminAuth, generateRecipesInBatch);
 router.post("/generate", authenticateToken, generateRecipe);
 router.delete("/delete", adminAuth, deleteRecipesInBatch);
-router.post("/recommend", authenticateToken, getTimeBasedRecipe);
+router.get("/recommend", authenticateToken, getTimeBasedRecipe);
 router.get("/all", authenticateToken, getAllRecipes);
 router.get("/trending", authenticateToken, getTrendingRecipes);
 router.get("/popular", authenticateToken, getPopularRecipes);
