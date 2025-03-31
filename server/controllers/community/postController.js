@@ -1,12 +1,20 @@
 const Post = require("../../models/community/Posts");
 const Comment = require("../../models/community/Comments");
 const Notification = require("../../models/community/Notification");
+const cloudinary = require("cloudinary").v2;
 
 exports.createPost = async (req, res) => {
   try {
     const user = req.user.userId;
     const { topic, description, tags } = req.body;
     const imageUrls = req.files ? req.files.map((file) => file.path) : [];
+
+    const totalImages = imageUrls?.length;
+    if (totalImages > 5) {
+      return res.status(400).json({
+        message: "You can only have a maximum of 5 images per post.",
+      });
+    }
 
     //check topic, descriptions are there
     if (!topic) {
@@ -219,38 +227,63 @@ exports.getPostById = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const { topic, description, tags } = req.body;
-    const postId = req.params.postId;
+    // 1. Parse request data
+    const { postId } = req.params;
+    let { topic, description, tags, existingImages } = req.body;
 
-    // Find the existing post
+    if (!Array.isArray(existingImages)) {
+      existingImages = existingImages ? [existingImages] : [];
+    }
+
+    // 2. Get new files
+    const newFiles = req.files || [];
+
+    // Check total image count (max 5)
+    const totalImages = existingImages.length + newFiles.length;
+    if (totalImages > 5) {
+      return res.status(400).json({
+        message: "You can only have a maximum of 5 images per post.",
+      });
+    }
+
+    // 3. Find original post
     const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({
-        status: 404,
-        message: "Post not found",
-      });
-    }
+    if (!post) return res.status(404).json({ message: "Post not found" });
 
-    // Check if the user is the author
-    if (post.author.toString() !== userId) {
-      return res.status(403).json({
-        status: 403,
-        message: "You do not have permission to update this post",
-      });
-    }
+    // 4. Upload new images to Cloudinary
+    const newImageUrls = await Promise.all(
+      newFiles.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "flavourCraft_posts",
+        });
+        return result.secure_url;
+      })
+    );
 
-    let updatedFields = { topic, description, tags };
+    // 5. Identify images to delete
+    const imagesToDelete = post.images.filter(
+      (img) => !existingImages.includes(img)
+    );
 
-    // Handle multiple images
-    if (req.files && req.files.length > 0) {
-      updatedFields.images = req.files.map((file) => file.path);
-    }
+    // 6. Delete removed images from Cloudinary
+    await Promise.all(
+      imagesToDelete.map(async (url) => {
+        const publicId = url.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`flavourCraft_posts/${publicId}`);
+      })
+    );
 
-    // Update the post
-    const updatedPost = await Post.findByIdAndUpdate(postId, updatedFields, {
-      new: true,
-    });
+    // 7. Update post with combined images
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      {
+        topic,
+        description,
+        tags,
+        images: [...existingImages, ...newImageUrls],
+      },
+      { new: true }
+    );
 
     res.status(200).json({
       status: 200,
@@ -258,8 +291,8 @@ exports.updatePost = async (req, res) => {
       post: updatedPost,
     });
   } catch (error) {
+    console.error("Update error:", error);
     res.status(500).json({
-      status: 500,
       message: "Failed to update post",
       error: error.message,
     });
@@ -286,10 +319,25 @@ exports.deletePost = async (req, res) => {
       });
     }
 
-    // First, find and delete all related comments
+    // Delete images from Cloudinary
+    if (post.images && post.images.length > 0) {
+      for (const imageUrl of post.images) {
+        const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
+
+    // Find and delete related comments
     const comments = await Comment.find({ postId: req.params.postId });
 
     for (const comment of comments) {
+      // Delete comment images from Cloudinary
+      if (comment.images && comment.images.length > 0) {
+        for (const imageUrl of comment.images) {
+          const publicId = imageUrl.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
       // Delete notifications related to this comment
       await Notification.deleteMany({ commentId: comment._id });
     }
@@ -297,12 +345,13 @@ exports.deletePost = async (req, res) => {
     // Delete all comments related to the post
     await Comment.deleteMany({ postId: req.params.postId });
 
-    // Now delete the post
+    // Delete the post
     await Post.findByIdAndDelete(req.params.postId);
 
     res.status(200).json({
       status: 200,
-      message: "Post and related comments & notifications deleted successfully",
+      message:
+        "Post, related comments, comment images & notifications deleted successfully",
     });
   } catch (error) {
     res.status(500).json({

@@ -18,16 +18,14 @@ const {
   // deleteUpVote,
   // deleteDownVote,
 } = require("../controllers/community/postController");
+const { uploadPostImages } = require("../middlewares/uploadImages");
 
 const authenticateToken =
   require("../middlewares/authVerification").authenticateToken;
-const adminAuth = require("../middlewares/authVerification").adminAuth;
 const router = express.Router();
 
-// ✅ Notifications route placed above any dynamic `/:postId` routes
 router.get("/notifications", authenticateToken, getNotifications);
 
-// ✅ Post creation & update
 router.post(
   "/create",
   cloudinaryUpload.array("images", 5),
@@ -36,7 +34,8 @@ router.post(
 );
 router.put(
   "/:postId",
-  cloudinaryUpload.array("images", 5),
+
+  cloudinaryUpload.array("newImages", 5),
   authenticateToken,
   updatePost
 );

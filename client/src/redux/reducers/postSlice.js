@@ -35,7 +35,7 @@ const postSlice = createSlice({
       state.images.push(...action.payload);
     },
     deleteImage: (state, action) => {
-      state.images = state.images.filter((img) => img.id !== action.payload);
+      state.images.splice(action.payload, 1);
     },
     clearPost: () => initialState,
   },

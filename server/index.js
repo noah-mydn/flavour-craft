@@ -13,6 +13,7 @@ const preferenceRoutes = require("./routes/preferences");
 const batchGenerateRoute = require("./routes/recipes");
 const communityRoute = require("./routes/community");
 const ingredientRoute = require("./routes/ingredient");
+const reportRoutes = require("./routes/report");
 
 const app = express();
 app.use("/uploads", express.static("public/uploads"));
@@ -44,6 +45,7 @@ app.use("/preferences", preferenceRoutes);
 app.use("/recipes", batchGenerateRoute);
 app.use("/posts", communityRoute);
 app.use("/ingredients", ingredientRoute);
+app.use("/report", reportRoutes);
 
 app.options("/auth/google", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");

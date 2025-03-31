@@ -12,13 +12,14 @@ const StyledCard = styled(Card)(({ theme }) => ({
   height: "100%",
   display: "flex",
   flexDirection: "column",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+  boxShadow: "0px 4px 16px rgba(0, 0, 0, 0.08)",
   borderRadius: "12px",
+  background: "white",
   transition: "transform 0.2s ease-in-out",
-  "&:hover": {
-    transform: "translateY(-4px)",
-    boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-  },
+  // "&:hover": {
+  //   transform: "translateY(-4px)",
+  //   boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+  // },
 }));
 
 const DashboardCard = ({ title, value, icon, color, progress = null }) => {
@@ -31,8 +32,8 @@ const DashboardCard = ({ title, value, icon, color, progress = null }) => {
           </Typography>
           <Box
             sx={{
-              backgroundColor: `${color}.light`,
-              color: color,
+              backgroundColor: `${color}`,
+              color: "#fff",
               borderRadius: "50%",
               width: 40,
               height: 40,

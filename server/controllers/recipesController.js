@@ -1,6 +1,7 @@
 const Recipe = require("../models/Recipes");
 const { CohereClient } = require("cohere-ai");
 const User = require("../models/Users");
+const RecipeGenerationLog = require("../logs/recipeGenerationLog");
 const {
   getTimePeriod,
   getRecipesByTimeAndDietary,
@@ -19,9 +20,11 @@ const cohere = new CohereClient({
 });
 
 const generateRecipesInBatch = async (req, res) => {
+  console.log("Recipe Generation Log :", req.user);
   if (req.user?.role !== "admin") {
     return;
   }
+  const { _id } = req.user;
   const { tags, cuisines, dietaryOptions, count } = req.body;
 
   try {
@@ -124,8 +127,13 @@ const generateRecipesInBatch = async (req, res) => {
 
     // Save unique recipes to MongoDB
     await Recipe.insertMany(uniqueRecipes);
-    console.log("Recipes successfully saved to the database.");
+
+    await RecipeGenerationLog.create({
+      userId: _id,
+    });
+
     await updateIngredientsDatabase();
+
     return res.status(200).json({
       status: 200,
       message: `${uniqueRecipes.length} new recipes saved to the database.`,
@@ -142,6 +150,7 @@ const generateRecipesInBatch = async (req, res) => {
 };
 const generateRecipe = async (req, res) => {
   const { ingredients, cuisines, dietaryPreferences } = req.body;
+  const { _id } = req.user;
 
   // Validate input
   if (!Array.isArray(ingredients) || ingredients.length === 0) {
@@ -264,6 +273,9 @@ Return **ONLY JSON**, nothing else.
     // Validate AI response
     let generatedRecipes;
     try {
+      await RecipeGenerationLog.create({
+        userId: _id,
+      });
       generatedRecipes = JSON.parse(cleanRecipeDataString);
 
       if (

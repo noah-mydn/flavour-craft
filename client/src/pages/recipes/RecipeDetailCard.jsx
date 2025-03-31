@@ -42,6 +42,7 @@ const RecipeDetail = () => {
     recipeLoading,
     rateRecipe,
   } = useRecipe();
+
   const [activeTab, setActiveTab] = useState(0);
 
   const [rate, setRate] = useState(0);
@@ -57,11 +58,11 @@ const RecipeDetail = () => {
   const [saved, setSaved] = React.useState(false);
 
   React.useEffect(() => {
-    const saved = profile?.savedRecipes?.includes(recipeId);
-    console.log("RECIPE SAVED:", saved);
-
-    setSaved(saved);
-  }, [profile, recipeId]);
+    if (profile?.savedRecipes) {
+      const isSaved = profile.savedRecipes.includes(recipeId);
+      setSaved(isSaved);
+    }
+  }, [profile?.savedRecipes, recipeId]);
 
   const likeRecipe = () => {
     handleSaveRecipe(recipeId);
@@ -86,7 +87,7 @@ const RecipeDetail = () => {
     if (recipeId) {
       fetchRecipeInfo(recipeId);
     }
-  }, []);
+  }, [recipeId]);
 
   const isAdmin = profile?.role === "admin";
 

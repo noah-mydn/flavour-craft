@@ -44,6 +44,7 @@ import PageHeader from "../../components/Admin/PageHeader";
 import { useRecipeManagement } from "../../hooks/admin/useRecipeManagement";
 import theme from "../../theme/theme";
 import { DetailCard } from "../../styles/ContainerStyles";
+import { formatDate, formatTimeAgo } from "../../utils/timeFormatter";
 
 const RecipeManagement = () => {
   const {
@@ -128,6 +129,9 @@ const RecipeManagement = () => {
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
                         Dietary Preferences
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
+                        Generated Date
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
                         Actions
@@ -216,6 +220,13 @@ const RecipeManagement = () => {
                               </Typography>
                             )}
                           </Box>
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.secondary,
+                          }}
+                        >
+                          {formatDate(recipe?.createdAt)}
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: "flex", gap: 1 }}>

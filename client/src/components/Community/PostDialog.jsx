@@ -29,12 +29,10 @@ import {
 } from "../../redux/selectors/selectors";
 import { useDispatch, useSelector } from "react-redux";
 import HashtagInput from "./HashtagInput";
-
 import { setPost } from "../../redux/reducers/postSlice";
-import { fetchPostById } from "../../redux/apiClients/postsAPI";
 import { useParams } from "react-router-dom";
 
-const PostDialog = ({ open, isEdit = false, onClose }) => {
+const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
   const dispatch = useDispatch();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const user = useSelector(userSelector);
@@ -53,7 +51,6 @@ const PostDialog = ({ open, isEdit = false, onClose }) => {
 
   const post = useSelector(postSelector);
   const postId = useParams().postId;
-  const postById = useSelector(postByIdSelector);
   const isResetState = useSelector(isResetSelector);
 
   const handleCreatePost = (e) => {
@@ -62,37 +59,40 @@ const PostDialog = ({ open, isEdit = false, onClose }) => {
     createPost(onClose);
   };
 
-  const handleEditPost = (e) => {
+  const handleEditPost = async (e) => {
     e.preventDefault();
-    console.log("Updating post :", post);
-    editPost(postId, onClose);
+    console.log("Updating post:", post);
+    await editPost(postId, onClose);
+    //await dispatch(fetchPostById(postId)).unwrap();
   };
 
-  const handlePostEdit = async () => {
-    await dispatch(
-      setPost({
-        topic: postById.topic,
-        description: postById.description,
-        tags: postById.tags,
-      })
-    );
-    setImages(postById.images);
+  const handlePostEdit = () => {
+    if (editedPost) {
+      if (editedPost?.images?.length > 0) {
+        setImages(editedPost.images);
+      }
+      dispatch(
+        setPost({
+          id: editedPost._id,
+          topic: editedPost.topic,
+          description: editedPost.description,
+          tags: editedPost.tags,
+          images: editedPost.images,
+          isResetState: false,
+        })
+      );
+    }
   };
 
   React.useEffect(() => {
-    if (postById != null) {
-      handlePostEdit().then(() => {
-        console.log("Redux images:", JSON.stringify(post.images, null, 2));
-      });
+    if (editedPost && isEdit) {
+      handlePostEdit();
     }
-  }, [postById]);
+  }, [editedPost]);
 
   React.useEffect(() => {
-    if (postId) {
-      dispatch(fetchPostById(postId));
-    }
-  }, [postId]);
-
+    console.log("useEffect Hook: Images:", images);
+  }, [images]);
   return (
     <Dialog
       open={open}
@@ -253,7 +253,7 @@ const PostDialog = ({ open, isEdit = false, onClose }) => {
               </Paper>
             </Box>
 
-            {images.length > 0 && !isResetState && (
+            {images?.length > 0 && !isResetState && (
               <Box display="flex" gap={2} flexWrap="wrap" py={3}>
                 {images.map((src, index) => (
                   <Box

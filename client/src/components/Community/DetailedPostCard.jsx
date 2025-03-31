@@ -21,10 +21,8 @@ import { QuestionAnswerTwoTone } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
 import {
   commentsSelector,
-  postByIdSelector,
   postListSelector,
   postLoadingSelector,
-  postsLoadingSelector,
   profileSelector,
 } from "../../redux/selectors/selectors";
 
@@ -47,19 +45,22 @@ const DetailedPostCard = () => {
   const comments = useSelector(commentsSelector);
   const [liked, setLiked] = useState(false);
   const postId = useParams().postId;
+  const posts = useSelector(postListSelector);
   const { getPostByPostId, detailPost } = usePostDetail();
 
   const handleLikePost = async () => {
-    await dispatch(likePost(postId));
+    await dispatch(likePost(postId)).unwrap();
     setLiked(!liked);
   };
 
   React.useEffect(() => {
-    getPostByPostId(postId);
-  }, [postId]);
+    if (postId && posts.some((p) => p._id === postId)) {
+      getPostByPostId(postId);
+    }
+  }, [postId, posts]);
 
   React.useEffect(() => {
-    dispatch(fetchPosts({ page: 1, pageSize: 100 }));
+    dispatch(fetchPosts(1, 100));
   }, []);
 
   React.useEffect(() => {

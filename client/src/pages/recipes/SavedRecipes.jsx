@@ -211,12 +211,28 @@ const SavedRecipes = () => {
                 ? Array(4)
                     .fill(0)
                     .map((_, index) => (
-                      <Grid item key={`skeleton-${index}`} md={12} lg={6}>
+                      <Grid
+                        item
+                        key={`skeleton-${index}`}
+                        xs={8}
+                        sm={6}
+                        md={4.5}
+                        lg={2.5}
+                        rowSpacing={3}
+                      >
                         <RecipeCardSkeleton />
                       </Grid>
                     ))
                 : currentPageRecipes?.map((recipe) => (
-                    <Grid item key={recipe._id} xs={10} lg={6}>
+                    <Grid
+                      item
+                      key={recipe._id}
+                      xs={8}
+                      sm={6}
+                      md={4.5}
+                      lg={2.5}
+                      rowSpacing={3}
+                    >
                       <RecipeCard recipe={recipe} />
                     </Grid>
                   ))}

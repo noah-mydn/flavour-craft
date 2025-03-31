@@ -13,13 +13,11 @@ import { fetchFilteredRecipes } from "../../redux/apiClients/recipeAPI";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
 import RecipeCard from "../../components/Recipes/RecipeCard";
 import {
-  filtersSelector,
   loadingRecipesSelector,
   paginationSelector,
   recipesListSelector,
 } from "../../redux/selectors/selectors";
-import { useRecipe } from "../../hooks/useRecipe";
-import TopNavigationBar from "../../components/Navigations/TopNavigationBar";
+
 import { Link, useParams } from "react-router-dom";
 import { setFilters } from "../../redux/reducers/recipesSlice";
 
@@ -45,8 +43,10 @@ const RecipesByCuisines = () => {
     if (cuisineType) {
       let payload = { cuisineTypes: [cuisineType] };
 
+      console.log("Payload:", payload);
+
       dispatch(setFilters(payload));
-      dispatch(fetchFilteredRecipes(payload, page, 10));
+      dispatch(fetchFilteredRecipes({ filters: payload, page, pageSize: 10 }));
     }
     return () => {
       dispatch(setFilters({}));
@@ -130,7 +130,15 @@ const RecipesByCuisines = () => {
                   </Grid>
                 ))
             : recipes?.map((recipe) => (
-                <Grid item key={recipe._id} xs={10} lg={6}>
+                <Grid
+                  item
+                  key={recipe._id}
+                  xs={8}
+                  sm={6}
+                  md={4.5}
+                  lg={2.5}
+                  rowSpacing={3}
+                >
                   <RecipeCard recipe={recipe} />
                 </Grid>
               ))}

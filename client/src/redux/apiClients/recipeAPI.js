@@ -40,10 +40,12 @@ export const fetchRecipes = createAsyncThunk(
 export const fetchFilteredRecipes = createAsyncThunk(
   "recipes/fetchFilteredRecipes",
   async ({ filters, page, pageSize }, { rejectWithValue }) => {
+    console.log("Filters:", filters);
+    console.log("Page and PageSize:", page, pageSize);
     try {
-      const response = await axios.get(
-        `${BASE_URL}/${filters}?page=${page}&pageSize=${pageSize}`,
-
+      const response = await axios.post(
+        `${BASE_URL}/filter?page=${page}&pageSize=${pageSize}`,
+        filters,
         getAuthConfig()
       );
       //console.log("Filter Response:", response.data);

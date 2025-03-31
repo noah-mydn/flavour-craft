@@ -14,7 +14,7 @@ const initialState = {
   recipesLoading: false,
   recipesError: null,
   // Filtering
-  filters: false,
+  filters: [],
   filterExists: false,
   //Single recipe
   recipe: null,
@@ -38,6 +38,7 @@ const recipesSlice = createSlice({
     },
     setFilters(state, action) {
       state.filters = action.payload;
+      state.filterExists = true;
     },
     addRecipe(state, action) {
       state.recipes.push(action.payload);
@@ -46,6 +47,10 @@ const recipesSlice = createSlice({
       state.recipes = state.recipes.filter(
         (recipe) => recipe._id !== action.payload
       );
+    },
+    removeFilters(state) {
+      state.filters = [];
+      state.filterExists = false;
     },
   },
   extraReducers: (builder) => {
@@ -118,6 +123,7 @@ export const {
   deleteRecipe,
   setSortType,
   setFilters,
+  removeFilters,
   setPagination,
 } = recipesSlice.actions;
 

@@ -43,6 +43,7 @@ import { logout } from "../../redux/reducers/authSlice";
 import { useNavigate } from "react-router-dom";
 import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
 import AutoCompleteSearch from "../AutoCompleteSearch/AutoCompleteSearch";
+import { useCategory } from "../../hooks/admin/useCategory";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
@@ -54,7 +55,8 @@ const TopNavigationBar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-
+  const { cuisineManagement } = useCategory();
+  const { fetchAllCuisines } = cuisineManagement;
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -73,10 +75,8 @@ const TopNavigationBar = () => {
   };
   const cuisineTypes = useSelector(cuisinesSelector);
 
-  //console.log("CuisineTypes:", cuisineTypes);
-
   React.useEffect(() => {
-    dispatch(fetchCuisines());
+    fetchAllCuisines();
   }, []);
 
   const recipeSubMenuItems = [
@@ -319,7 +319,7 @@ const TopNavigationBar = () => {
           )}
 
           {/* Search Bar */}
-          {!isMobile && (
+          {/* {!isMobile && (
             // <TextField
             //   variant="outlined"
             //   size="small"
@@ -351,7 +351,7 @@ const TopNavigationBar = () => {
             //   }}
             // />
             <AutoCompleteSearch />
-          )}
+          )} */}
 
           {/* User Profile Avatar */}
           <Box display="flex" gap={2} justifyContent="flex-end">
@@ -368,7 +368,7 @@ const TopNavigationBar = () => {
           </Box>
         </Box>
         <Box display="flex" justifyContent="center" alignItems="center">
-          {isMobile && (
+          {/* {isMobile && (
             // <TextField
             //   variant="outlined"
             //   size="small"
@@ -399,8 +399,8 @@ const TopNavigationBar = () => {
             //     },
             //   }}
             // />
-            <AutoCompleteSearch />
-          )}
+            // <AutoCompleteSearch />
+          )} */}
         </Box>
       </AppBar>
 

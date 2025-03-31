@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   deleteRecipe,
   fetchFilteredRecipes,
+  fetchRecipes,
   searchRecipe,
 } from "../../redux/apiClients/recipeAPI";
 import { displayErrorToast, displaySuccessToast } from "../../utils/toastUtil";
@@ -48,8 +49,8 @@ export const useRecipeManagement = () => {
   const getRecipesInventory = () => {
     setLoading(true);
     dispatch(
-      fetchFilteredRecipes({
-        filters: "all",
+      fetchRecipes({
+        sortValue: "all",
         page,
         pageSize,
       })

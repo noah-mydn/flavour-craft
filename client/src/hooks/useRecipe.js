@@ -4,10 +4,7 @@ import { getAuthConfig } from "../utils/authHeaders";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import {
-  getCurrentUserProfile,
-  toggleSavedRecipe,
-} from "../redux/apiClients/userAPI";
+import { toggleSavedRecipe } from "../redux/apiClients/userAPI";
 import { fetchRecipes } from "../redux/apiClients/recipeAPI";
 import {
   rateRecipes,

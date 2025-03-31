@@ -17,11 +17,7 @@ import {
   clearPost,
 } from "../../redux/reducers/postSlice";
 import { convertBlobsToFiles } from "../../utils/blobToFile";
-import {
-  deletePost,
-  fetchPostById,
-  fetchPosts,
-} from "../../redux/apiClients/postsAPI";
+import { deletePost, fetchPosts } from "../../redux/apiClients/postsAPI";
 
 export const usePostDetail = () => {
   const post = useSelector(postSelector);
@@ -57,6 +53,7 @@ export const usePostDetail = () => {
   };
 
   const removeImage = (index) => {
+    console.log(index);
     setImages(images.filter((_, i) => i !== index));
     dispatch(deleteImage(index));
   };
@@ -89,29 +86,40 @@ export const usePostDetail = () => {
 
   const editPost = async (postId, onSuccess) => {
     setUploading(true);
+    console.log("ABOUT TO GET EDITED POST:", post);
+
+    const formData = new FormData();
+    formData.append("topic", post?.topic);
+    formData.append("description", post?.description);
+
+    // Append each tag
+    post?.tags.forEach((tag, index) => {
+      formData.append(`tags[${index}]`, tag);
+    });
+
+    post?.images
+      .filter((img) => typeof img === "string")
+      .forEach((img) => {
+        formData.append("existingImages[]", img);
+      });
+
+    const blobImgs = post?.images?.filter((img) => img instanceof Blob);
+
+    // Convert blob URLs to File objects
+    if (blobImgs?.length > 0) {
+      return await convertBlobsToFiles(blobImgs);
+    }
+
+    blobImgs.forEach((file) => {
+      formData.append("newImages", file);
+    });
+
+    // Debug: Log the form data
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
     try {
-      const formData = new FormData();
-      formData.append("topic", post?.topic);
-      formData.append("description", post?.description);
-
-      // Append each tag
-      post?.tags.forEach((tag, index) => {
-        formData.append(`tags[${index}]`, tag);
-      });
-
-      // Convert blob URLs to File objects
-      const imageFiles = await convertBlobsToFiles(post?.images);
-
-      // Append valid images
-      imageFiles.forEach((file) => {
-        if (file) formData.append("images", file);
-        else {
-          formData.append("images", []);
-        }
-      });
-
-      console.log("FormData:", formData);
-
       const response = await axios.put(
         `${process.env.REACT_APP_BASE_API}/posts/${postId}`,
         formData,
@@ -119,11 +127,16 @@ export const usePostDetail = () => {
       );
 
       console.log(response);
+
       if (response.data.status === 200) {
         if (onSuccess) {
-          dispatch(setPost(null));
-          await dispatch(fetchPostById(postId)).unwrap();
-          onSuccess();
+          dispatch(clearPost());
+          const res = await dispatch(fetchPosts(1, 10)).unwrap();
+          console.log(res);
+          if (res?.status === 200) {
+            getPostByPostId(postId);
+            onSuccess();
+          }
         }
       }
     } catch (error) {
@@ -149,7 +162,7 @@ export const usePostDetail = () => {
     const imageFiles = await convertBlobsToFiles(post?.images);
 
     // Append valid images
-    imageFiles.forEach((file) => {
+    imageFiles?.forEach((file) => {
       if (file) formData.append("images", file);
     });
 

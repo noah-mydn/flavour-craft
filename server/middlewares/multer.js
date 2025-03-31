@@ -11,7 +11,7 @@ const cloudinaryStorage = new CloudinaryStorage({
       {
         width: 500,
         height: 500,
-        crop: "pad",
+        crop: "fill",
       },
     ],
   },

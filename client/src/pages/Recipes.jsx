@@ -34,9 +34,7 @@ import {
 } from "../redux/apiClients/recipeAPI";
 import FilterSort from "../components/FilterSort/FilterSort";
 import { SearchOff } from "@mui/icons-material";
-import { setSortType } from "../redux/reducers/recipesSlice";
-import { fetchCuisines } from "../redux/apiClients/cuisineAPI";
-import { fetchDietaryOptions } from "../redux/apiClients/dietaryAPI";
+import { removeFilters, setSortType } from "../redux/reducers/recipesSlice";
 
 const Recipes = () => {
   const theme = useTheme();
@@ -44,6 +42,7 @@ const Recipes = () => {
   const loading = useSelector(loadingRecipesSelector);
   const pagination = useSelector(paginationSelector);
   const filters = useSelector(filtersSelector);
+  const filterExists = useSelector(filterExistsSelector);
   const dispatch = useDispatch();
 
   const { filterRecipeOption } = useRecipe();
@@ -63,27 +62,17 @@ const Recipes = () => {
   };
 
   React.useEffect(() => {
-    if (filters && Object.keys(filters).length > 0) {
-      dispatch(fetchFilteredRecipes(filters, page, pageSize));
-      dispatch(setSortType(null));
-    } else {
-      console.log("BECAUSE OF THIS:");
-      dispatch(fetchRecipes({ sortValue, page, pageSize }));
+    console.log(filters);
+    if (filterExists && filters && Object?.keys(filters)?.length > 0) {
+      dispatch(fetchFilteredRecipes({ filters, page, pageSize }));
     }
-  }, [filters, page, dispatch]);
+  }, [filters, page, pageSize, dispatch]);
 
-  // sort changes
   React.useEffect(() => {
-    if (
-      (!filters || Object.keys(filters).length === 0) &&
-      sortValue !== "all"
-    ) {
-      console.log("BECAUSE OF NO FILTERS:");
-      dispatch(fetchRecipes({ sortValue, page, pageSize }));
-    }
-  }, [sortValue, dispatch]);
+    dispatch(fetchRecipes({ sortValue, page, pageSize }));
+  }, [sortValue, page, dispatch]);
 
-  console.log("Recipes:", recipes);
+  //console.log("Recipes:", recipes);
   return (
     <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
       <Grid container direction="column" spacing={3}>
@@ -105,7 +94,15 @@ const Recipes = () => {
             ? Array(4)
                 .fill(0)
                 .map((_, index) => (
-                  <Grid item key={`skeleton-${index}`} md={12} lg={6}>
+                  <Grid
+                    item
+                    key={`skeleton-${index}`}
+                    xs={8}
+                    sm={6}
+                    md={4.5}
+                    lg={2.5}
+                    rowSpacing={3}
+                  >
                     <RecipeCardSkeleton />
                   </Grid>
                 ))
