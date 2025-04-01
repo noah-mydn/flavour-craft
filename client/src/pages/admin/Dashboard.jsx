@@ -1,28 +1,7 @@
 // src/pages/Dashboard.js
 import React from "react";
-import {
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Divider,
-  useTheme,
-} from "@mui/material";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
+import { Box, Grid, useTheme } from "@mui/material";
+
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
 import FlagIcon from "@mui/icons-material/Flag";

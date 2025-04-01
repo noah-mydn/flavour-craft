@@ -186,7 +186,7 @@ const BarChartData = () => {
               {
                 dataKey: "value",
                 label: "Recipes Generated",
-                color: theme.palette.primary.main,
+                color: theme.palette.info.main,
                 valueFormatter: (value) => value.toString(),
               },
             ]}

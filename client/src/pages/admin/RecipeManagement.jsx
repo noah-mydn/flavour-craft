@@ -170,7 +170,7 @@ const RecipeManagement = () => {
                                 <ImageIcon sx={{ color: "#bdbdbd" }} />
                               </Avatar>
                             )}
-                            <Typography variant="body1">
+                            <Typography variant="subtitle2">
                               {recipe.name}
                             </Typography>
                           </Box>
@@ -183,6 +183,7 @@ const RecipeManagement = () => {
                               sx={{
                                 backgroundColor: "#e3f2fd",
                                 color: "#1565c0",
+                                fontSize: 12,
                               }}
                             />
                           ) : (
@@ -208,6 +209,7 @@ const RecipeManagement = () => {
                                   sx={{
                                     backgroundColor: "#e8f5e9",
                                     color: "#2e7d32",
+                                    fontSize: 12,
                                   }}
                                 />
                               ))
