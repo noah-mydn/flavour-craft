@@ -1,509 +1,460 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
   Button,
-  TextField,
-  Divider,
+  Container,
+  Typography,
+  Paper,
+  Grid,
   IconButton,
+  CircularProgress,
+  Card,
+  CardMedia,
+  CardContent,
+  Chip,
+  Tooltip,
+  Divider,
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
+  TextField,
+  InputAdornment,
   InputLabel,
-  MenuItem,
-  Select,
-  CardMedia,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import CampaignIcon from "@mui/icons-material/Campaign";
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Refresh as RefreshIcon,
+  DateRange as DateRangeIcon,
+  Title as TitleIcon,
+  Cancel as CancelIcon,
+} from "@mui/icons-material";
+import { useCampaign } from "../../hooks/admin/useCampaign";
 import PageHeader from "../../components/Admin/PageHeader";
+import { DetailCard } from "../../styles/ContainerStyles";
+import theme from "../../theme/theme";
 
-// Sample data for campaigns
-const campaignData = [
-  {
-    id: 1,
-    title: "Summer Grilling Recipes",
-    description:
-      "Discover the best BBQ and grilling recipes for your summer gatherings",
-    status: "Active",
-    startDate: "2025-06-01",
-    endDate: "2025-08-31",
-    imageUrl: "/api/placeholder/800/400",
-  },
-  {
-    id: 2,
-    title: "Healthy New Year",
-    description: "Start the year with healthy, nutritious recipes",
-    status: "Scheduled",
-    startDate: "2026-01-01",
-    endDate: "2026-01-31",
-    imageUrl: "/api/placeholder/800/400",
-  },
-  {
-    id: 3,
-    title: "Fall Comfort Food",
-    description: "Warm, hearty recipes for the fall season",
-    status: "Inactive",
-    startDate: "2024-09-01",
-    endDate: "2024-11-30",
-    imageUrl: "/api/placeholder/800/400",
-  },
-];
+const CampaignManagement = () => {
+  const {
+    campaign,
+    campaigns,
+    loading,
+    error,
+    openDialog,
+    deleteConfirmOpen,
+    campaignToDelete,
+    mode,
+    setOpenDialog,
+    handleInputChange,
+    handleFileInput,
+    handleSubmit,
+    fetchCampaigns,
+    setupEditCampaign,
+    setupCreateCampaign,
+    resetForm,
+    openDeleteConfirmation,
+    closeDeleteConfirmation,
+    confirmDelete,
+  } = useCampaign();
 
-const CampaignManager = () => {
-  const [campaigns, setCampaigns] = useState(campaignData);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [newCampaign, setNewCampaign] = useState({
-    title: "",
-    description: "",
-    status: "Scheduled",
-    startDate: "",
-    endDate: "",
-    imageUrl: "/api/placeholder/800/400",
-  });
-  const [imagePreview, setImagePreview] = useState(null);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const minDate = today.toISOString().split("T")[0];
 
-  const handleAddCampaign = () => {
-    setDialogOpen(true);
-  };
-
-  const handleEditCampaign = (campaign) => {
-    setSelectedCampaign(campaign);
-    setEditDialogOpen(true);
-  };
-
-  const handleDeleteCampaign = (id) => {
-    setCampaigns(campaigns.filter((campaign) => campaign.id !== id));
-  };
-
-  const handleSaveCampaign = () => {
-    // Add new campaign
-    if (newCampaign.title && newCampaign.startDate && newCampaign.endDate) {
-      const newId =
-        campaigns.length > 0 ? Math.max(...campaigns.map((c) => c.id)) + 1 : 1;
-      setCampaigns([...campaigns, { id: newId, ...newCampaign }]);
-      setNewCampaign({
-        title: "",
-        description: "",
-        status: "Scheduled",
-        startDate: "",
-        endDate: "",
-        imageUrl: "/api/placeholder/800/400",
-      });
-      setDialogOpen(false);
-    }
-  };
-
-  const handleUpdateCampaign = () => {
-    if (selectedCampaign) {
-      setCampaigns(
-        campaigns.map((campaign) =>
-          campaign.id === selectedCampaign.id ? selectedCampaign : campaign
-        )
-      );
-      setEditDialogOpen(false);
-      setSelectedCampaign(null);
-    }
-  };
-
-  const handleImageChange = (event) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-      };
-
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "success";
-      case "Scheduled":
-        return "info";
-      case "Inactive":
-        return "error";
-      default:
-        return "default";
-    }
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
   };
 
   return (
-    <Box>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <PageHeader
-        title="Campaign Manager"
-        description="Manage featured campaigns for the home page"
-        buttonText="Add Campaign"
-        buttonIcon={<AddIcon />}
-        onButtonClick={handleAddCampaign}
+        title="Campaign Management"
+        description="Create Campaign Banners"
       />
+      <Box
+        display="flex"
+        justifyContent={{ xs: "center", sm: "flex-end" }}
+        my={2}
+      >
+        <Button
+          variant="contained"
+          startIcon={<RefreshIcon />}
+          onClick={fetchCampaigns}
+          sx={{ mr: 2 }}
+        >
+          Refresh
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={setupCreateCampaign}
+        >
+          New Campaign
+        </Button>
+      </Box>
 
-      <Grid container spacing={3}>
-        {campaigns.map((campaign) => (
-          <Grid item xs={12} md={6} lg={4} key={campaign.id}>
-            <Card>
-              <CardMedia
-                component="img"
-                height="160"
-                image={campaign.imageUrl}
-                alt={campaign.title}
-              />
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="h6">{campaign.title}</Typography>
+      {/* {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )} */}
+
+      {loading && !openDialog ? (
+        <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : campaigns.length === 0 ? (
+        <DetailCard
+          sx={{ p: 4, textAlign: "center", mt: 4, border: "1px solid #ddd" }}
+        >
+          <Typography variant="h6" color="textSecondary">
+            No campaigns found
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+            Create a new campaign to get started
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={setupCreateCampaign}
+            sx={{ mt: 2 }}
+          >
+            Create Campaign
+          </Button>
+        </DetailCard>
+      ) : (
+        <Grid container spacing={3}>
+          {campaigns.map((camp) => (
+            <Grid item xs={12} md={6} lg={4} key={camp._id}>
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                  },
+                  borderRadius: 2,
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={
+                    camp.desktopImage ||
+                    "https://via.placeholder.com/400x200?text=No+Image"
+                  }
+                  alt={camp.title}
+                  sx={{ objectFit: "cover" }}
+                />
+                <CardContent sx={{ flexGrow: 1 }}>
                   <Typography
-                    variant="caption"
+                    gutterBottom
+                    variant="h6"
+                    component="div"
+                    sx={{ fontWeight: "bold" }}
+                  >
+                    {camp.title}
+                  </Typography>
+
+                  <Box sx={{ mt: 2, display: "flex", alignItems: "center" }}>
+                    <DateRangeIcon
+                      color="action"
+                      sx={{ mr: 1, fontSize: 20 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      {formatDate(camp.startDate)} - {formatDate(camp.endDate)}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 2 }}>
+                    <Chip
+                      label={
+                        new Date(camp.endDate) > new Date()
+                          ? "Active"
+                          : "Expired"
+                      }
+                      color={
+                        new Date(camp.endDate) > new Date()
+                          ? "success"
+                          : "error"
+                      }
+                      size="small"
+                    />
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  <Box
                     sx={{
-                      bgcolor: `${getStatusColor(campaign.status)}.light`,
-                      color: `${getStatusColor(campaign.status)}.main`,
-                      px: 1,
-                      py: 0.5,
-                      borderRadius: 1,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mt: 1,
                     }}
                   >
-                    {campaign.status}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  {campaign.description}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                >
-                  {campaign.startDate} to {campaign.endDate}
-                </Typography>
-                <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleEditCampaign(campaign)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDeleteCampaign(campaign.id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                    <Tooltip title="Edit Campaign">
+                      <IconButton
+                        onClick={() => setupEditCampaign(camp)}
+                        color="primary"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Campaign">
+                      <IconButton
+                        onClick={() => openDeleteConfirmation(camp._id)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
-      {/* Add Campaign Dialog */}
+      {/* Dialog for creating or editing a campaign */}
       <Dialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Add New Campaign</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Campaign Title"
-                value={newCampaign.title}
-                onChange={(e) =>
-                  setNewCampaign({ ...newCampaign, title: e.target.value })
-                }
-                margin="normal"
-                required
-              />
-              <TextField
-                fullWidth
-                label="Description"
-                value={newCampaign.description}
-                onChange={(e) =>
-                  setNewCampaign({
-                    ...newCampaign,
-                    description: e.target.value,
-                  })
-                }
-                margin="normal"
-                multiline
-                rows={4}
-              />
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={newCampaign.status}
-                  onChange={(e) =>
-                    setNewCampaign({ ...newCampaign, status: e.target.value })
-                  }
-                  label="Status"
-                >
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="Scheduled">Scheduled</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-              <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                <TextField
-                  label="Start Date"
-                  type="date"
-                  value={newCampaign.startDate}
-                  onChange={(e) =>
-                    setNewCampaign({
-                      ...newCampaign,
-                      startDate: e.target.value,
-                    })
-                  }
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="End Date"
-                  type="date"
-                  value={newCampaign.endDate}
-                  onChange={(e) =>
-                    setNewCampaign({ ...newCampaign, endDate: e.target.value })
-                  }
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                  required
-                />
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom>
-                Campaign Image
-              </Typography>
-              <Box
-                sx={{
-                  border: "2px dashed #ccc",
-                  borderRadius: 1,
-                  p: 2,
-                  textAlign: "center",
-                  height: "200px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundImage: imagePreview
-                    ? `url(${imagePreview})`
-                    : "none",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }}
-              >
-                {!imagePreview && (
-                  <>
-                    <CampaignIcon
-                      sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      Drag and drop an image here or
-                    </Typography>
-                    <Button
-                      component="label"
-                      variant="outlined"
-                      size="small"
-                      sx={{ mt: 1 }}
-                    >
-                      Browse Files
-                      <input
-                        type="file"
-                        hidden
-                        accept="image/*"
-                        onChange={handleImageChange}
-                      />
-                    </Button>
-                  </>
+        <DialogTitle>
+          {mode === "create" ? "Create New Campaign" : "Edit Campaign"}
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <Grid container spacing={3}>
+              <Grid item xs={12} mb={2}>
+                {error && (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    {error}
+                  </Alert>
                 )}
-              </Box>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: "block", mt: 1 }}
-              >
-                Recommended size: 1200x600 pixels. Max file size: 2MB
-              </Typography>
-              {imagePreview && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  size="small"
-                  onClick={() => setImagePreview(null)}
-                  sx={{ mt: 2 }}
-                >
-                  Remove Image
-                </Button>
-              )}
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  name="title"
+                  label="Campaign Title"
+                  value={campaign.title}
+                  onChange={handleInputChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <TitleIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  required
+                  type="date"
+                  name="startDate"
+                  label="Start Date"
+                  value={campaign.startDate}
+                  onChange={handleInputChange}
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                    input: {
+                      inputProps: {
+                        min: minDate,
+                      },
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <DateRangeIcon />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  required
+                  type="date"
+                  name="endDate"
+                  label="End Date"
+                  value={campaign.endDate}
+                  onChange={handleInputChange}
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                    input: {
+                      inputProps: {
+                        min: minDate,
+                      },
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <DateRangeIcon />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Desktop Image
+                  </Typography>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="desktop-image-upload"
+                    type="file"
+                    onChange={(e) => handleFileInput(e, "desktopImage")}
+                  />
+                  <label htmlFor="desktop-image-upload">
+                    <Button variant="outlined" component="span" fullWidth>
+                      Choose Desktop Image
+                    </Button>
+                  </label>
+                </Box>
+                {typeof campaign.desktopImage === "string" &&
+                  campaign.desktopImage && (
+                    <Box sx={{ mt: 2, position: "relative" }}>
+                      <img
+                        src={campaign.desktopImage}
+                        alt="Desktop Preview"
+                        style={{
+                          width: "100%",
+                          height: "150px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                        }}
+                      />
+                    </Box>
+                  )}
+                {campaign.desktopImage instanceof File && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption">
+                      Selected file: {campaign.desktopImage.name}
+                    </Typography>
+                  </Box>
+                )}
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Mobile Image
+                  </Typography>
+                  <input
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    id="mobile-image-upload"
+                    type="file"
+                    onChange={(e) => handleFileInput(e, "mobileImage")}
+                  />
+                  <label htmlFor="mobile-image-upload">
+                    <Button variant="outlined" component="span" fullWidth>
+                      Choose Mobile Image
+                    </Button>
+                  </label>
+                </Box>
+                {typeof campaign.mobileImage === "string" &&
+                  campaign.mobileImage && (
+                    <Box sx={{ mt: 2, position: "relative" }}>
+                      <img
+                        src={campaign.mobileImage}
+                        alt="Mobile Preview"
+                        style={{
+                          width: "100%",
+                          height: "150px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                        }}
+                      />
+                    </Box>
+                  )}
+                {campaign.mobileImage instanceof File && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption">
+                      Selected file: {campaign.mobileImage.name}
+                    </Typography>
+                  </Box>
+                )}
+              </Grid>
             </Grid>
-          </Grid>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button
+              variant="outlined"
+              onClick={resetForm}
+              color="primary"
+              startIcon={<CancelIcon />}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{ bgcolor: theme.palette.secondary.dark }}
+              disabled={loading}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20} />
+                ) : mode === "create" ? (
+                  <AddIcon />
+                ) : (
+                  <EditIcon />
+                )
+              }
+            >
+              {mode === "create" ? "Create Campaign" : "Update Campaign"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Confirmation Dialog for Delete */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={closeDeleteConfirmation}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Confirm Delete Campaign"}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this campaign? This action cannot be
+            undone.
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSaveCampaign}
-            disabled={
-              !newCampaign.title ||
-              !newCampaign.startDate ||
-              !newCampaign.endDate
-            }
-          >
-            Save Campaign
+          <Button onClick={closeDeleteConfirmation} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error" autoFocus>
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Edit Campaign Dialog */}
-      <Dialog
-        open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        {selectedCampaign && (
-          <>
-            <DialogTitle>Edit Campaign</DialogTitle>
-            <DialogContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Campaign Title"
-                    value={selectedCampaign.title}
-                    onChange={(e) =>
-                      setSelectedCampaign({
-                        ...selectedCampaign,
-                        title: e.target.value,
-                      })
-                    }
-                    margin="normal"
-                  />
-                  <TextField
-                    fullWidth
-                    label="Description"
-                    value={selectedCampaign.description}
-                    onChange={(e) =>
-                      setSelectedCampaign({
-                        ...selectedCampaign,
-                        description: e.target.value,
-                      })
-                    }
-                    margin="normal"
-                    multiline
-                    rows={4}
-                  />
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={selectedCampaign.status}
-                      onChange={(e) =>
-                        setSelectedCampaign({
-                          ...selectedCampaign,
-                          status: e.target.value,
-                        })
-                      }
-                      label="Status"
-                    >
-                      <MenuItem value="Active">Active</MenuItem>
-                      <MenuItem value="Scheduled">Scheduled</MenuItem>
-                      <MenuItem value="Inactive">Inactive</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                    <TextField
-                      label="Start Date"
-                      type="date"
-                      value={selectedCampaign.startDate}
-                      onChange={(e) =>
-                        setSelectedCampaign({
-                          ...selectedCampaign,
-                          startDate: e.target.value,
-                        })
-                      }
-                      InputLabelProps={{ shrink: true }}
-                      fullWidth
-                    />
-                    <TextField
-                      label="End Date"
-                      type="date"
-                      value={selectedCampaign.endDate}
-                      onChange={(e) =>
-                        setSelectedCampaign({
-                          ...selectedCampaign,
-                          endDate: e.target.value,
-                        })
-                      }
-                      InputLabelProps={{ shrink: true }}
-                      fullWidth
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Campaign Image
-                  </Typography>
-                  <CardMedia
-                    component="img"
-                    image={selectedCampaign.imageUrl}
-                    alt={selectedCampaign.title}
-                    sx={{ height: 200, borderRadius: 1, mb: 2 }}
-                  />
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    fullWidth
-                    startIcon={<EditIcon />}
-                  >
-                    Change Image
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                  </Button>
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleUpdateCampaign}
-              >
-                Update Campaign
-              </Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
-    </Box>
+    </Container>
   );
 };
 
-export default CampaignManager;
+export default CampaignManagement;

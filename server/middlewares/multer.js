@@ -47,6 +47,17 @@ const recipeThumbnailStorage = new CloudinaryStorage({
   },
 });
 
+const campaignStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: "campaigns",
+      allowedFormats: ["jpg", "png", "jpeg"],
+      public_id: `${Date.now()}-${file.originalname}`,
+    };
+  },
+});
+
 const cloudinaryUpload = multer({ storage: cloudinaryStorage });
 const profilePicUpload = multer({ storage: profilePicStorage });
 const recipeImgUpload = multer({
@@ -61,5 +72,13 @@ const recipeImgUpload = multer({
     cb(null, true);
   },
 });
+const campaignUpload = multer({
+  storage: campaignStorage,
+});
 
-module.exports = { cloudinaryUpload, profilePicUpload, recipeImgUpload };
+module.exports = {
+  cloudinaryUpload,
+  profilePicUpload,
+  recipeImgUpload,
+  campaignUpload,
+};
