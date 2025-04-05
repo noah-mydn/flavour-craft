@@ -75,13 +75,13 @@ const DetailedPostCard = () => {
       <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
         <Link
           color="text.secondary"
-          to="/forum"
+          to="/post"
           style={{
             textDecoration: "none",
             cursor: "pointer",
           }}
         >
-          Forum
+          Posts
         </Link>
         <Link
           style={{

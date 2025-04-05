@@ -14,9 +14,9 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useTheme } from "@mui/material/styles";
 import EditProfileDialog from "../Profile/EditProfileDialog";
 import AccountSettingsDialog from "../Profile/AccountSettings";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { profileSelector } from "../../redux/selectors/selectors";
-import { useAuth } from "../../hooks/useAuth";
+import { logout } from "../../redux/reducers/authSlice";
 
 const AdminHeader = ({ onMenuClick }) => {
   const theme = useTheme();
@@ -24,7 +24,11 @@ const AdminHeader = ({ onMenuClick }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [accountSettingsOpen, setAccountSettingsOpen] = React.useState(false);
   const user = useSelector(profileSelector);
-  const { accountLogout } = useAuth();
+  const dispatch = useDispatch();
+
+  const accountLogout = () => {
+    dispatch(logout());
+  };
 
   const handleAvatarClick = (event) => {
     setAnchorEl(event.currentTarget);

@@ -178,8 +178,9 @@ export const usePostDetail = () => {
       if (response.data.status === 201) {
         dispatch(fetchPosts(1, 10));
       }
-      onSuccess();
       dispatch(setPost(null));
+      onSuccess();
+
       setImages([]);
       displaySuccessToast(response?.data?.message);
     } catch (error) {

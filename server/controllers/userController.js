@@ -86,7 +86,7 @@ const deleteUserProfile = async (req, res) => {
       return res.status(401).json({ message: "Incorrect password." });
     }
 
-    // Delete related data (posts, comments, notifications, etc.)
+    // Delete related data
     await Post.deleteMany({ userId });
     await Comment.deleteMany({ userId });
     await Notification.deleteMany({ userId });

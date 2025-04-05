@@ -4,7 +4,6 @@ import {
   Button,
   Container,
   Typography,
-  Paper,
   Grid,
   IconButton,
   CircularProgress,
@@ -21,7 +20,7 @@ import {
   DialogActions,
   TextField,
   InputAdornment,
-  InputLabel,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -31,10 +30,11 @@ import {
   DateRange as DateRangeIcon,
   Title as TitleIcon,
   Cancel as CancelIcon,
+  AccessTime as AccessTimeIcon,
 } from "@mui/icons-material";
 import { useCampaign } from "../../hooks/admin/useCampaign";
 import PageHeader from "../../components/Admin/PageHeader";
-import { DetailCard } from "../../styles/ContainerStyles";
+import { CustomCancelBtn, DetailCard } from "../../styles/ContainerStyles";
 import theme from "../../theme/theme";
 
 const CampaignManagement = () => {
@@ -45,7 +45,6 @@ const CampaignManagement = () => {
     error,
     openDialog,
     deleteConfirmOpen,
-    campaignToDelete,
     mode,
     setOpenDialog,
     handleInputChange,
@@ -58,18 +57,36 @@ const CampaignManagement = () => {
     openDeleteConfirmation,
     closeDeleteConfirmation,
     confirmDelete,
+    activeCampaign,
   } = useCampaign();
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
+  const now = new Date();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const minDate = today.toISOString().split("T")[0];
-
-  // Format date for display
-  const formatDate = (dateString) => {
+  // Format date and time for display
+  const formatDateTime = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+    return `${date.getDate()}/${
+      date.getMonth() + 1
+    }/${date.getFullYear()} ${date
+      .getHours()
+      .toString()
+      .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
   };
+
+  const toDateTimeLocalFormat = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return `${date.getFullYear()}-${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}T${date
+      .getHours()
+      .toString()
+      .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  };
+  const minDateTime = toDateTimeLocalFormat(now);
+
+  console.log("ACTIVE:", activeCampaign);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -86,7 +103,7 @@ const CampaignManagement = () => {
           variant="contained"
           startIcon={<RefreshIcon />}
           onClick={fetchCampaigns}
-          sx={{ mr: 2 }}
+          sx={{ mr: 2, bgcolor: theme.palette.secondary.dark }}
         >
           Refresh
         </Button>
@@ -99,12 +116,6 @@ const CampaignManagement = () => {
           New Campaign
         </Button>
       </Box>
-
-      {/* {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )} */}
 
       {loading && !openDialog ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
@@ -172,22 +183,22 @@ const CampaignManagement = () => {
                       sx={{ mr: 1, fontSize: 20 }}
                     />
                     <Typography variant="body2" color="text.secondary">
-                      {formatDate(camp.startDate)} - {formatDate(camp.endDate)}
+                      {formatDateTime(camp.startDate)} -{" "}
+                      {formatDateTime(camp.endDate)}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mt: 2 }}>
                     <Chip
                       label={
-                        new Date(camp.endDate) > new Date()
-                          ? "Active"
-                          : "Expired"
+                        camp._id === activeCampaign._id ? "Active" : "Inactive"
                       }
                       color={
-                        new Date(camp.endDate) > new Date()
-                          ? "success"
-                          : "error"
+                        camp._id === activeCampaign._id ? "success" : "error"
                       }
+                      sx={{
+                        color: "#fff",
+                      }}
                       size="small"
                     />
                   </Box>
@@ -230,13 +241,14 @@ const CampaignManagement = () => {
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         maxWidth="md"
+        fullScreen={isMobile}
         fullWidth
       >
-        <DialogTitle>
+        <DialogTitle bgcolor={theme.palette.primary.main} color="white">
           {mode === "create" ? "Create New Campaign" : "Edit Campaign"}
         </DialogTitle>
         <form onSubmit={handleSubmit}>
-          <DialogContent>
+          <DialogContent dividers>
             <Grid container spacing={3}>
               <Grid item xs={12} mb={2}>
                 {error && (
@@ -245,7 +257,7 @@ const CampaignManagement = () => {
                   </Alert>
                 )}
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   required
@@ -262,28 +274,41 @@ const CampaignManagement = () => {
                   }}
                 />
               </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  required
+                  name="hashtag"
+                  label="Campaign Hashtag"
+                  value={campaign.hashtag}
+                  onChange={handleInputChange}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">#</InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              </Grid>
 
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   required
-                  type="date"
+                  type="datetime-local"
                   name="startDate"
-                  label="Start Date"
-                  value={campaign.startDate}
+                  label="Start Date & Time"
+                  value={toDateTimeLocalFormat(campaign.startDate)}
                   onChange={handleInputChange}
-                  slotProps={{
-                    inputLabel: { shrink: true },
-                    input: {
-                      inputProps: {
-                        min: minDate,
-                      },
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <DateRangeIcon />
-                        </InputAdornment>
-                      ),
-                    },
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ min: minDateTime }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <AccessTimeIcon />
+                      </InputAdornment>
+                    ),
                   }}
                 />
               </Grid>
@@ -292,29 +317,27 @@ const CampaignManagement = () => {
                 <TextField
                   fullWidth
                   required
-                  type="date"
+                  type="datetime-local"
                   name="endDate"
-                  label="End Date"
-                  value={campaign.endDate}
-                  onChange={handleInputChange}
+                  label="End Date & Time"
+                  value={toDateTimeLocalFormat(campaign.endDate)}
                   slotProps={{
                     inputLabel: { shrink: true },
                     input: {
-                      inputProps: {
-                        min: minDate,
-                      },
+                      min: minDateTime,
                       startAdornment: (
                         <InputAdornment position="start">
-                          <DateRangeIcon />
+                          <AccessTimeIcon />
                         </InputAdornment>
                       ),
                     },
                   }}
+                  onChange={handleInputChange}
                 />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Box sx={{ mb: 2 }}>
+                <Box sx={{ mb: isMobile ? 0 : 2 }}>
                   <Typography variant="subtitle2" gutterBottom>
                     Desktop Image
                   </Typography>
@@ -356,7 +379,7 @@ const CampaignManagement = () => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Box sx={{ mb: 2 }}>
+                <Box sx={{ mb: isMobile ? 0 : 2 }}>
                   <Typography variant="subtitle2" gutterBottom>
                     Mobile Image
                   </Typography>
@@ -399,18 +422,17 @@ const CampaignManagement = () => {
             </Grid>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button
+            <CustomCancelBtn
               variant="outlined"
               onClick={resetForm}
-              color="primary"
               startIcon={<CancelIcon />}
             >
               Cancel
-            </Button>
+            </CustomCancelBtn>
             <Button
               type="submit"
               variant="contained"
-              sx={{ bgcolor: theme.palette.secondary.dark }}
+              sx={{ bgcolor: theme.palette.primary.main }}
               disabled={loading}
               startIcon={
                 loading ? (
@@ -445,9 +467,9 @@ const CampaignManagement = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDeleteConfirmation} color="primary">
+          <CustomCancelBtn onClick={closeDeleteConfirmation}>
             Cancel
-          </Button>
+          </CustomCancelBtn>
           <Button onClick={confirmDelete} color="error" autoFocus>
             Delete
           </Button>

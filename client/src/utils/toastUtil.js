@@ -1,7 +1,7 @@
 import toast from "react-hot-toast";
 
 export const displayErrorToast = (error) => {
-  console.log(error);
+  console.log(error.message);
   let errorMsg = error.message;
   console.log(error);
   if (error?.response?.data) {

@@ -9,6 +9,7 @@ import {
   Typography,
   CircularProgress,
   InputLabel,
+  useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useReport } from "../../hooks/admin/useReport";
@@ -24,16 +25,13 @@ const BarChartData = () => {
     generationLoading,
     handleFilterChange,
     handleMonthChange,
-    fetchRecipeGenerationTrend,
   } = useReport();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Prevent API call until month is selected
   const [initialMonthlyLoad, setInitialMonthlyLoad] = React.useState(false);
 
-  // Handle period change with special handling for monthly
   const handlePeriodChangeWithValidation = (event) => {
     const newPeriod = event.target.value;
-
     if (newPeriod === "monthly") {
       setInitialMonthlyLoad(true);
       const currentMonth = months[new Date().getMonth()];
@@ -47,9 +45,8 @@ const BarChartData = () => {
     }
   };
 
-  // Format data for the chart
   const formatChartData = () => {
-    if (!generationTrendsData || generationTrendsData?.length === 0) {
+    if (!generationTrendsData || generationTrendsData.length === 0) {
       return { xLabels: [], datasets: [] };
     }
 
@@ -57,17 +54,13 @@ const BarChartData = () => {
     let data = [];
 
     if (selectedPeriod === "last7") {
-      // For last 7 days, use date labels
       xLabels = generationTrendsData.map((item) => item.date);
       data = generationTrendsData.map((item) => item.count);
     } else if (selectedPeriod === "this-year") {
-      // For yearly view, use month labels
       xLabels = generationTrendsData.map((item) => item.month);
       data = generationTrendsData.map((item) => item.count);
     } else if (selectedPeriod === "monthly" && selectedMonth) {
-      // For monthly view, correctly use date property
       xLabels = generationTrendsData.map((item) => {
-        // Extract day from date string (e.g. "Mar 3" -> "3")
         const parts = item.date?.split(" ");
         return parts && parts.length > 1 ? parts[1] : item.date;
       });
@@ -78,19 +71,6 @@ const BarChartData = () => {
   };
 
   const { xLabels, data } = formatChartData();
-
-  const getLabel = () => {
-    if (selectedPeriod === "last7") {
-      return "Recipe Generation - Last 7 Days";
-    } else if (selectedPeriod === "this-year") {
-      return "Recipe Generation - This Year";
-    } else if (selectedPeriod === "monthly" && selectedMonth) {
-      return `Recipe Generation - ${selectedMonth} ${new Date().getFullYear()}`;
-    }
-    return "Recipe Generation Trends";
-  };
-
-  // Determine if we should show the chart
   const shouldShowChart =
     data?.length > 0 &&
     !(selectedPeriod === "monthly" && !selectedMonth) &&
@@ -98,10 +78,15 @@ const BarChartData = () => {
 
   return (
     <Box sx={{ width: "100%" }}>
+      {/* Filters */}
       <Stack
-        direction="row"
+        direction={isMobile ? "column" : "row"}
         spacing={2}
-        sx={{ mb: 3, justifyContent: "flex-end" }}
+        sx={{
+          mb: 3,
+          justifyContent: isMobile ? "center" : "flex-end",
+          alignItems: isMobile ? "center" : "flex-start",
+        }}
       >
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel id="period-select-label">Period</InputLabel>
@@ -141,30 +126,38 @@ const BarChartData = () => {
         )}
       </Stack>
 
+      {/* Title */}
       <Typography
-        variant="h6"
+        variant={isMobile ? "subtitle1" : "h6"}
         fontWeight="bold"
         textAlign="center"
         gutterBottom
         color="primary.main"
-        mt={3}
+        mt={2}
       >
-        {getLabel()}
+        Recipe Generation Trends
       </Typography>
 
+      {/* Chart or Loading */}
       {generationLoading || initialMonthlyLoad ? (
         <Box
           sx={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: 300,
+            height: 250,
           }}
         >
           <CircularProgress />
         </Box>
       ) : shouldShowChart ? (
-        <Box sx={{ height: 400, width: "100%" }}>
+        <Box
+          sx={{
+            width: "100%",
+            overflowX: "auto",
+            height: isMobile ? 300 : 400,
+          }}
+        >
           <BarChart
             dataset={data.map((value, index) => ({
               value,
@@ -186,12 +179,17 @@ const BarChartData = () => {
               {
                 dataKey: "value",
                 label: "Recipes Generated",
-                color: theme.palette.info.main,
+                color: theme.palette.secondary.dark,
                 valueFormatter: (value) => value.toString(),
               },
             ]}
-            height={400}
-            margin={{ top: 20, bottom: 50, left: 60, right: 30 }}
+            height={isMobile ? 300 : 420}
+            margin={{
+              top: 30,
+              bottom: isMobile ? 70 : 50,
+              left: isMobile ? 30 : 60,
+              right: 10,
+            }}
           />
         </Box>
       ) : (
@@ -200,10 +198,11 @@ const BarChartData = () => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: 300,
+            height: 250,
+            textAlign: "center",
           }}
         >
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body2" color="text.secondary">
             {selectedPeriod === "monthly" && !selectedMonth
               ? "Please select a month to view data"
               : "No data available"}

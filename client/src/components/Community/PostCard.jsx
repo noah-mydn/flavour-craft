@@ -38,7 +38,7 @@ const PostCard = ({ post }) => {
           alignItems: isMobile ? "flex-start" : "center",
           flexDirection: isMobile ? "column" : "row",
         }}
-        onClick={() => navigate("/forum/" + post?._id)}
+        onClick={() => navigate("/post/" + post?._id)}
       >
         {/* Left section - Avatar */}
         {/* <Box mr={2}>

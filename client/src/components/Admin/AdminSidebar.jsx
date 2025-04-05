@@ -56,7 +56,7 @@ const AdminSidebar = ({ open, onToggle }) => {
       icon: <AutoFixHighIcon />,
       path: "/admin/generator",
     },
-    { text: "Reported Content", icon: <FlagIcon />, path: "/admin/reported" },
+    // { text: "Reported Content", icon: <FlagIcon />, path: "/admin/reported" },
     {
       text: "Manage Categories",
       icon: <CategoryIcon />,

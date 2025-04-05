@@ -52,3 +52,18 @@ export const formatTimeAgo = (dateString) => {
   const options = { month: "short", day: "numeric" };
   return postDate.toLocaleDateString(undefined, options);
 };
+
+export const toISOStringWithTimezone = (datetimeLocalString) => {
+  const date = new Date(datetimeLocalString);
+  return date.toISOString(); // UTC-based ISO string
+};
+
+export const toDateTimeLocalFormat = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const pad = (n) => n.toString().padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};

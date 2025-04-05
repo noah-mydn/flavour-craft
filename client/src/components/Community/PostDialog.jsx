@@ -29,7 +29,7 @@ import {
 } from "../../redux/selectors/selectors";
 import { useDispatch, useSelector } from "react-redux";
 import HashtagInput from "./HashtagInput";
-import { setPost } from "../../redux/reducers/postSlice";
+import { clearPost, setPost } from "../../redux/reducers/postSlice";
 import { useParams } from "react-router-dom";
 
 const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
@@ -48,6 +48,11 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
     uploading,
     editPost,
   } = usePostDetail();
+
+  const cancelDialog = () => {
+    dispatch(clearPost());
+    onClose();
+  };
 
   const post = useSelector(postSelector);
   const postId = useParams().postId;
@@ -96,7 +101,7 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={cancelDialog}
       fullScreen={fullScreen}
       slots={{
         transition: Fade,
@@ -142,7 +147,7 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
           <IconButton
             edge="end"
             color="inherit"
-            onClick={onClose}
+            onClick={cancelDialog}
             sx={{
               backgroundColor: "rgba(255,255,255,0.1)",
               "&:hover": {
@@ -333,7 +338,7 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
           }}
         >
           <Button
-            onClick={onClose}
+            onClick={cancelDialog}
             variant="outlined"
             color="inherit"
             sx={{

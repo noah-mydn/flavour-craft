@@ -1,12 +1,14 @@
 import React from "react";
 
 import { HomeContainer } from "../../styles/ContainerStyles";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Skeleton, useMediaQuery, useTheme } from "@mui/material";
 import Carousel from "../Recipes/MainPage/Carousel";
 import RecipeOfTheDay from "../Recipes/MainPage/RecipeOfTheDay";
 import { Greeting } from "../Recipes/MainPage/Greeting";
 
 import { useRecipe } from "../../hooks/useRecipe";
+import { useCampaign } from "../../hooks/admin/useCampaign";
+import LabelOnBanner from "./LabelOnBanner";
 
 export const Main = () => {
   const theme = useTheme();
@@ -15,8 +17,8 @@ export const Main = () => {
     fetchTrendingRecipes,
     fetchRecipeOfTheDay,
     recipeOfTheDay,
-    recipeDayLoading,
   } = useRecipe();
+  const { activeCampaign, loading, error } = useCampaign();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -25,17 +27,31 @@ export const Main = () => {
     fetchRecipeOfTheDay();
   }, []);
 
-  const createNewPostWithHashTag = () => {};
-
   return (
     <>
-      <Box
-        mt={isMobile ? 16 : isTablet ? 14 : 10}
-        component="img"
-        src={isMobile ? "./banner-mobile.png" : "./banner-desktop.png"}
-        alt="hashtag campaign banner"
-        onClick={createNewPostWithHashTag}
-      />
+      {!loading && !error && activeCampaign && (
+        <Box position="relative" mt={isMobile ? 12 : isTablet ? 10 : 8}>
+          <Box
+            component="img"
+            src={
+              isMobile
+                ? activeCampaign?.mobileImage
+                : activeCampaign?.desktopImage
+            }
+            alt={activeCampaign?.title}
+          />
+
+          <LabelOnBanner isMobile={isMobile} campaign={activeCampaign} />
+        </Box>
+      )}
+      {loading && (
+        <Skeleton
+          animation="wave"
+          variant="rectangular"
+          width="100%"
+          height={isMobile ? 500 : 400}
+        />
+      )}
       <Box my={3} mx={isMobile ? 0 : 10}>
         <HomeContainer>
           <Greeting />

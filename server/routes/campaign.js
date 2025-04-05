@@ -6,9 +6,13 @@ const {
   getCampaignById,
   updateCampaign,
   deleteCampaign,
+  getActiveCampaign,
 } = require("../controllers/campaignController");
 const { campaignUpload } = require("../middlewares/multer");
-const { adminAuth } = require("../middlewares/authVerification");
+const {
+  adminAuth,
+  authenticateToken,
+} = require("../middlewares/authVerification");
 
 const router = express.Router();
 
@@ -18,8 +22,9 @@ router.post(
   adminAuth,
   createCampaign
 );
-router.get("/", adminAuth, getCampaigns);
-router.get("/:id", adminAuth, getCampaignById);
+router.get("/current", authenticateToken, getActiveCampaign);
+router.get("/", authenticateToken, getCampaigns);
+router.get("/:id", authenticateToken, getCampaignById);
 router.put(
   "/:id",
   campaignUpload.fields([{ name: "desktopImage" }, { name: "mobileImage" }]),

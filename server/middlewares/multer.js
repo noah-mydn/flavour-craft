@@ -37,13 +37,13 @@ const recipeThumbnailStorage = new CloudinaryStorage({
   params: {
     folder: "flavourCraft_recipes",
     allowedFormats: ["jpg", "png", "jpeg"],
-    transformation: [
-      {
-        width: 400,
-        height: 400,
-        crop: "fill",
-      },
-    ],
+    // transformation: [
+    //   {
+    //     width: 400,
+    //     height: 400,
+    //     crop: "fill",
+    //   },
+    // ],
   },
 });
 

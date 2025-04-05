@@ -5,6 +5,7 @@ import {
   Typography,
   Box,
   LinearProgress,
+  Skeleton,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
@@ -22,33 +23,52 @@ const StyledCard = styled(Card)(({ theme }) => ({
   // },
 }));
 
-const DashboardCard = ({ title, value, icon, color, progress = null }) => {
+const DashboardCard = ({
+  title,
+  value,
+  icon,
+  color,
+  progress = null,
+  loading,
+}) => {
   return (
     <StyledCard>
       <CardContent>
         <Box display="flex" justifyContent="space-between" mb={2}>
-          <Typography variant="h6" component="div" color="text.secondary">
-            {title}
-          </Typography>
-          <Box
-            sx={{
-              backgroundColor: `${color}`,
-              color: "#fff",
-              borderRadius: "50%",
-              width: 40,
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {icon}
-          </Box>
+          {loading ? (
+            <Skeleton variant="text" width={100} />
+          ) : (
+            <Typography variant="h6" component="div" color="text.secondary">
+              {title}
+            </Typography>
+          )}
+          {loading ? (
+            <Skeleton variant="circular" width={40} height={40} />
+          ) : (
+            <Box
+              sx={{
+                backgroundColor: `${color}`,
+                color: "#fff",
+                borderRadius: "50%",
+                width: 40,
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {icon}
+            </Box>
+          )}
         </Box>
-        <Typography variant="h4" component="div" fontWeight="bold">
-          {value}
-        </Typography>
-        {progress !== null && (
+        {loading ? (
+          <Skeleton variant="text" width={60} />
+        ) : (
+          <Typography variant="h4" component="div" fontWeight="bold">
+            {value}
+          </Typography>
+        )}
+        {progress !== null && !loading && (
           <Box mt={2}>
             <LinearProgress
               variant="determinate"
@@ -65,6 +85,7 @@ const DashboardCard = ({ title, value, icon, color, progress = null }) => {
             />
           </Box>
         )}
+        {loading && <Skeleton variant="text" width={200} />}
       </CardContent>
     </StyledCard>
   );

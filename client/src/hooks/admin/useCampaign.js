@@ -2,15 +2,20 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { displayErrorToast, displaySuccessToast } from "../../utils/toastUtil";
 import { getAuthConfig } from "../../utils/authHeaders";
-
+import {
+  toISOStringWithTimezone,
+  toDateTimeLocalFormat,
+} from "../../utils/timeFormatter";
 export const useCampaign = () => {
   const [campaign, setCampaign] = useState({
     title: "",
+    hashtag: "",
     desktopImage: "",
     mobileImage: "",
     startDate: "",
     endDate: "",
   });
+  const [activeCampaign, setActiveCampaign] = useState({});
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -28,7 +33,7 @@ export const useCampaign = () => {
     try {
       const response = await axios.get(BASE_URL, getAuthConfig());
       setCampaigns(response.data.campaigns || []);
-    } catch (err) {
+    } catch (error) {
       displayErrorToast(error);
     } finally {
       setLoading(false);
@@ -41,10 +46,11 @@ export const useCampaign = () => {
 
     const formData = new FormData();
     formData.append("title", campaign.title);
+    formData.append("hashtag", campaign.hashtag);
     formData.append("desktopImage", campaign.desktopImage);
     formData.append("mobileImage", campaign.mobileImage);
-    formData.append("startDate", campaign.startDate);
-    formData.append("endDate", campaign.endDate);
+    formData.append("startDate", toISOStringWithTimezone(campaign.startDate));
+    formData.append("endDate", toISOStringWithTimezone(campaign.endDate));
 
     try {
       const response = await axios.post(
@@ -71,10 +77,11 @@ export const useCampaign = () => {
   const updateCampaign = async (id) => {
     const formData = new FormData();
     formData.append("title", campaign.title);
+    formData.append("hashtag", campaign.hashtag);
     formData.append("desktopImage", campaign.desktopImage);
     formData.append("mobileImage", campaign.mobileImage);
-    formData.append("startDate", campaign.startDate);
-    formData.append("endDate", campaign.endDate);
+    formData.append("startDate", toISOStringWithTimezone(campaign.startDate));
+    formData.append("endDate", toISOStringWithTimezone(campaign.endDate));
 
     setLoading(true);
     try {
@@ -107,9 +114,10 @@ export const useCampaign = () => {
       setCampaigns(campaigns.filter((c) => c._id !== id));
       setDeleteConfirmOpen(false);
       setCampaignToDelete(null);
+      displaySuccessToast("Campaign Deleted!");
       return true;
     } catch (err) {
-      displayErrorToast(error);
+      displayErrorToast(err);
       return false;
     } finally {
       setLoading(false);
@@ -123,7 +131,7 @@ export const useCampaign = () => {
       const response = await axios.get(`${BASE_URL}/${id}`, getAuthConfig());
       return response.data.campaign;
     } catch (err) {
-      displayErrorToast(error);
+      displayErrorToast(err);
 
       return null;
     } finally {
@@ -148,6 +156,20 @@ export const useCampaign = () => {
     };
     console.log(fieldValue);
     setCampaign(fieldValue);
+  };
+
+  //fetch Active Campaign
+  const fetchActiveCampaign = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${BASE_URL}/current`, getAuthConfig());
+      setActiveCampaign(response.data.campaign || {});
+    } catch (err) {
+      setError(err.response.data.message);
+      displayErrorToast(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Reset form
@@ -187,12 +209,15 @@ export const useCampaign = () => {
   const setupEditCampaign = (campaignData) => {
     setCampaign({
       title: campaignData.title,
+      hashtag: campaignData.hashtag,
       desktopImage: campaignData.desktopImage,
       mobileImage: campaignData.mobileImage,
       startDate: campaignData.startDate
-        ? campaignData.startDate.split("T")[0]
+        ? toDateTimeLocalFormat(campaignData.startDate)
         : "",
-      endDate: campaignData.endDate ? campaignData.endDate.split("T")[0] : "",
+      endDate: campaignData.endDate
+        ? toDateTimeLocalFormat(campaignData.endDate)
+        : "",
     });
     setSelectedCampaign(campaignData._id);
     setMode("edit");
@@ -216,13 +241,15 @@ export const useCampaign = () => {
     }
   };
 
-  // Load campaigns on component mount
+  // Load campaigns & active campaign
   useEffect(() => {
     fetchCampaigns();
+    fetchActiveCampaign();
   }, []);
 
   return {
     campaign,
+    activeCampaign,
     campaigns,
     loading,
     error,
@@ -246,5 +273,6 @@ export const useCampaign = () => {
     openDeleteConfirmation,
     closeDeleteConfirmation,
     confirmDelete,
+    fetchActiveCampaign,
   };
 };

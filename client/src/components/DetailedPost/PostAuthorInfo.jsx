@@ -68,7 +68,7 @@ const PostAuthorInfo = ({ post, loading, onEdit }) => {
 
   const deleteAndNavigate = () => {
     setOpenDeleteDialog(false);
-    navigate("/forum");
+    navigate("/post");
   };
 
   return (

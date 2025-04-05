@@ -1,5 +1,6 @@
 const Post = require("../../models/community/Posts");
 const Comment = require("../../models/community/Comments");
+const User = require("../../models/Users");
 const Notification = require("../../models/community/Notification");
 const cloudinary = require("cloudinary").v2;
 
@@ -385,16 +386,27 @@ exports.addComment = async (req, res) => {
     post.comments.push(newComment._id);
     await post.save();
 
-    //send noti to post's author
-    if (post.author._id.toString() != author.toString()) {
-      const noti = new Notification({
-        author: post.author._id,
+    // Fetch the commenter with profile data
+    const commentedUser = await User.findById(author).select(
+      "firstName lastName userImg"
+    );
+    console.log("Fetched Commented User:", commentedUser);
+
+    // Send notification to post's author
+    if (post.author.toString() !== author.toString()) {
+      const notification = new Notification({
+        author: post.author,
         type: "comment",
-        message: `${req.user.firstName} left a comment on your post.`,
+        commentedUser: {
+          firstName: commentedUser.firstName,
+          lastName: commentedUser.lastName,
+          userImg: commentedUser.userImg,
+        },
+        message: `${commentedUser.firstName} left a comment on your post.`,
         link: `/post/${postId}`,
         isRead: false,
       });
-      await noti.save();
+      await notification.save();
     }
 
     res.status(201).json({
@@ -666,16 +678,46 @@ exports.deleteDownVote = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
     const notifications = await Notification.find({
-      userId: req.user._id,
+      author: req.user.userId,
+      createdAt: { $gte: oneWeekAgo },
     }).sort({ createdAt: -1 });
+
     res.status(200).json({
       status: 200,
       notifications: notifications,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to fetch notifications", error: error.message });
+    res.status(500).json({
+      message: "Failed to fetch notifications",
+      error: error.message,
+    });
+  }
+};
+
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { isRead: true },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    res.status(200).json({
+      message: "Notification marked as read",
+      notification,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      //error: error.message,
+    });
   }
 };

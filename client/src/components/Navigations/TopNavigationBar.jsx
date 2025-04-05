@@ -18,6 +18,7 @@ import {
   Tooltip,
   useMediaQuery,
   Typography,
+  Badge,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import React, { useState } from "react";
@@ -37,13 +38,15 @@ import {
   Search,
   ChevronRight,
   ArrowBack,
+  Notifications,
 } from "@mui/icons-material";
 
 import { logout } from "../../redux/reducers/authSlice";
 import { useNavigate } from "react-router-dom";
-import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
-import AutoCompleteSearch from "../AutoCompleteSearch/AutoCompleteSearch";
+
 import { useCategory } from "../../hooks/admin/useCategory";
+import NotificationComponent from "./NotificationComponent";
+import { useNotification } from "../../hooks/useNotification";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
@@ -69,6 +72,21 @@ const TopNavigationBar = () => {
   // State for mobile menu navigation
   const [mobileMenuLevel, setMobileMenuLevel] = useState("main"); // 'main', 'recipes', 'cuisines'
   const [mobileMenuTitle, setMobileMenuTitle] = useState("Main Menu");
+
+  //notification
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
+  const { notifications } = useNotification();
+
+  // Count unread notifications for the badge
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const openNotificationPanel = () => {
+    setNotificationPanelOpen(true);
+  };
+
+  const closeNotificationPanel = () => {
+    setNotificationPanelOpen(false);
+  };
 
   const accountLogout = () => {
     dispatch(logout());
@@ -149,7 +167,7 @@ const TopNavigationBar = () => {
       hasSubmenu: true,
     },
     // { label: "Favourites", link: "/favourites", icon: <Favorite /> },
-    { label: "Community", link: "/forum", icon: <Forum /> },
+    { label: "Community", link: "/post", icon: <Forum /> },
   ];
 
   return (
@@ -318,43 +336,15 @@ const TopNavigationBar = () => {
             </Box>
           )}
 
-          {/* Search Bar */}
-          {/* {!isMobile && (
-            // <TextField
-            //   variant="outlined"
-            //   size="small"
-            //   placeholder="Search..."
-            //   sx={{
-            //     width: isMobile ? 250 : 350,
-            //     bgcolor: "transparent",
-            //     "& .MuiOutlinedInput-root": {
-            //       "& fieldset": {
-            //         borderColor: theme.palette.secondary.dark,
-            //         borderRadius: 20,
-            //       },
-            //       "&:hover fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //       "&.Mui-focused fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //     },
-            //   }}
-            //   slotProps={{
-            //     input: {
-            //       startAdornment: (
-            //         <Search
-            //           sx={{ color: theme.palette.secondary.dark, mr: 1 }}
-            //         />
-            //       ),
-            //     },
-            //   }}
-            // />
-            <AutoCompleteSearch />
-          )} */}
-
           {/* User Profile Avatar */}
           <Box display="flex" gap={2} justifyContent="flex-end">
+            <Tooltip title="Notifications">
+              <IconButton onClick={openNotificationPanel}>
+                <Badge badgeContent={unreadCount} max={99} color="primary">
+                  <Notifications />
+                </Badge>
+              </IconButton>
+            </Tooltip>
             <Tooltip title={user?.firstName}>
               <Avatar
                 sx={{
@@ -367,41 +357,7 @@ const TopNavigationBar = () => {
             </Tooltip>
           </Box>
         </Box>
-        <Box display="flex" justifyContent="center" alignItems="center">
-          {/* {isMobile && (
-            // <TextField
-            //   variant="outlined"
-            //   size="small"
-            //   placeholder="Search..."
-            //   sx={{
-            //     width: 350,
-            //     bgcolor: "transparent",
-            //     "& .MuiOutlinedInput-root": {
-            //       "& fieldset": {
-            //         borderColor: theme.palette.secondary.dark,
-            //         borderRadius: 20,
-            //       },
-            //       "&:hover fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //       "&.Mui-focused fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //     },
-            //   }}
-            //   slotProps={{
-            //     input: {
-            //       startAdornment: (
-            //         <Search
-            //           sx={{ color: theme.palette.secondary.dark, mr: 1 }}
-            //         />
-            //       ),
-            //     },
-            //   }}
-            // />
-            // <AutoCompleteSearch />
-          )} */}
-        </Box>
+        <Box display="flex" justifyContent="center" alignItems="center"></Box>
       </AppBar>
 
       {/* Mobile Drawer with Menu Levels */}
@@ -663,6 +619,11 @@ const TopNavigationBar = () => {
         </MenuItem>
         <MenuItem onClick={accountLogout}>Logout</MenuItem>
       </Menu>
+
+      <NotificationComponent
+        open={notificationPanelOpen}
+        onClose={closeNotificationPanel}
+      />
     </>
   );
 };

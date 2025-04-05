@@ -1,10 +1,17 @@
 import * as React from "react";
 import { PieChart, pieArcLabelClasses } from "@mui/x-charts/PieChart";
-import { useMediaQuery, Box, Typography, Stack } from "@mui/material";
-import { useTheme } from "@emotion/react";
+import {
+  useMediaQuery,
+  Box,
+  Typography,
+  Stack,
+  Skeleton,
+  useTheme,
+} from "@mui/material";
 
-const PieChartData = ({ data, title }) => {
+const PieChartData = ({ data, title, loading }) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const colors = [
     theme?.palette?.info?.main,
@@ -27,8 +34,10 @@ const PieChartData = ({ data, title }) => {
       >
         {title}
       </Typography>
+
       <Box
         display="flex"
+        flexDirection={isMobile ? "column" : "row"}
         alignItems="center"
         justifyContent="center"
         gap={6}

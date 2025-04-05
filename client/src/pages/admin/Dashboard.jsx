@@ -1,6 +1,6 @@
 // src/pages/Dashboard.js
 import React from "react";
-import { Box, Grid, useTheme } from "@mui/material";
+import { Box, Grid, Skeleton, useTheme } from "@mui/material";
 
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
@@ -18,11 +18,13 @@ const Dashboard = () => {
   const theme = useTheme();
   const {
     stats,
+    statsLoading,
+    engagementLoading,
+    generationLoading,
     engagementData,
     generationTrendsData,
     selectedPeriod,
     handleFilterChange,
-    generationLoading,
   } = useReport();
   return (
     <Box sx={{ p: { xs: 0, md: 3 }, maxWidth: 1200, margin: "0 auto" }}>
@@ -41,6 +43,7 @@ const Dashboard = () => {
             icon={<PeopleIcon />}
             color={theme.palette.info.main}
             progress={(stats?.users / 100) * 100}
+            loading={statsLoading}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -50,6 +53,7 @@ const Dashboard = () => {
             icon={<MenuBookIcon />}
             color={theme.palette.success.main}
             progress={(stats?.recipes / 100) * 100}
+            loading={statsLoading}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -59,9 +63,9 @@ const Dashboard = () => {
             icon={<FlagIcon />}
             color={theme.palette.warning.main}
             progress={(stats?.cuisines / 100) * 100}
+            loading={statsLoading}
           />
         </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
           <DashboardCard
             title="Dietary Options"
@@ -69,9 +73,12 @@ const Dashboard = () => {
             icon={<RestaurantIcon />}
             color={theme.palette.primary.main}
             progress={(stats?.dietaryOptions / 100) * 100}
+            loading={statsLoading}
           />
         </Grid>
+      </Grid>
 
+      <Grid container spacing={3} mt={1}>
         {/* Recipe Generation Trend */}
         <Grid item xs={12} mt={2}>
           <DetailCard
@@ -99,6 +106,7 @@ const Dashboard = () => {
             <LineGraphData
               data={engagementData}
               title="Community Engagment Trends (Last 7 days)"
+              loading={engagementLoading}
             />
           </DetailCard>
         </Grid>
@@ -114,6 +122,7 @@ const Dashboard = () => {
             <PieChartData
               data={stats?.cuisineDistribution}
               title="Cuisine Distribution (%)"
+              loading={statsLoading}
             />
           </DetailCard>
         </Grid>

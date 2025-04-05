@@ -46,7 +46,6 @@ const authSlice = createSlice({
     setIsVerified: (state, action) => {
       state.isVerified = action.payload;
     },
-
     loginSuccess: (state, action) => {
       state.loading = false;
       state.user = action.payload.user;
@@ -54,6 +53,9 @@ const authSlice = createSlice({
       state.refreshToken = action.payload.refreshToken;
       state.isVerified = true;
       state.error = null;
+      sessionStorage.setItem("accessToken", state.accessToken);
+      sessionStorage.setItem("auth", JSON.stringify(state.user));
+      localStorage.setItem("refreshToken", state.refreshToken);
     },
   },
   extraReducers: (builder) => {

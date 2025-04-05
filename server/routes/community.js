@@ -14,6 +14,7 @@ const {
   getAllComments,
   getNotifications,
   updateComment,
+  markNotificationAsRead,
   // downvotePost,
   // deleteUpVote,
   // deleteDownVote,
@@ -24,7 +25,8 @@ const authenticateToken =
   require("../middlewares/authVerification").authenticateToken;
 const router = express.Router();
 
-router.get("/notifications", authenticateToken, getNotifications);
+router.get("/notis", authenticateToken, getNotifications);
+router.put("/notis/:id/read", authenticateToken, markNotificationAsRead);
 
 router.post(
   "/create",

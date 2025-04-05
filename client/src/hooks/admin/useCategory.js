@@ -249,10 +249,8 @@ export const useCategory = () => {
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
 
-    // API uses 1-indexed pages, but MUI uses 0-indexed
     const apiPage = newPage + 1;
 
-    // Remove all option, only handle cuisine and dietary
     if (selectedType === "cuisine") {
       fetchAllCuisines(apiPage, rowsPerPage);
     } else {
@@ -263,9 +261,8 @@ export const useCategory = () => {
   const handleChangeRowsPerPage = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage(newRowsPerPage);
-    setPage(0); // Reset to first page
+    setPage(0);
 
-    // Remove all option, only handle cuisine and dietary
     if (selectedType === "cuisine") {
       fetchAllCuisines(1, newRowsPerPage);
     } else {
@@ -273,16 +270,13 @@ export const useCategory = () => {
     }
   };
 
-  // Method for filtering data based on selectedType
   const filterCategories = (categories) => {
-    // Remove all option, only return categories that match the selectedType
     return categories.filter((cat) => cat.type === selectedType);
   };
 
   const fetchDataWithPagination = () => {
     const apiPage = page + 1;
 
-    // Remove all option, only handle cuisine and dietary
     if (selectedType === "cuisine") {
       fetchAllCuisines(apiPage, rowsPerPage);
     } else {
@@ -290,14 +284,12 @@ export const useCategory = () => {
     }
   };
 
-  // Effect to fetch data when filter changes
   useEffect(() => {
-    setPage(0); // Reset to first page when filter changes
+    setPage(0);
 
     fetchDataWithPagination();
   }, [selectedType, rowsPerPage]);
 
-  // Bundle API management functions
   const cuisineManagement = {
     fetchAllCuisines,
     addNewCuisineType,

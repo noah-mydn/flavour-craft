@@ -4,9 +4,30 @@ import PostDialog from "./PostDialog";
 import { useSelector } from "react-redux";
 import { profileSelector } from "../../redux/selectors/selectors";
 import { Image } from "@mui/icons-material";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 const AddPost = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [openDialog, setOpenDialog] = React.useState(false);
   const user = useSelector(profileSelector);
+
+  React.useEffect(() => {
+    if (searchParams?.get("openDialog") === "true") {
+      setOpenDialog(true);
+
+      // Remove the "openDialog" param from the URL
+      searchParams.delete("openDialog");
+
+      navigate(
+        {
+          pathname: location.pathname,
+          search: searchParams.toString(),
+        },
+        { replace: true }
+      );
+    }
+  }, [location, navigate]);
 
   return (
     <Box width="100%">

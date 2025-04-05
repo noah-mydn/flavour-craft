@@ -63,87 +63,82 @@ const AnimatedRoutes = () => {
 
   //Google Auth
   React.useEffect(() => {
-    // Only process if we have search parameters
-    if (location.search) {
-      console.log("IT RUNS");
-      const handleOAuthCallback = async () => {
-        try {
-          // Get tokens from URL parameters
-          const params = new URLSearchParams(location.search);
-          const accessToken = params.get("accessToken");
-          const refreshToken = params.get("refreshToken");
-          const userId = params.get("userId");
-          const error = params.get("error");
+    const params = new URLSearchParams(location.search);
+    const hasOAuthParams =
+      params.has("accessToken") ||
+      params.has("refreshToken") ||
+      params.has("userId");
 
-          // Check for errors
-          if (error) {
-            displayErrorToast({ message: `Authentication failed: ${error}` });
-            navigate("/auth");
-            return;
-          }
+    if (!hasOAuthParams) return;
 
-          // Validate tokens exist
-          if (!accessToken || !refreshToken || !userId) {
-            displayErrorToast({ message: "Missing authentication data" });
-            navigate("/auth");
-            return;
-          }
+    console.log("Running Google OAuth callback...");
 
-          // Fetch user data with the token
-          const response = await fetch(
-            `${process.env.REACT_APP_BASE_API}/user/me`,
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          );
+    const handleOAuthCallback = async () => {
+      try {
+        const accessToken = params.get("accessToken");
+        const refreshToken = params.get("refreshToken");
+        const userId = params.get("userId");
+        const error = params.get("error");
 
-          if (!response.ok) {
-            throw new Error("Failed to fetch user data");
-          }
-
-          const userData = await response.json();
-
-          // Store tokens and user data
-          sessionStorage.setItem("accessToken", accessToken);
-          sessionStorage.setItem("userData", JSON.stringify(userData.user));
-          localStorage.setItem("refreshToken", refreshToken);
-
-          // Update Redux state
-
-          let authUser = {
-            id: userData?.user?._id,
-            firstName: userData?.user?.firstName,
-            lastName: userData?.user?.lastName,
-            username: userData?.user?.username,
-            role: userData?.user?.role,
-            email: userData?.user?.email,
-            //isFirstLoggedIn: userData?.user?.isFirstLoggedIn,
-          };
-
-          dispatch({
-            type: "auth/loginSuccess",
-            payload: {
-              user: authUser,
-              accessToken,
-              refreshToken,
-            },
-          });
-
-          displaySuccessToast("Successfully logged in with Google");
-
-          // Redirect to home page
-          navigate("/home");
-        } catch (error) {
-          console.error("OAuth callback error:", error);
-          displayErrorToast({ message: "Authentication process failed" });
+        if (error) {
+          displayErrorToast({ message: `Authentication failed: ${error}` });
           navigate("/auth");
+          return;
         }
-      };
 
-      handleOAuthCallback();
-    }
+        if (!accessToken || !userId) {
+          displayErrorToast({ message: "Missing authentication data" });
+          navigate("/auth");
+          return;
+        }
+
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_API}/user/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch user data");
+
+        const userData = await response.json();
+
+        sessionStorage.setItem("accessToken", accessToken);
+        sessionStorage.setItem("userData", JSON.stringify(userData.user));
+        localStorage.setItem("refreshToken", refreshToken);
+
+        const authUser = {
+          id: userData?.user?._id,
+          firstName: userData?.user?.firstName,
+          lastName: userData?.user?.lastName,
+          username: userData?.user?.username,
+          role: userData?.user?.role,
+          email: userData?.user?.email,
+          isFirstLoggedIn: userData?.user?.isFirstLoggedIn,
+        };
+
+        dispatch({
+          type: "auth/loginSuccess",
+          payload: { user: authUser, accessToken, refreshToken },
+        });
+
+        displaySuccessToast("Successfully logged in with Google");
+        if (userData?.user?.isFirstLoggedIn) {
+          navigate("/pref");
+        } else {
+          navigate("/home");
+        }
+        //navigate("/home");
+      } catch (error) {
+        console.error("OAuth callback error:", error);
+        displayErrorToast({ message: "Authentication process failed" });
+        navigate("/auth");
+      }
+    };
+
+    handleOAuthCallback();
   }, [dispatch, location, navigate]);
 
   return (
@@ -193,7 +188,7 @@ const AnimatedRoutes = () => {
         <Route path="me/generated" element={<GeneratedRecipes />} />
       </Route>
 
-      <Route path="/forum" element={<PrivateRoute />}>
+      <Route path="/post" element={<PrivateRoute />}>
         <Route index element={<Community isMobile={isMobile} />} />
         <Route path=":postId" element={<Post />} />
       </Route>
@@ -246,6 +241,7 @@ const AnimatedRoutes = () => {
       </Route>
 
       <Route path="/not-found" element={<NotFound />} />
+      <Route path="/pref" element={<Preferences />} />
     </Routes>
   );
 };

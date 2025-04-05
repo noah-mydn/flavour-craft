@@ -43,7 +43,7 @@ const register = async (req, res) => {
         lastName: newUser.lastName,
         username: newUser.username,
         email: newUser.email,
-        //isFirstLoggedIn: user.isFirstLoggedIn,
+        isFirstLoggedIn: true,
       },
     });
   } catch (error) {
@@ -78,8 +78,10 @@ const login = async (req, res) => {
     );
 
     user.refreshToken = refreshToken;
-    user.isFirstLoggedIn = false;
-    await user.save();
+    if (user.isFirstLoggedIn) {
+      user.isFirstLoggedIn = false;
+      await user.save();
+    }
 
     res.status(200).json({
       message: "Login successful",
@@ -92,7 +94,7 @@ const login = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        //isFirstLoggedIn: user.isFirstLoggedIn,
+        isFirstLoggedIn: user.isFirstLoggedIn,
       },
     });
   } catch (error) {
@@ -130,8 +132,9 @@ passport.use(
               Math.random().toString(36).slice(-8) +
               Math.random().toString(36).slice(-8),
           });
+          isFirstLoggedIn = true;
         } else {
-          // Only update firstName and lastName if they haven't been modified manually
+          // Only update firstName and lastName
           if (
             user.firstName === profile.name.givenName &&
             user.lastName === profile.name.familyName
@@ -143,7 +146,9 @@ passport.use(
           // Always update Google ID & profile image
           user.googleId = profile.id;
           user.profileImage = profile.photos[0]?.value || user.profileImage;
-
+          if (user.isFirstLoggedIn) {
+            user.isFirstLoggedIn = false;
+          }
           await user.save();
         }
 

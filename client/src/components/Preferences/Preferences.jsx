@@ -108,13 +108,11 @@ const Preferences = () => {
 
     const promises = [];
     if (dietarySelections.length > 0) {
-      // Wrap IDs in the expected object structure
       promises.push(
         dispatch(setDietaryPreferences({ dietaryOptions: dietarySelections }))
       );
     }
     if (cuisineSelections.length > 0) {
-      // Wrap IDs in the expected object structure
       promises.push(
         dispatch(setCuisinePreferences({ cuisineTypes: cuisineSelections }))
       );
