@@ -8,7 +8,10 @@ const {
 const { Cuisine, DietaryOption } = require("../models/DietaryOptions");
 const Recipe = require("../models/Recipes");
 const Users = require("../models/Users");
-const { cleanUpOrphanedRecipes } = require("../controllers/recipesController");
+const {
+  cleanUpOrphanedRecipes,
+  recalculateRecipeRatings,
+} = require("../controllers/recipesController");
 
 const connectDB = async () => {
   try {
@@ -32,6 +35,9 @@ const connectDB = async () => {
         });
       });
     });
+
+    //recalculateRecipeRatings();
+
     // await Cuisine.deleteMany({});
     //await DietaryOption.deleteMany({});
 

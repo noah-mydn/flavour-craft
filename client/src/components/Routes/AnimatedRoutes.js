@@ -124,7 +124,7 @@ const AnimatedRoutes = () => {
           payload: { user: authUser, accessToken, refreshToken },
         });
 
-        displaySuccessToast("Successfully logged in with Google");
+        // displaySuccessToast("Successfully logged in with Google");
         if (userData?.user?.isFirstLoggedIn) {
           navigate("/pref");
         } else {

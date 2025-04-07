@@ -46,7 +46,6 @@ const CampaignManagement = () => {
     openDialog,
     deleteConfirmOpen,
     mode,
-    setOpenDialog,
     handleInputChange,
     handleFileInput,
     handleSubmit,
@@ -159,13 +158,16 @@ const CampaignManagement = () => {
               >
                 <CardMedia
                   component="img"
-                  height="200"
-                  image={
-                    camp.desktopImage ||
-                    "https://via.placeholder.com/400x200?text=No+Image"
-                  }
+                  style={{
+                    ...(isMobile && { height: "200px" }),
+                  }}
+                  height={"200"}
+                  image={isMobile ? camp.mobileImage : camp.desktopImage}
                   alt={camp.title}
-                  sx={{ objectFit: "cover" }}
+                  sx={{
+                    objectFit: "cover",
+                    ...(isMobile && { objectPosition: "25% 75%" }),
+                  }}
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography
@@ -239,7 +241,7 @@ const CampaignManagement = () => {
       {/* Dialog for creating or editing a campaign */}
       <Dialog
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
+        onClose={resetForm}
         maxWidth="md"
         fullScreen={isMobile}
         fullWidth
@@ -471,7 +473,7 @@ const CampaignManagement = () => {
             Cancel
           </CustomCancelBtn>
           <Button onClick={confirmDelete} color="error" autoFocus>
-            Delete
+            {loading ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>

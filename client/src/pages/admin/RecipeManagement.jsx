@@ -28,6 +28,11 @@ import {
   Tooltip,
   alpha,
   DialogContentText,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -38,6 +43,9 @@ import {
   Visibility as VisibilityIcon,
   Delete as RemoveImageIcon,
   Warning,
+  FilterAlt as FilterIcon,
+  Sort as SortIcon,
+  Clear as ClearIcon,
 } from "@mui/icons-material";
 import PageHeader from "../../components/Admin/PageHeader";
 
@@ -54,6 +62,10 @@ const RecipeManagement = () => {
     page,
     pageSize,
     searchTerm,
+    cuisineFilter,
+    sortDirection,
+    sortField,
+    uniqueCuisineTypes,
     deletingRecipeName,
     setSearchTerm,
     closeDeleteDialog,
@@ -65,11 +77,14 @@ const RecipeManagement = () => {
     handlePageChange,
     handlePageSizeChange,
     handleSearch,
+    handleCuisineFilterChange,
+    handleSortChange,
     viewRecipeDetail,
     openThumbnailDialog,
     closeThumbnailDialog,
     handleFileSelect,
     updateRecipeThumbnail,
+    clearFilters,
   } = useRecipeManagement();
 
   const fileInputRef = useRef(null);
@@ -78,8 +93,10 @@ const RecipeManagement = () => {
     fileInputRef.current.click();
   };
 
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, margin: "0 auto" }}>
+    <Box sx={{ p: isMobile ? 0 : 3, maxWidth: 1200, margin: "0 auto" }}>
       <PageHeader
         title="Recipe Management"
         subtitle="Manage recipe properties and assets"
@@ -99,10 +116,66 @@ const RecipeManagement = () => {
                     <SearchIcon />
                   </InputAdornment>
                 ),
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => handleSearch("")}>
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
               variant="outlined"
               size="small"
             />
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="cuisine-filter-label">
+                Filter by Cuisine
+              </InputLabel>
+              <Select
+                labelId="cuisine-filter-label"
+                id="cuisine-filter"
+                value={cuisineFilter}
+                label="Filter by Cuisine"
+                displayEmpty
+                onChange={(e) => handleCuisineFilterChange(e.target.value)}
+                startAdornment={
+                  <InputAdornment position="start">
+                    <FilterIcon fontSize="small" />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value="" disabled>
+                  All Cuisines
+                </MenuItem>
+                {uniqueCuisineTypes.map((cuisine) => (
+                  <MenuItem key={cuisine} value={cuisine}>
+                    {cuisine}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} sm={12} md={3}>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              {(searchTerm ||
+                cuisineFilter ||
+                sortField !== "createdAt" ||
+                sortDirection !== "desc") && (
+                <Button
+                  variant="outlined"
+                  startIcon={<ClearIcon />}
+                  onClick={clearFilters}
+                  size="medium"
+                  sx={{ height: "40px" }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </Box>
           </Grid>
         </Grid>
       </DetailCard>
@@ -131,7 +204,19 @@ const RecipeManagement = () => {
                         Dietary Preferences
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
-                        Generated Date
+                        <TableSortLabel
+                          active={sortField === "createdAt"}
+                          direction={sortDirection}
+                          onClick={() => handleSortChange("createdAt")}
+                          sx={{
+                            "& .MuiTableSortLabel-icon": {
+                              color: "#fff !important",
+                            },
+                            color: "#fff !important",
+                          }}
+                        >
+                          Generated Date
+                        </TableSortLabel>
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold", color: "#fff" }}>
                         Actions
@@ -141,7 +226,7 @@ const RecipeManagement = () => {
                   <TableBody>
                     {recipes.map((recipe) => (
                       <TableRow
-                        key={recipe.id}
+                        key={recipe.id || recipe._id}
                         sx={{ "&:hover": { backgroundColor: "#f9f9f9" } }}
                       >
                         <TableCell>
@@ -176,7 +261,8 @@ const RecipeManagement = () => {
                           </Box>
                         </TableCell>
                         <TableCell>
-                          {recipe?.cuisineTypes.length > 0 ? (
+                          {recipe?.cuisineTypes &&
+                          recipe?.cuisineTypes.length > 0 ? (
                             <Chip
                               label={recipe?.cuisineTypes[0]}
                               size="small"
@@ -304,13 +390,7 @@ const RecipeManagement = () => {
               <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
                 Try adjusting your search criteria or filters
               </Typography>
-              <Button
-                variant="outlined"
-                sx={{ mt: 2 }}
-                onClick={() => {
-                  setSearchTerm("");
-                }}
-              >
+              <Button variant="outlined" sx={{ mt: 2 }} onClick={clearFilters}>
                 Clear Filters
               </Button>
             </Paper>
@@ -409,6 +489,7 @@ const RecipeManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}

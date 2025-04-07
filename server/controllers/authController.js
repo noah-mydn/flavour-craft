@@ -146,9 +146,7 @@ passport.use(
           // Always update Google ID & profile image
           user.googleId = profile.id;
           user.profileImage = profile.photos[0]?.value || user.profileImage;
-          if (user.isFirstLoggedIn) {
-            user.isFirstLoggedIn = false;
-          }
+
           await user.save();
         }
 
@@ -197,10 +195,14 @@ passport.use(
             lastName: profile.name?.familyName || profile.name.givenName,
             email: profile.emails[0].value,
             googleId: profile.id,
+            isFirstLoggedIn: true,
           });
         } else if (!user.googleId) {
           // If user exists, but not been used - update their record
           user.googleId = profile.id;
+          if (user.isFirstLoggedIn) {
+            user.isFirstLoggedIn = false;
+          }
           await user.save();
         }
 

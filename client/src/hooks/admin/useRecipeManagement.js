@@ -8,13 +8,14 @@ import {
 import { displayErrorToast, displaySuccessToast } from "../../utils/toastUtil";
 import { getAuthConfig } from "../../utils/authHeaders";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import {
   paginationSelector,
   recipesListSelector,
 } from "../../redux/selectors/selectors";
 import { useNavigate } from "react-router-dom";
+
 export const useRecipeManagement = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,31 +29,115 @@ export const useRecipeManagement = () => {
   const [recipeGeneratedMsg, setRecipeGeneratedMsg] = useState(null);
   const [generatedLoading, setGeneratedLoading] = useState(false);
 
+  // New state for filtering and sorting
+  const [cuisineFilter, setCuisineFilter] = useState("");
+  const [sortDirection, setSortDirection] = useState("desc"); // "asc" or "desc"
+  const [sortField, setSortField] = useState("createdAt");
+
   // Pagination state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
   const pagination = useSelector(paginationSelector);
-  const recipes = useSelector(recipesListSelector);
+  const allRecipes = useSelector(recipesListSelector);
   const BASE_URL = process.env.REACT_APP_BASE_API + "/recipes";
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  // Get unique cuisine types for the filter dropdown
+  const uniqueCuisineTypes = useMemo(() => {
+    const cuisines = new Set();
+    allRecipes.forEach((recipe) => {
+      if (recipe.cuisineTypes && recipe.cuisineTypes.length > 0) {
+        recipe.cuisineTypes.forEach((cuisine) => cuisines.add(cuisine));
+      }
+    });
+    return Array.from(cuisines).sort();
+  }, [allRecipes]);
+
+  // Filter and sort recipes on the frontend
+  const recipes = useMemo(() => {
+    let filteredRecipes = [...allRecipes];
+
+    // Apply search filter
     if (searchTerm) {
-      queryRecipe(searchTerm);
-    } else {
-      getRecipesInventory();
+      filteredRecipes = filteredRecipes.filter((recipe) =>
+        recipe.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  }, [page, pageSize, searchTerm]);
+
+    // Apply cuisine filter
+    if (cuisineFilter) {
+      filteredRecipes = filteredRecipes.filter(
+        (recipe) =>
+          recipe.cuisineTypes && recipe.cuisineTypes.includes(cuisineFilter)
+      );
+    }
+
+    // Apply sorting
+    filteredRecipes.sort((a, b) => {
+      const fieldA = a[sortField] ? a[sortField] : "";
+      const fieldB = b[sortField] ? b[sortField] : "";
+
+      if (sortField === "createdAt") {
+        const dateA = new Date(fieldA);
+        const dateB = new Date(fieldB);
+        return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+      }
+
+      // For string fields
+      if (typeof fieldA === "string" && typeof fieldB === "string") {
+        return sortDirection === "asc"
+          ? fieldA.localeCompare(fieldB)
+          : fieldB.localeCompare(fieldA);
+      }
+
+      return 0;
+    });
+
+    // Calculate pagination for frontend
+    const calculatedTotalItems = filteredRecipes.length;
+    const calculatedTotalPages = Math.ceil(calculatedTotalItems / pageSize);
+
+    // Apply pagination
+    const startIndex = (page - 1) * pageSize;
+    const paginatedRecipes = filteredRecipes.slice(
+      startIndex,
+      startIndex + pageSize
+    );
+
+    // Update local pagination object for UI
+    const paginationInfo = {
+      ...pagination,
+      totalRecipes: calculatedTotalItems,
+      totalPages: calculatedTotalPages,
+    };
+
+    return {
+      paginatedData: paginatedRecipes,
+      paginationInfo,
+    };
+  }, [
+    allRecipes,
+    searchTerm,
+    cuisineFilter,
+    sortField,
+    sortDirection,
+    page,
+    pageSize,
+  ]);
+
+  useEffect(() => {
+    getRecipesInventory();
+  }, [page, pageSize]);
 
   const getRecipesInventory = () => {
     setLoading(true);
     dispatch(
       fetchRecipes({
         sortValue: "all",
-        page,
-        pageSize,
+        page: 1, // Always fetch all data from page 1
+        pageSize: 1000, // Fetch a large number to handle frontend pagination
       })
     ).finally(() => setLoading(false));
   };
@@ -69,7 +154,23 @@ export const useRecipeManagement = () => {
 
   const handleSearch = (value) => {
     setSearchTerm(value);
-    queryRecipe(value);
+    setPage(1); // Reset to first page when searching
+  };
+
+  const handleCuisineFilterChange = (cuisine) => {
+    setCuisineFilter(cuisine);
+    setPage(1); // Reset to first page when filtering
+  };
+
+  const handleSortChange = (field) => {
+    // If clicking on the same field, toggle direction
+    if (field === sortField) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc"); // Default to descending for new field
+    }
+    setPage(1); // Reset to first page when sorting
   };
 
   const openThumbnailDialog = (recipeId, currentImage) => {
@@ -90,14 +191,11 @@ export const useRecipeManagement = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    console.log("It's here!");
     setSelectedImage(file);
-
     setImagePreview(URL.createObjectURL(file));
   };
 
   const updateRecipeThumbnail = async () => {
-    console.log(currentRecipeId);
     if (!selectedImage || !currentRecipeId) {
       displayErrorToast("Please select an image to upload");
       return;
@@ -132,7 +230,6 @@ export const useRecipeManagement = () => {
   const discardRecipe = async (id) => {
     setLoading(true);
     try {
-      console.log("ABOUT TO DELETE ID:", id);
       const result = await dispatch(deleteRecipe(id));
       if (result.meta.requestStatus === "fulfilled") {
         displaySuccessToast("Recipe deleted successfully");
@@ -153,41 +250,18 @@ export const useRecipeManagement = () => {
     navigate(`/admin/recipes/edit/${id}`);
   };
 
-  const queryRecipe = async (value) => {
-    setLoading(true);
-    if (!value) {
-      getRecipesInventory();
-      return;
-    }
-    try {
-      let result = await dispatch(
-        searchRecipe({
-          query: value,
-          page,
-          pageSize,
-        })
-      ).unwrap();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const openDeleteDialog = (recipeId, recipeName) => {
     setRecipeToDelete(recipeId);
     setDeletingRecipeName(recipeName);
     setDeleteDialogOpen(true);
   };
 
-  // Close delete confirmation dialog
   const closeDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setRecipeToDelete(null);
     setDeletingRecipeName("");
   };
 
-  // Confirm delete action
   const confirmDelete = () => {
     if (recipeToDelete) {
       discardRecipe(recipeToDelete);
@@ -214,7 +288,6 @@ export const useRecipeManagement = () => {
         },
         getAuthConfig()
       );
-      console.log(response.data);
       if (response.data.status === 200) {
         setRecipeGeneratedMsg(response?.data?.message);
         onSuccess();
@@ -227,13 +300,26 @@ export const useRecipeManagement = () => {
     }
   };
 
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm("");
+    setCuisineFilter("");
+    setSortDirection("desc");
+    setSortField("createdAt");
+    setPage(1);
+  };
+
   return {
-    recipes,
-    pagination,
+    recipes: recipes.paginatedData,
+    pagination: recipes.paginationInfo,
     loading,
     page,
     pageSize,
     searchTerm,
+    cuisineFilter,
+    sortDirection,
+    sortField,
+    uniqueCuisineTypes,
     openImageDialog,
     imagePreview,
     recipeToDelete,
@@ -245,6 +331,8 @@ export const useRecipeManagement = () => {
     handlePageChange,
     handlePageSizeChange,
     handleSearch,
+    handleCuisineFilterChange,
+    handleSortChange,
     getRecipesInventory,
     discardRecipe,
     editRecipe,
@@ -256,6 +344,7 @@ export const useRecipeManagement = () => {
     confirmDelete,
     openDeleteDialog,
     closeDeleteDialog,
+    clearFilters,
     batchRecipeGeneration,
   };
 };

@@ -10,8 +10,7 @@ const PrivateRoute = ({ adminOnly = false, children }) => {
   const isVerified = useSelector(isVerifiedSelector);
   const user = useSelector(userSelector);
 
-  // Check for session or token validity here
-  if (!isVerified || !user) {
+  if (!isVerified) {
     return <Navigate to="/auth" replace />;
   }
 

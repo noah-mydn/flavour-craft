@@ -1,7 +1,7 @@
 const Recipe = require("../models/Recipes");
 const { CohereClient } = require("cohere-ai");
 const User = require("../models/Users");
-const RecipeGenerationLog = require("../logs/recipeGenerationLog");
+
 const {
   getTimePeriod,
   getRecipesByTimeAndDietary,
@@ -14,6 +14,7 @@ const {
   updateCuisineAndDietaryDb,
 } = require("../controllers/preferencesController");
 const mongoose = require("mongoose");
+const Users = require("../models/Users");
 
 const cohere = new CohereClient({
   token: process.env.COHERE_TOKEN,
@@ -47,7 +48,8 @@ const generateRecipesInBatch = async (req, res) => {
       - Nut-Free recipes **CANNOT** contain any type of nuts.
       - Soy-Free recipes **CANNOT** contain soybeans, soy sauce, tofu, miso, or any soy-derived products.
       - Strict dietary validation - **No mislabeling allowed**.
-    
+      - Dietary Options IS NOT CUISINE. Do not add cuisine to dietaryRestrictions.
+      - Cuisine is NOT DIETARY RESTRICTIONS. Do not add dietaryRestrictions to cuisineTypes.
     - **Ingredient Substitutions:**
       - If an ingredient violates a dietary restriction, **replace it ONLY with a nutritionally and functionally similar alternative**.
       - Example:
@@ -79,7 +81,7 @@ const generateRecipesInBatch = async (req, res) => {
         }
       ],
       "shortDescription": "String", 
-      "dietaryPreferences": ["String"],
+      "dietaryPreferences": ["String", maximum-2],
       "cuisineTypes": ["String"],
       "tags": ["String"],
       "cookingInstructions": ["String"],
@@ -128,9 +130,9 @@ const generateRecipesInBatch = async (req, res) => {
     // Save unique recipes to MongoDB
     await Recipe.insertMany(uniqueRecipes);
 
-    await RecipeGenerationLog.create({
-      userId: _id,
-    });
+    // await RecipeGenerationLog.create({
+    //   userId: _id,
+    // });
 
     await updateIngredientsDatabase();
 
@@ -144,13 +146,13 @@ const generateRecipesInBatch = async (req, res) => {
     return res.status(500).json({
       status: 500,
       message:
-        "An error occurred while generating or saving the recipes. Please try again.",
+        "An error occurred while generating or saving the recipes, " +
+        error.message,
     });
   }
 };
 const generateRecipe = async (req, res) => {
   const { ingredients, cuisines, dietaryPreferences } = req.body;
-  const { _id } = req.user;
 
   // Validate input
   if (!Array.isArray(ingredients) || ingredients.length === 0) {
@@ -173,24 +175,15 @@ const generateRecipe = async (req, res) => {
   try {
     // Check DB first
     const query = {
-      // Strict match for cuisine
-      cuisineTypes: { $all: cuisines }, // Ensures ALL selected cuisines are included
-
-      // Dietary preferences should be flexible
+      cuisineTypes: { $all: cuisines },
       dietaryPreferences: { $in: dietaryPreferences },
-
-      // Ingredients should be flexible but must be part of the list
       $or: [
-        {
-          "ingredients.name": { $in: ingredients }, // Ingredient matches directly
-        },
-        {
-          "ingredients.substitute": { $in: ingredients }, // Match ingredient substitutes
-        },
+        { "ingredients.name": { $in: ingredients } },
+        { "ingredients.substitute": { $in: ingredients } },
       ],
     };
 
-    const recipesFromDB = await Recipe.find(query).limit(25);
+    const recipesFromDB = await Recipe.find(query).limit(4);
 
     if (recipesFromDB.length > 0) {
       return res
@@ -200,139 +193,119 @@ const generateRecipe = async (req, res) => {
 
     console.log("No matching recipes found. Generating with AI...");
 
-    // AI Recipe Generation
     const prompt = `
-      Generate 4 complete and authentic recipes based on the given details.
-      **Important Rules**:
-     
-      - If a value is unknown, generate a realistic value instead.
-      - Use ingredients from the list, but not necessarily all. 
-      - If no valid recipes can be generated, return: { "error": "Sorry, I couldn't find any recipe." }
-      - If you are unsure about cuisine, just don't add
+Generate 4 recipes using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects.
 
-      **Input Details**:
-      - Ingredients: ${ingredients.join(", ")}
-      - Cuisine types: ${cuisines.join(", ")}
-      - Dietary preferences: ${dietaryPreferences.join(", ")}
+Use the following:
+- Ingredients: ${ingredients.join(", ")}
+- Cuisine types: ${cuisines.join(", ")}
+- Dietary preferences: ${dietaryPreferences.join(", ")}
 
-      **Expected JSON Schema**:
-       - **ALL fields inside are mandatory.**. Do NOT leave any fields empty.
+STRICT VALIDATION RULES:
+- If given cuisine type is "All", analyze the origin of the recipe and label its cuisine, do not label it as All.
+- **Verify all ingredients align with dietary labels**:
+  - Vegan recipes CANNOT contain any meat, dairy, eggs, honey, or animal-derived products.
+  - Vegetarian recipes CANNOT contain meat, poultry, or fish.
+  - Halal recipes CANNOT contain pork, alcohol, or non-halal meat.
+  - Kosher recipes MUST only contain kosher-certified ingredients.
+  - Gluten-free recipes CANNOT contain wheat, barley, or rye.
+  - Nut-Free recipes CANNOT contain any type of nuts.
+  - Soy-Free recipes CANNOT contain soybeans, soy sauce, tofu, miso, or any soy-derived products.
+  - Strict dietary validation - No mislabeling allowed.
+  - Dietary Options IS NOT CUISINE. Do not add cuisine to dietaryPreferences.
+  - Cuisine is NOT DIETARY RESTRICTIONS. Do not add dietaryPreferences to cuisineTypes.
+
+- **Ingredient Substitutions**:
+  - If an ingredient violates a dietary restriction, replace it ONLY with a nutritionally and functionally similar alternative.
+    - e.g., Miso paste → Chickpea miso, not vegetable broth
+    - Soy sauce → Coconut aminos
+  - If a compliant substitute is unavailable, exclude the ingredient.
+
+- **Recipe Quality**:
+  - Provide a precise and image-promptable description for each recipe.
+  - Ensure detailed, step-by-step cooking instructions.
+
+- **Nutritional Information** (for a single serving estimate):
+  - Macronutrients must be stated in grams (g) for calories, protein, carbs, and fat.
+  - Estimation should be closely related to actual values. Do not generate unrealistic values.
+  - If exact macronutrient values cannot be estimated, use "Varies" — only if absolutely necessary.
+
+- **Output Format**:
+  - The response must be a structured JSON array.
+
+Schema:
 {
-  "recipes": [
+  "name": "String (Recipe name)",
+  "ingredients": [
     {
-      "name": "String",
-      "shortDescription": "String",
-      "ingredients": [{"name": "String", "quantity": "String", "substitute": ["String"]}],
-      "cookingInstructions": ["String"],
-      "cookingTime": "String",
-      "cuisineTypes": ["String"], 
-      "dietaryPreferences": ["String"],
-      "tags": ["String"],
-      "nutritionalInfo": {"calories": "String", "protein": "String", "carbs": "String", "fat": "String"}
+      "name": "String (Ingredient name)",
+      "quantity": "String",
+      "substitute": ["String"]
     }
-  ]
+  ],
+  "shortDescription": "String", 
+  "dietaryPreferences": ["String"] maximum-2,
+  "cuisineTypes": ["String"],
+  "tags": ["String"],
+  "cookingInstructions": ["String"],
+  "nutritionalInfo": {
+    "calories": "String",
+    "protein": "String",
+    "carbs": "String",
+    "fat": "String"
+  },
+  "cookingTime": "String"
 }
-Return **ONLY JSON**, nothing else.
-`;
+    `;
 
+    // Call Cohere API for recipe generation
     const stream = await cohere.chatStream({
       model: "command-r-08-2024",
       message: prompt,
       temperature: 0.3,
-      chatHistory: [{ role: "User", message: prompt }],
-      promptTruncation: "AUTO",
     });
 
     let responseText = "";
-    try {
-      for await (const chat of stream) {
-        if (chat.eventType === "text-generation") {
-          responseText += chat.text;
-        }
+    for await (const chat of stream) {
+      if (chat.eventType === "text-generation") {
+        responseText += chat.text;
       }
-    } catch (error) {
-      console.error("Error streaming AI response:", error.message);
-      return res.status(500).json({
-        status: 500,
-        message: "Error retrieving AI response.",
-      });
     }
 
-    console.log("Raw AI Response:", responseText);
-
+    console.log(responseText);
     const cleanRecipeDataString = responseText
-      .replace(/^```json\n/, "") // Remove leading code block markers
-      .replace(/\n```$/, "") // Remove trailing markers
-      .trim(); // Remove extra spaces
+      .replace(/^```json\n/, "")
+      .replace(/\n```$/, "");
 
-    // Add a closing bracket if missing
-    if (!cleanRecipeDataString.endsWith("}")) {
-      cleanRecipeDataString += "}";
-    }
+    const recipes = JSON.parse(cleanRecipeDataString);
+    console.log("Generated Recipes:", recipes);
 
-    // Validate AI response
-    let generatedRecipes;
-    try {
-      await RecipeGenerationLog.create({
-        userId: _id,
-      });
-      generatedRecipes = JSON.parse(cleanRecipeDataString);
+    const existingRecipeNames = await Recipe.find({}, "name").then((docs) =>
+      docs.map((doc) => doc.name)
+    );
 
-      if (
-        !generatedRecipes ||
-        !generatedRecipes.recipes ||
-        !Array.isArray(generatedRecipes.recipes)
-      ) {
-        throw new Error("Invalid JSON structure from AI");
-      }
-    } catch (error) {
-      console.error("Error parsing AI response:", error.message);
-      console.error("Received AI response:", cleanRecipeDataString);
-      return res.status(500).json({
-        status: 500,
-        message: "AI response is not valid JSON.",
-      });
-    }
+    const uniqueRecipes = recipes.filter(
+      (recipe) => !existingRecipeNames.includes(recipe.name)
+    );
 
-    generatedRecipes.recipes = generatedRecipes.recipes.map((recipe) => ({
-      name: recipe.name || "Unknown Recipe",
-      shortDescription: recipe.shortDescription || "",
-      ingredients: recipe.ingredients,
+    await Recipe.insertMany(uniqueRecipes);
 
-      cookingInstructions: recipe.cookingInstructions,
-      cookingTime: recipe.cookingTime,
-      cuisineTypes: recipe.cuisineTypes || [],
-      dietaryPreferences: recipe.dietaryPreferences || [],
-      tags: recipe.tags || [],
-      nutritionalInfo: {
-        calories: recipe.nutritionalInfo?.calories || "Unknown",
-        protein: recipe.nutritionalInfo?.protein || "Unknown",
-        carbs: recipe.nutritionalInfo?.carbs || "Unknown",
-        fat: recipe.nutritionalInfo?.fat || "Unknown",
-      },
-    }));
+    //await RecipeGenerationLog.create({ userId: _id });
 
-    console.log("Generated Recipes:", generatedRecipes.recipes);
-
-    // Save to DB
-    const newlySavedRecipes = await Recipe.insertMany(generatedRecipes.recipes);
     await updateIngredientsDatabase();
-    await updateCuisineAndDietaryDb();
 
-    // Extract recipe IDs
-    const recipeIds = newlySavedRecipes?.map((recipe) => recipe._id);
-
-    // Update user's myRecipeGenerations field
-    await User.findByIdAndUpdate(req.user.userId, {
-      $push: { myRecipeGenerations: { $each: recipeIds } },
+    return res.status(200).json({
+      status: 200,
+      message: `${uniqueRecipes.length} new recipes saved to the database.`,
+      data: uniqueRecipes,
     });
-
-    return res.status(201).json({ status: 201, data: newlySavedRecipes });
   } catch (error) {
-    console.error("Error generating recipe:", error.message);
+    console.error("Error generating or saving recipes:", error.message);
     return res.status(500).json({
       status: 500,
-      message: `Error generating recipe, ${error.message}`,
+      message:
+        "An error occurred while generating or saving the recipes" +
+        error.message,
     });
   }
 };
@@ -384,31 +357,46 @@ const deleteRecipesInBatch = async (req, res) => {
 
 const deleteRecipe = async (req, res) => {
   const recipeId = req.params.id;
+
+  if (!recipeId) {
+    return res.status(400).json({
+      status: 400,
+      message: "Invalid recipe ID format",
+    });
+  }
+
   try {
-    const recipe = await Recipe.findById(recipeId);
+    let id = new mongoose.Types.ObjectId(recipeId);
+    const recipe = await Recipe.findById(id);
     if (!recipe) {
       return res.status(404).json({ status: 404, message: "Recipe not found" });
     }
+
     await User.updateMany(
       {
         $or: [
-          { savedRecipes: recipeId },
-          { myRecipeGenerations: recipeId },
-          { ratedRecipes: recipeId },
+          { savedRecipes: id },
+          { myRecipeGenerations: id },
+          { ratedRecipes: id },
         ],
       },
       {
         $pull: {
-          savedRecipes: recipeId,
-          myRecipeGenerations: recipeId,
-          ratedRecipes: recipeId,
+          savedRecipes: id,
+          myRecipeGenerations: id,
+          ratedRecipes: id,
         },
       }
     );
+
     await Recipe.findByIdAndDelete(recipeId);
-    return res
-      .status(200)
-      .json({ status: 200, data: "Recipe deleted successfully", recipeId });
+    await Recipe.findByIdAndUpdate(recipeId, { $inc: { views: -1 } });
+
+    return res.status(200).json({
+      status: 200,
+      data: "Recipe deleted successfully",
+      recipeId,
+    });
   } catch (error) {
     res.status(500).json({
       status: 500,
@@ -666,12 +654,13 @@ const rateRecipe = async (req, res) => {
   try {
     const userId = req.user.userId;
     const recipeId = req.params.id;
-    const { rating } = req.body;
+    let { rating } = req.body;
 
+    rating = Number(rating);
     if (!rating || rating < 1 || rating > 5) {
       return res
         .status(400)
-        .json({ message: "Invalid rating. Must be between 1-5." });
+        .json({ message: "Invalid rating. Must be between 1 and 5." });
     }
 
     const user = await User.findById(userId);
@@ -680,38 +669,39 @@ const rateRecipe = async (req, res) => {
     const recipe = await Recipe.findById(recipeId);
     if (!recipe) return res.status(404).json({ message: "Recipe not found" });
 
-    // Check if user has already rated this recipe
-    const existingRating = user.ratedRecipes.find(
-      (r) => r.recipeId.toString() === recipeId
+    let existingRating = user.ratedRecipes.find(
+      (r) => r.recipeId && r.recipeId.toString() === recipeId
     );
+
     if (existingRating) {
-      // Update existing rating
       const oldRating = existingRating.rating;
       existingRating.rating = rating;
 
-      // Adjust recipe rating average
+      // Update average rating
       const newAverage =
         (recipe.ratings.average * recipe.ratings.count - oldRating + rating) /
         recipe.ratings.count;
-      await Recipe.findByIdAndUpdate(recipeId, {
-        $set: { "ratings.average": newAverage },
-      });
+
+      recipe.ratings.average = newAverage;
     } else {
       // New rating
       user.ratedRecipes.push({ recipeId, rating });
       recipe.ratings.count += 1;
+
       recipe.ratings.average =
         (recipe.ratings.average * (recipe.ratings.count - 1) + rating) /
         recipe.ratings.count;
-      await recipe.save();
     }
 
-    await user.save();
+    // Save both user and recipe
+    await Promise.all([user.save(), recipe.save()]);
+
     return res.status(200).json({
       status: 200,
       message: "Recipe rated successfully",
     });
   } catch (error) {
+    console.error("Rate recipe error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -1149,6 +1139,38 @@ const cleanUpOrphanedRecipes = async () => {
   }
 };
 
+const recalculateRecipeRatings = async () => {
+  const recipes = await Recipe.find({});
+
+  for (const recipe of recipes) {
+    const recipeId = recipe._id.toString();
+    const users = await Users.find({ "ratedRecipes.recipeId": recipeId });
+
+    let total = 0;
+    let count = 0;
+
+    users.forEach((user) => {
+      const ratingEntry = user.ratedRecipes.find(
+        (r) =>
+          r.recipeId?.toString() === recipeId && r.rating >= 1 && r.rating <= 5
+      );
+
+      if (ratingEntry) {
+        total += ratingEntry.rating;
+        count++;
+      }
+    });
+
+    const newAverage = count > 0 ? total / count : 0;
+
+    recipe.ratings.average = newAverage;
+    recipe.ratings.count = count;
+    await recipe.save();
+  }
+
+  console.log("✅ All recipe ratings have been recalculated.");
+};
+
 module.exports = {
   generateRecipesInBatch,
   trackRecipeViews,
@@ -1170,4 +1192,5 @@ module.exports = {
   deleteRecipe,
   searchRecipe,
   cleanUpOrphanedRecipes,
+  recalculateRecipeRatings,
 };

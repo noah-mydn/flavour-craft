@@ -64,7 +64,7 @@ export const useCampaign = () => {
 
       return response.data.campaign;
     } catch (err) {
-      setError(err.response.data.error);
+      setError(err.response.data.message);
       //displayErrorToast(error);
       //setOpenDialog(false);
       return null;
@@ -97,8 +97,9 @@ export const useCampaign = () => {
       resetForm();
       return response.data.campaign;
     } catch (err) {
+      console.log(err?.response?.data?.message);
       //displayErrorToast(error);
-      setError(err.response.data.error);
+      setError(err?.response?.data?.message);
       //setOpenDialog(false);
       return null;
     } finally {
@@ -165,8 +166,8 @@ export const useCampaign = () => {
       const response = await axios.get(`${BASE_URL}/current`, getAuthConfig());
       setActiveCampaign(response.data.campaign || {});
     } catch (err) {
-      setError(err.response.data.message);
-      displayErrorToast(err);
+      //setError(err.response.data.message);
+      //displayErrorToast(err);
     } finally {
       setLoading(false);
     }
@@ -184,6 +185,7 @@ export const useCampaign = () => {
     setSelectedCampaign(null);
     setMode("create");
     setOpenDialog(false);
+    setError("");
   };
 
   // Open delete confirmation

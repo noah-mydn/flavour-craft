@@ -52,7 +52,7 @@ export const Main = () => {
           height={isMobile ? 500 : 400}
         />
       )}
-      <Box my={3} mx={isMobile ? 0 : 10}>
+      <Box mb={3} mt={isMobile ? 3 : 12} mx={isMobile ? 0 : 10}>
         <HomeContainer>
           <Greeting />
 

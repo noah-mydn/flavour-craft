@@ -30,13 +30,9 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       console.log("Removing accessToken from sessionStorage");
-      sessionStorage.removeItem("accessToken");
-
-      console.log("Removing auth from sessionStorage");
-      sessionStorage.removeItem("auth");
       sessionStorage.removeItem("userData");
-
-      console.log("Removing refreshToken from localStorage");
+      sessionStorage.removeItem("auth");
+      sessionStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       state.user = null;
       state.accessToken = null;

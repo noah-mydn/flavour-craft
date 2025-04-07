@@ -40,6 +40,9 @@ const Preferences = () => {
     new Set()
   );
 
+  const [hasSelectedPreferences, setHasSelectedPreferences] =
+    React.useState(false);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -132,7 +135,13 @@ const Preferences = () => {
     fetchAllDietaryOptions();
   }, []);
 
-  if (loading) {
+  React.useEffect(() => {
+    if (tempDietarySelections.size > 0 || tempCuisineSelections.size > 0) {
+      setHasSelectedPreferences(true);
+    }
+  }, [tempDietarySelections, tempCuisineSelections]);
+
+  if (loading && hasSelectedPreferences) {
     return <CookingAnimation />;
   }
   return (

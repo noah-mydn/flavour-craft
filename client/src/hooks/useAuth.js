@@ -60,19 +60,7 @@ export const useAuth = () => {
         password: accountUser.password,
       })
     );
-    // console.log(user);
-    // dispatch(setUserProfile(user));
-    // if (isVerified) {
-    //   return navigate("/home");
-    // }
-  };
 
-  //Logout
-  const accountLogout = () => {
-    dispatch(logout());
-  };
-
-  React.useEffect(() => {
     if (user && isVerified && user?.role !== "admin") {
       dispatch(setUserProfile(user));
       if (user.isFirstLoggedIn) {
@@ -85,7 +73,17 @@ export const useAuth = () => {
     } else {
       navigate("/auth");
     }
-  }, [user, dispatch, navigate]);
+    // console.log(user);
+    // dispatch(setUserProfile(user));
+    // if (isVerified) {
+    //   return navigate("/home");
+    // }
+  };
+
+  //Logout
+  const accountLogout = () => {
+    dispatch(logout());
+  };
 
   return {
     user,

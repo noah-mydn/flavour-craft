@@ -29,7 +29,7 @@ const GetStarted = ({ isMobile, isTablet }) => {
             justifyContent: "center",
             marginBottom: isMobile ? "auto" : "",
             marginTop: isMobile ? "1rem" : "",
-            width: isMobile ? "100%" : "auto",
+            width: isTablet ? "100%" : "auto",
           }}
         >
           <lottie-player
@@ -49,7 +49,7 @@ const GetStarted = ({ isMobile, isTablet }) => {
         <HeadingsContainer>
           <Box
             sx={{
-              marginTop: isMobile ? "" : "8rem",
+              marginTop: isMobile ? "" : isTablet ? "2rem" : "8rem",
               marginBottom: "auto",
               display: "flex",
               flexDirection: "column",
@@ -57,21 +57,29 @@ const GetStarted = ({ isMobile, isTablet }) => {
             }}
           >
             <Typography
-              variant={isTablet ? "h2" : isMobile ? "h3" : "h1"}
-              textAlign="left"
+              variant={isMobile ? "h4" : isTablet ? "h2" : "h1"}
+              textAlign={isTablet ? "center" : "left"}
               fontFamily={theme.typography.fontFamily[0]}
-              style={{ color: theme.palette.primary.dark }}
+              sx={{
+                color: theme.palette.primary.dark,
+                width: isTablet ? "100%" : "auto",
+              }}
+              fontWeight="bold"
             >
               Turn Ingredients Into Masterpieces
             </Typography>
             <Typography
-              textAlign={isMobile ? "justify" : "left"}
+              textAlign={isTablet ? "justify" : "left"}
               variant={isMobile ? "body2" : "body1"}
               fontFamily={theme.typography.fontFamily[1]}
               paddingTop={4}
               color="text.secondary"
               fontSize={14}
               fontWeight="400"
+              sx={{
+                width: isMobile ? "100%" : isTablet ? "70%" : "auto",
+                margin: "0 auto",
+              }}
             >
               Discover personalized recipes, create culinary masterpieces with
               ease, and share your favorite dishes with a vibrant community.
@@ -83,8 +91,12 @@ const GetStarted = ({ isMobile, isTablet }) => {
           <WelcomeButton
             onClick={goToAuth}
             variant="contained"
-            style={{
-              marginTop: "2rem",
+            sx={{
+              margin: isMobile
+                ? "2rem 0 0 0"
+                : isTablet
+                ? "2rem auto 0 auto"
+                : "2rem 0 0 0",
               width: isMobile ? "100%" : "70%",
             }}
             endIcon={<SendIcon />}

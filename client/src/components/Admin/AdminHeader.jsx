@@ -17,6 +17,7 @@ import AccountSettingsDialog from "../Profile/AccountSettings";
 import { useDispatch, useSelector } from "react-redux";
 import { profileSelector } from "../../redux/selectors/selectors";
 import { logout } from "../../redux/reducers/authSlice";
+import { useNavigate } from "react-router-dom";
 
 const AdminHeader = ({ onMenuClick }) => {
   const theme = useTheme();
@@ -25,9 +26,11 @@ const AdminHeader = ({ onMenuClick }) => {
   const [accountSettingsOpen, setAccountSettingsOpen] = React.useState(false);
   const user = useSelector(profileSelector);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const accountLogout = () => {
     dispatch(logout());
+    navigate("/auth", { replace: true });
   };
 
   const handleAvatarClick = (event) => {
