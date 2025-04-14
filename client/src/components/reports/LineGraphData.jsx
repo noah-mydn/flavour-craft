@@ -2,50 +2,45 @@ import React from "react";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { Typography, Box, useMediaQuery, useTheme } from "@mui/material";
 
-const LineGraphData = ({ data, title }) => {
-  const theme = useTheme();
-  const dates = data.map((item) => item.date);
-  const postsData = data.map((item) => item.totalPosts);
-  const commentsData = data.map((item) => item.totalComments);
+const LineChartData = ({ data, title }) => {
+  const themeContext = useTheme();
 
-  const maxValue = Math.max(...postsData, ...commentsData);
-  const yAxisMax = Math.ceil(maxValue * 1.2);
+  const isSmallScreen = useMediaQuery(themeContext.breakpoints.down("sm"));
+  const isExtraSmall = useMediaQuery(themeContext.breakpoints.down("xs"));
+  const isLargeScreen = useMediaQuery(themeContext.breakpoints.up("lg"));
+  const isMidScreen = useMediaQuery(
+    themeContext.breakpoints.between("sm", "lg")
+  );
 
-  // More granular responsive breakpoints
-  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isXsMobile = useMediaQuery(theme.breakpoints.down("xs"));
+  const dateList = data.map((entry) => entry.date);
+  const postCounts = data.map((entry) => entry.totalPosts);
+  const commentCounts = data.map((entry) => entry.totalComments);
 
-  // Determine chart dimensions based on screen size
-  const getChartWidth = () => {
-    if (isDesktop) return 520;
-    if (isTablet) return 480;
-    if (isMobile) return 340;
-    if (isXsMobile) return 280;
-    return 300; // Fallback
-  };
+  const highestPoint = Math.max(...postCounts, ...commentCounts);
+  const dynamicMaxY = Math.ceil(highestPoint * 1.2);
 
-  const getChartHeight = () => {
-    if (isMobile) return 250;
+  const calculateChartWidth = () => {
+    if (isLargeScreen) return 520;
+    if (isMidScreen) return 480;
+    if (isSmallScreen) return 340;
+    if (isExtraSmall) return 280;
     return 300;
   };
 
-  // Handle date label display for smaller screens
-  const formatDateLabels = () => {
-    if (isMobile && dates.length > 5) {
-      // For mobile, show fewer date labels to prevent overcrowding
-      const visibleIndices = [];
-      const step = Math.ceil(dates.length / 4);
-      for (let i = 0; i < dates.length; i += step) {
-        visibleIndices.push(i);
-      }
+  const calculateChartHeight = () => (isSmallScreen ? 250 : 300);
 
-      return dates.map((date, index) =>
-        visibleIndices.includes(index) ? date : ""
+  const getReducedDateLabels = () => {
+    if (isSmallScreen && dateList.length > 5) {
+      const shownIndices = [];
+      const interval = Math.ceil(dateList.length / 4);
+      for (let i = 0; i < dateList.length; i += interval) {
+        shownIndices.push(i);
+      }
+      return dateList.map((label, idx) =>
+        shownIndices.includes(idx) ? label : ""
       );
     }
-    return dates;
+    return dateList;
   };
 
   return (
@@ -55,8 +50,8 @@ const LineGraphData = ({ data, title }) => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        overflow: "hidden", // Prevent horizontal scrolling
-        px: isMobile ? 1 : 2, // Padding adjustment for mobile
+        overflow: "hidden",
+        px: isSmallScreen ? 1 : 2,
       }}
     >
       <Typography
@@ -67,84 +62,84 @@ const LineGraphData = ({ data, title }) => {
         color="primary.main"
         mt={2}
         sx={{
-          fontSize: isMobile ? "1rem" : "1.25rem",
+          fontSize: isSmallScreen ? "1rem" : "1.25rem",
         }}
       >
         {title}
       </Typography>
+
       <Box
         sx={{
           width: "100%",
           display: "flex",
           justifyContent: "center",
-          overflow: "auto", // Allow horizontal scrolling only when needed
+          overflow: "auto",
         }}
       >
         <LineChart
-          height={getChartHeight()}
-          width={getChartWidth()}
+          height={calculateChartHeight()}
+          width={calculateChartWidth()}
           margin={{
             top: 20,
-            right: isMobile ? 30 : 40,
-            bottom: isMobile ? 35 : 50,
-            left: isMobile ? 40 : 50,
+            right: isSmallScreen ? 30 : 40,
+            bottom: isSmallScreen ? 35 : 50,
+            left: isSmallScreen ? 40 : 50,
           }}
           series={[
             {
-              data: postsData,
+              data: postCounts,
               label: "Posts",
               color: "#3f51b5",
               curve: "linear",
-              showMark: !isMobile,
+              showMark: !isSmallScreen,
             },
             {
-              data: commentsData,
+              data: commentCounts,
               label: "Comments",
               color: "#f50057",
               curve: "linear",
-              showMark: !isMobile,
+              showMark: !isSmallScreen,
             },
           ]}
           xAxis={[
             {
-              data: formatDateLabels(),
+              data: getReducedDateLabels(),
               scaleType: "point",
               label: "Date",
-
               tickLabelStyle: {
                 angle: 0,
-                textAnchor: isMobile ? "start" : "middle",
-                fontSize: isMobile ? 10 : 12,
+                textAnchor: isSmallScreen ? "start" : "middle",
+                fontSize: isSmallScreen ? 10 : 12,
               },
             },
           ]}
           yAxis={[
             {
               min: 0,
-              max: yAxisMax,
+              max: dynamicMaxY,
               label: "Count",
-              tickNumber: isMobile ? 5 : 8, // Fewer ticks on mobile
+              tickNumber: isSmallScreen ? 5 : 8,
             },
           ]}
           sx={{
             ".MuiLineElement-root": {
-              strokeWidth: isMobile ? 2 : 3,
+              strokeWidth: isSmallScreen ? 2 : 3,
             },
             ".MuiMarkElement-root": {
               stroke: "white",
-              scale: isMobile ? "0.1" : "0.2",
-              strokeWidth: isMobile ? 1 : 2,
+              scale: isSmallScreen ? "0.1" : "0.2",
+              strokeWidth: isSmallScreen ? 1 : 2,
             },
-            fontSize: isMobile ? "0.75rem" : "0.875rem",
+            fontSize: isSmallScreen ? "0.75rem" : "0.875rem",
           }}
           slotProps={{
             legend: {
               position: {
                 vertical: "top",
-                horizontal: isMobile ? "center" : "right",
+                horizontal: isSmallScreen ? "center" : "right",
               },
-              itemGap: isMobile ? 8 : 12,
-              fontSize: isMobile ? 12 : 14,
+              itemGap: isSmallScreen ? 8 : 12,
+              fontSize: isSmallScreen ? 12 : 14,
             },
           }}
         />
@@ -153,4 +148,4 @@ const LineGraphData = ({ data, title }) => {
   );
 };
 
-export default LineGraphData;
+export default LineChartData;
