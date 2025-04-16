@@ -11,14 +11,13 @@ import { login, register } from "../redux/apiClients/authAPI";
 import React from "react";
 import { setUserProfile } from "../redux/reducers/userProfileSlice";
 import { logout } from "../redux/reducers/authSlice";
+import { displayErrorToast } from "../utils/toastUtil";
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
   const user = useSelector(userSelector);
-  const loading = useSelector(loadingSelector);
-  const error = useSelector(errorSelector);
   const isVerified = useSelector(isVerifiedSelector);
 
   const [accountUser, setAccountUser] = React.useState({
@@ -52,6 +51,13 @@ export const useAuth = () => {
   //Register
   const accountRegister = (e) => {
     e.preventDefault();
+    if (!accountUser?.termsAndConditions) {
+      displayErrorToast({
+        title: "Error",
+        message: "You must agree to the terms and conditions to register",
+      });
+      return;
+    }
     dispatch(
       register({
         firstName: accountUser.firstName,

@@ -448,48 +448,54 @@ const ManageCategories = () => {
               variant="outlined"
             />
 
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                gap: 2,
-                alignItems: isMobile ? "flex-start" : "center",
-              }}
-            >
-              <Typography variant="body1">Category Type:</Typography>
-              <Box sx={{ display: "flex", gap: 1, mt: isMobile ? 1 : 0 }}>
-                <Chip
-                  label="Dietary Option"
-                  onClick={() => {
-                    const updatedCategory = {
-                      ...currentCategory,
-                      type: "dietary",
-                    };
-                    setCurrentCategory(updatedCategory);
-                    handleCategoryTypeChange({ target: { value: "dietary" } });
-                  }}
-                  color={
-                    currentCategory?.type === "dietary" ? "info" : "default"
-                  }
-                  clickable
-                />
-                <Chip
-                  label="Cuisine"
-                  onClick={() => {
-                    const updatedCategory = {
-                      ...currentCategory,
-                      type: "cuisine",
-                    };
-                    setCurrentCategory(updatedCategory);
-                    handleCategoryTypeChange({ target: { value: "cuisine" } });
-                  }}
-                  color={
-                    currentCategory?.type === "cuisine" ? "info" : "default"
-                  }
-                  clickable
-                />
+            {!editMode && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: isMobile ? "column" : "row",
+                  gap: 2,
+                  alignItems: isMobile ? "flex-start" : "center",
+                }}
+              >
+                <Typography variant="body1">Category Type:</Typography>
+                <Box sx={{ display: "flex", gap: 1, mt: isMobile ? 1 : 0 }}>
+                  <Chip
+                    label="Dietary Option"
+                    onClick={() => {
+                      const updatedCategory = {
+                        ...currentCategory,
+                        type: "dietary",
+                      };
+                      setCurrentCategory(updatedCategory);
+                      handleCategoryTypeChange({
+                        target: { value: "dietary" },
+                      });
+                    }}
+                    color={
+                      currentCategory?.type === "dietary" ? "info" : "default"
+                    }
+                    clickable
+                  />
+                  <Chip
+                    label="Cuisine"
+                    onClick={() => {
+                      const updatedCategory = {
+                        ...currentCategory,
+                        type: "cuisine",
+                      };
+                      setCurrentCategory(updatedCategory);
+                      handleCategoryTypeChange({
+                        target: { value: "cuisine" },
+                      });
+                    }}
+                    color={
+                      currentCategory?.type === "cuisine" ? "info" : "default"
+                    }
+                    clickable
+                  />
+                </Box>
               </Box>
-            </Box>
+            )}
           </Box>
         </DialogContent>
         <DialogActions

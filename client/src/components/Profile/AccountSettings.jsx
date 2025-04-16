@@ -199,7 +199,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
                   </InputAdornment>
                 ),
               }}
-              helperText="Password must be at least 8 characters long"
+              //helperText="Password must be at least 8 characters long "
             />
 
             <TextField
