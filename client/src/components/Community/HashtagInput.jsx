@@ -48,25 +48,28 @@ const HashtagInput = () => {
       </Typography>
       <Box display="flex" alignItems="center" mb={2}>
         <TextField
+          helperText="Press Enter or comma to add a tag"
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleInputKeyDown}
           placeholder=" Add your hashtags"
           size="small"
           fullWidth
-          InputProps={{
-            startAdornment: <Typography color="primary">#</Typography>,
-            sx: {
-              borderRadius: 2,
-              "&:hover": {
-                boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
+          slotProps={{
+            input: {
+              startAdornment: <Typography color="primary">#</Typography>,
+              sx: {
+                borderRadius: 2,
+                "&:hover": {
+                  boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
+                },
               },
             },
           }}
         />
-        <IconButton onClick={addTag} color="primary">
+        {/* <IconButton onClick={addTag} color="primary">
           <Add />
-        </IconButton>
+        </IconButton> */}
       </Box>
 
       <Box display="flex" flexWrap="wrap" gap={1}>
