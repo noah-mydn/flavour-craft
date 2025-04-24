@@ -48,8 +48,8 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
     handlePasswordChange,
     deleteAccount,
     passwordData,
-    password,
-    setPassword,
+    email,
+    setEmail,
   } = useProfile();
 
   const { accountLogout } = useAuth();
@@ -239,14 +239,14 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
             </Alert>
 
             <Typography variant="body2">
-              To confirm, please enter your password:{" "}
+              To confirm, please enter your email address:{" "}
             </Typography>
 
             <TextField
-              type="password"
-              label="Confirm by typing your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              label="Confirm by typing your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               fullWidth
               required
               variant="outlined"

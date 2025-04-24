@@ -36,7 +36,7 @@ const useProfile = (user) => {
   // Delete account state
 
   const [confirmDeleteError, setConfirmDeleteError] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
 
   // Sync state with user data
   useEffect(() => {
@@ -146,7 +146,7 @@ const useProfile = (user) => {
       const response = await axios.post(
         `${process.env.REACT_APP_BASE_API}/user/delete`,
         {
-          password: password,
+          email: email,
         },
         getAuthConfig()
       );
@@ -164,7 +164,7 @@ const useProfile = (user) => {
   };
 
   return {
-    password,
+    email,
     passwordData,
     profileData,
     profileImage,
@@ -178,7 +178,7 @@ const useProfile = (user) => {
     handleChangePassword,
     handlePasswordChange,
     deleteAccount,
-    setPassword,
+    setEmail,
   };
 };
 

@@ -69,27 +69,29 @@ const editUserProfile = async (req, res) => {
 const deleteUserProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { password } = req.body;
+    const { email } = req.body;
 
-    if (!password) {
-      return res.status(400).json({ message: "Password is required." });
+    if (!email) {
+      return res
+        .status(400)
+        .json({ message: "Email is required to confirm deletion." });
     }
 
-    const user = await User.findById(userId).select("+password");
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Verify password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Incorrect password." });
+    if (user.email !== email) {
+      return res
+        .status(401)
+        .json({ message: "Email confirmation does not match." });
     }
 
     // Delete related data
-    await Post.deleteMany({ userId });
-    await Comment.deleteMany({ userId });
-    await Notification.deleteMany({ userId });
+    await Post.deleteMany({ author: userId });
+    await Comment.deleteMany({ author: userId });
+    await Notification.deleteMany({ author: userId });
 
     // Delete user profile
     await User.findByIdAndDelete(userId);
