@@ -82,6 +82,7 @@ const server = http.createServer(app);
 //   });
 // });
 
-// Start the server
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => console.log(`Server running on PORT:${PORT}`));
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on PORT:${PORT}`);
+});
