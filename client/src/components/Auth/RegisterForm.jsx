@@ -166,7 +166,8 @@ const RegisterForm = (props) => {
 
         <Button
           onClick={() =>
-            (window.location.href = "http://localhost:8080/auth/google")
+            (window.location.href =
+              "https://flavour-craft.onrender.com/auth/google")
           }
           fullWidth
           variant="outlined"
