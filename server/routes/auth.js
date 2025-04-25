@@ -20,7 +20,8 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: "http://localhost:3000/login?error=authentication_failed",
+    failureRedirect:
+      "https://flavour-craft.onrender.com/login?error=authentication_failed",
   }),
   async (req, res) => {
     try {

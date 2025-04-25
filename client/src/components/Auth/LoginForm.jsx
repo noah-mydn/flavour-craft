@@ -108,7 +108,8 @@ const LoginForm = (props) => {
           fullWidth
           variant="outlined"
           onClick={() =>
-            (window.location.href = "http://localhost:8080/auth/google")
+            (window.location.href =
+              "https://flavour-craft.onrender.com/auth/google")
           }
           startIcon={
             <img src="./google-icon.svg" alt="google-icon" width={18} />
