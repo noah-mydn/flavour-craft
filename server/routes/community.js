@@ -15,11 +15,13 @@ const {
   getNotifications,
   updateComment,
   markNotificationAsRead,
+
   // downvotePost,
   // deleteUpVote,
   // deleteDownVote,
 } = require("../controllers/community/postController");
 const { uploadPostImages } = require("../middlewares/uploadImages");
+const { adminAuth } = require("../middlewares/authVerification");
 
 const authenticateToken =
   require("../middlewares/authVerification").authenticateToken;
@@ -42,12 +44,8 @@ router.put(
   updatePost
 );
 
-//  Popular & trending posts
-router.get("/popular", authenticateToken, getPopularPosts);
-router.get("/trending", authenticateToken, getTrendingPosts);
-
 //  General post routes
-router.get("/", authenticateToken, getAllPosts);
+router.get("/sort", authenticateToken, getAllPosts);
 router.get("/:postId", authenticateToken, getPostById);
 router.delete("/:postId", authenticateToken, deletePost);
 
@@ -59,6 +57,9 @@ router.delete("/:postId/comment/:commentId", authenticateToken, deleteComment);
 
 //  Voting routes
 router.post("/:postId/upvote", authenticateToken, upvotePost);
+
+//Report routes
+
 // router.post("/:postId/downvote", authenticateToken, downvotePost);
 // router.delete("/:postId/removeUpvote", authenticateToken, deleteUpVote);
 // router.delete("/:postId/removeDownVote", authenticateToken, deleteDownVote);

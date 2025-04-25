@@ -48,6 +48,12 @@ const RecipeCard = ({ recipe, recipeId }) => {
     }
   };
 
+  const truncateText = (text, maxLength) => {
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
+
   return (
     <Card
       sx={{
@@ -147,7 +153,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
             fontWeight="bold"
             gutterBottom
           >
-            {recipe?.name}
+            {truncateText(recipe?.name, 35)}
           </Typography>
 
           {/* Time and Cuisine Type */}

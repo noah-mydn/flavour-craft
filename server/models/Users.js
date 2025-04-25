@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  authProvider: {
+    type: String,
+    enum: ["local", "google"],
+    default: "local",
+  },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },

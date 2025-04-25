@@ -37,7 +37,7 @@ import {
 } from "../../redux/apiClients/postsAPI";
 import { usePostDetail } from "../../hooks/community/usePostDetail";
 
-const DetailedPostCard = () => {
+const DetailedPostCard = ({ isAdmin }) => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const profile = useSelector(profileSelector);
@@ -75,7 +75,7 @@ const DetailedPostCard = () => {
       <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
         <Link
           color="text.secondary"
-          to="/post"
+          to={isAdmin ? "/admin/reported" : "/post"}
           style={{
             textDecoration: "none",
             cursor: "pointer",
@@ -96,7 +96,11 @@ const DetailedPostCard = () => {
       <DetailCard>
         <CardContent sx={{ position: "relative", zIndex: 1, p: 2.5 }}>
           {/* Author and post content */}
-          <PostAuthorInfo post={detailPost} loading={loading} />
+          <PostAuthorInfo
+            post={detailPost}
+            loading={loading}
+            isAdmin={isAdmin}
+          />
 
           {/* Images section */}
           {!loading && <PostImageGallery images={detailPost?.images} />}
@@ -135,7 +139,11 @@ const DetailedPostCard = () => {
                 ))
               ) : (
                 <>
-                  <ActionButton active={liked} onClick={handleLikePost}>
+                  <ActionButton
+                    active={liked}
+                    onClick={isAdmin ? undefined : handleLikePost}
+                    isAdmin={isAdmin}
+                  >
                     <Fade in={liked}>
                       <FavoriteIcon
                         fontSize="small"
@@ -180,7 +188,7 @@ const DetailedPostCard = () => {
           </Box>
 
           {/* Comments section */}
-          <CommentSection postId={postId} />
+          <CommentSection postId={postId} isAdmin={isAdmin} />
         </CardContent>
       </DetailCard>
     </React.Fragment>

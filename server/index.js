@@ -15,6 +15,7 @@ const communityRoute = require("./routes/community");
 const ingredientRoute = require("./routes/ingredient");
 const reportRoutes = require("./routes/report");
 const campaignRoutes = require("./routes/campaign");
+const reportedPostRoutes = require("./routes/reportedPost");
 
 const app = express();
 app.use("/uploads", express.static("public/uploads"));
@@ -48,6 +49,7 @@ app.use("/posts", communityRoute);
 app.use("/ingredients", ingredientRoute);
 app.use("/report", reportRoutes);
 app.use("/campaign", campaignRoutes);
+app.use("/community/report", reportedPostRoutes);
 
 app.options("/auth/google", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");

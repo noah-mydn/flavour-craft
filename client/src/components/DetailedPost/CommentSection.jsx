@@ -47,7 +47,7 @@ import {
   removeComment,
 } from "../../redux/apiClients/postsAPI.js";
 
-const CommentSection = ({ postId }) => {
+const CommentSection = ({ postId, isAdmin }) => {
   const theme = useTheme();
   const user = useSelector(userSelector);
   const comments = useSelector(commentsSelector);
@@ -163,41 +163,46 @@ const CommentSection = ({ postId }) => {
         </Typography>
 
         {/* Add comment form */}
-        <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 3 }}>
-          <Box display="flex" gap={1.5} alignItems="center">
-            <Avatar
-              sx={{ width: 36, height: 36 }}
-              src={user?.userImg || "../avatar.png"}
-            />
-            <Box sx={{ flexGrow: 1, display: "flex" }}>
-              <TextField
-                fullWidth
-                placeholder="Add a comment..."
-                variant="outlined"
-                size="small"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "20px 0 0 20px",
-                    backgroundColor: alpha(theme.palette.background.paper, 0.5),
-                  },
-                }}
+        {!isAdmin && (
+          <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 3 }}>
+            <Box display="flex" gap={1.5} alignItems="center">
+              <Avatar
+                sx={{ width: 36, height: 36 }}
+                src={user?.userImg || "../avatar.png"}
               />
-              <Button
-                type="submit"
-                variant="contained"
-                disableElevation
-                sx={{
-                  borderRadius: "0 20px 20px 0",
-                  minWidth: "auto",
-                }}
-              >
-                <SendIcon fontSize="small" />
-              </Button>
+              <Box sx={{ flexGrow: 1, display: "flex" }}>
+                <TextField
+                  fullWidth
+                  placeholder="Add a comment..."
+                  variant="outlined"
+                  size="small"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "20px 0 0 20px",
+                      backgroundColor: alpha(
+                        theme.palette.background.paper,
+                        0.5
+                      ),
+                    },
+                  }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disableElevation
+                  sx={{
+                    borderRadius: "0 20px 20px 0",
+                    minWidth: "auto",
+                  }}
+                >
+                  <SendIcon fontSize="small" />
+                </Button>
+              </Box>
             </Box>
           </Box>
-        </Box>
+        )}
 
         {/* Existing comments with improved design */}
         {comments && comments.length > 0 && (

@@ -40,19 +40,6 @@ const PostCard = ({ post }) => {
         }}
         onClick={() => navigate("/post/" + post?._id)}
       >
-        {/* Left section - Avatar */}
-        {/* <Box mr={2}>
-          {loading ? (
-            <Skeleton variant="circular" width={32} height={32} />
-          ) : (
-            <Avatar
-              sx={{ width: 32, height: 32 }}
-              src={post?.author?.userImg || "../avatar.png"}
-            />
-          )}
-        </Box> */}
-
-        {/* Middle section - Content */}
         <Box
           sx={{
             flexGrow: 1,

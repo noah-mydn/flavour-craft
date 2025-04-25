@@ -69,7 +69,20 @@ const connectDB = async () => {
     //   { role: { $ne: "admin" } },
     //   { $set: { isFirstLoggedIn: true } }
     // );
-
+    await Users.updateMany(
+      {
+        $or: [
+          { isFirstLoggedIn: { $exists: false } },
+          { authProvider: { $exists: false } },
+        ],
+      },
+      {
+        $set: {
+          isFirstLoggedIn: true,
+          authProvider: "local",
+        },
+      }
+    );
     // console.log("Migration Success:", result);
 
     cleanUpOrphanedRecipes();

@@ -94,8 +94,11 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
     deleteAccount(accountDeleteSuccess);
   };
 
-  // Check if user is admin
+  const GoogleUser = user?.authProvider === "google";
   const isAdmin = user?.role === "admin";
+
+  const canChangePassword = !GoogleUser;
+  const canDeleteAccount = !isAdmin;
 
   return (
     <Dialog
@@ -112,24 +115,27 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
         Account Settings
       </DialogTitle>
 
-      {/* Only show tabs if user is not admin */}
-      {!isAdmin && (
+      {(canChangePassword || canDeleteAccount) && (
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           variant="fullWidth"
           sx={{ borderBottom: 1, borderColor: "divider" }}
         >
-          <Tab
-            icon={<LockReset fontSize="small" />}
-            iconPosition="start"
-            label="Change Password"
-          />
-          <Tab
-            icon={<DeleteForever fontSize="small" />}
-            iconPosition="start"
-            label="Delete Account"
-          />
+          {canChangePassword && (
+            <Tab
+              icon={<LockReset fontSize="small" />}
+              iconPosition="start"
+              label="Change Password"
+            />
+          )}
+          {canDeleteAccount && (
+            <Tab
+              icon={<DeleteForever fontSize="small" />}
+              iconPosition="start"
+              label="Delete Account"
+            />
+          )}
         </Tabs>
       )}
 
@@ -144,8 +150,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           </Alert>
         )}
 
-        {/* Always show password change for admin users */}
-        {(tabValue === 0 || isAdmin) && (
+        {tabValue === 0 && canChangePassword && (
           <Stack spacing={3} sx={{ mt: isAdmin ? 3 : 1 }}>
             {isAdmin && (
               <Typography variant="subtitle1" fontWeight="bold">
@@ -199,7 +204,6 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
                   </InputAdornment>
                 ),
               }}
-              //helperText="Password must be at least 8 characters long "
             />
 
             <TextField
@@ -230,8 +234,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           </Stack>
         )}
 
-        {/* Only show delete account tab for non-admin users */}
-        {tabValue === 1 && !isAdmin && (
+        {tabValue === (canChangePassword ? 1 : 0) && canDeleteAccount && (
           <Stack spacing={3} sx={{ mt: 1 }}>
             <Alert severity="warning">
               Warning: This action cannot be undone. Your account and all
@@ -239,7 +242,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
             </Alert>
 
             <Typography variant="body2">
-              To confirm, please enter your email address:{" "}
+              To confirm, please enter your email address:
             </Typography>
 
             <TextField
@@ -266,8 +269,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           Cancel
         </Button>
 
-        {/* Show appropriate action button based on tab and role */}
-        {tabValue === 0 || isAdmin ? (
+        {tabValue === 0 && canChangePassword ? (
           <LoadingButton
             onClick={handleUpdatePassword}
             loading={loading}
@@ -276,7 +278,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           >
             Update Password
           </LoadingButton>
-        ) : (
+        ) : tabValue === (canChangePassword ? 1 : 0) && canDeleteAccount ? (
           <LoadingButton
             onClick={handleDeleteAccount}
             loading={loading}
@@ -285,7 +287,7 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
           >
             Delete Account
           </LoadingButton>
-        )}
+        ) : null}
       </DialogActions>
     </Dialog>
   );

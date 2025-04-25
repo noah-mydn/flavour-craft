@@ -22,13 +22,14 @@ import {
   postLoadingSelector,
   profileSelector,
 } from "../../redux/selectors/selectors";
-import { Edit, DeleteOutline, MoreVert } from "@mui/icons-material";
+import { Edit, DeleteOutline, MoreVert, Flag } from "@mui/icons-material";
 
 import PostDialog from "../Community/PostDialog";
 import { usePostDetail } from "../../hooks/community/usePostDetail";
 import { useNavigate } from "react-router-dom";
+import ReportPostModal from "./ReportedPostModal";
 
-const PostAuthorInfo = ({ post, loading, onEdit }) => {
+const PostAuthorInfo = ({ post, loading, isAdmin }) => {
   const theme = useTheme();
 
   const user = useSelector(profileSelector);
@@ -39,7 +40,8 @@ const PostAuthorInfo = ({ post, loading, onEdit }) => {
   const postLoading = useSelector(postLoadingSelector);
   const [openDeleteDialog, setOpenDeleteDialog] = React.useState(false);
   const [openEditDialog, setOpenEditDialog] = React.useState(false);
-  const { removePost } = usePostDetail();
+  const [openReportDialog, setOpenReportDialog] = React.useState(false);
+  const { removePost, reportPost } = usePostDetail();
   const navigate = useNavigate();
 
   const handleOpenMenu = (event) => {
@@ -60,6 +62,11 @@ const PostAuthorInfo = ({ post, loading, onEdit }) => {
     setOpenDeleteDialog(true);
   };
 
+  const handleReportPost = () => {
+    handleCloseMenu();
+    setOpenReportDialog(true);
+  };
+
   const confirmDelete = () => {
     console.log("User ID:", user._id);
     console.log("Author ID:", post.author._id);
@@ -69,6 +76,10 @@ const PostAuthorInfo = ({ post, loading, onEdit }) => {
   const deleteAndNavigate = () => {
     setOpenDeleteDialog(false);
     navigate("/post");
+  };
+
+  const submitReport = (id, reason) => {
+    return reportPost(id, reason);
   };
 
   return (
@@ -119,7 +130,7 @@ const PostAuthorInfo = ({ post, loading, onEdit }) => {
               )}
             </Box>
           </Box>
-          {!loading && isAuthorMe && (
+          {!loading && !isAdmin && (
             <IconButton
               size="small"
               onClick={handleOpenMenu}
@@ -192,18 +203,29 @@ const PostAuthorInfo = ({ post, loading, onEdit }) => {
           },
         }}
       >
-        <MenuItem onClick={handleEditPost} sx={{ py: 1.5 }}>
-          <Box display="flex" alignItems="center" gap={1.5}>
-            <Edit fontSize="small" />
-            <Typography variant="body2">Edit Post</Typography>
-          </Box>
-        </MenuItem>
-        <MenuItem onClick={handleDeletePost} sx={{ py: 1.5 }}>
-          <Box display="flex" alignItems="center" gap={1.5}>
-            <DeleteOutline fontSize="small" />
-            <Typography variant="body2">Delete Post</Typography>
-          </Box>
-        </MenuItem>
+        {isAuthorMe ? (
+          <>
+            <MenuItem onClick={handleEditPost} sx={{ py: 1.5 }}>
+              <Box display="flex" alignItems="center" gap={1.5}>
+                <Edit fontSize="small" />
+                <Typography variant="body2">Edit Post</Typography>
+              </Box>
+            </MenuItem>
+            <MenuItem onClick={handleDeletePost} sx={{ py: 1.5 }}>
+              <Box display="flex" alignItems="center" gap={1.5}>
+                <DeleteOutline fontSize="small" />
+                <Typography variant="body2">Delete Post</Typography>
+              </Box>
+            </MenuItem>
+          </>
+        ) : (
+          <MenuItem onClick={handleReportPost} sx={{ py: 1.5 }}>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <Flag fontSize="small" color="primary" />
+              <Typography variant="body2">Report Post</Typography>
+            </Box>
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Delete confirmation dialog */}
@@ -265,6 +287,14 @@ const PostAuthorInfo = ({ post, loading, onEdit }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Report Dialog */}
+      <ReportPostModal
+        open={openReportDialog}
+        onClose={() => setOpenReportDialog(false)}
+        postId={post?._id}
+        onSubmit={submitReport}
+      />
 
       <PostDialog
         isEdit={true}

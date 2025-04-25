@@ -222,7 +222,7 @@ const ManageCategories = () => {
                   backgroundColor: theme.palette.primary.main,
                 }}
               >
-                <TableRow s>
+                <TableRow>
                   <TableCell
                     sx={{
                       fontWeight: "bold",

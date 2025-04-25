@@ -17,7 +17,13 @@ const register = async (req, res) => {
     }
 
     // Create new user and save
-    const newUser = new User({ firstName, lastName, email, password });
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      password,
+      isFirstLoggedIn: true,
+    });
     await newUser.save();
 
     const accessToken = jwt.sign(
@@ -45,7 +51,8 @@ const register = async (req, res) => {
         lastName: newUser.lastName,
         username: newUser.username,
         email: newUser.email,
-        isFirstLoggedIn: true,
+        isFirstLoggedIn: newUser.isFirstLoggedIn,
+        authProvider: "local",
       },
     });
   } catch (error) {
@@ -97,6 +104,7 @@ const login = async (req, res) => {
         email: user.email,
         role: user.role,
         isFirstLoggedIn: user.isFirstLoggedIn,
+        authProvider: "user.authProvider",
       },
     });
   } catch (error) {
@@ -198,12 +206,14 @@ passport.use(
             email: profile.emails[0].value,
             googleId: profile.id,
             isFirstLoggedIn: true,
+            authProvider: "google",
           });
         } else if (!user.googleId) {
           // If user exists, but not been used - update their record
           user.googleId = profile.id;
           if (user.isFirstLoggedIn) {
             user.isFirstLoggedIn = false;
+            user.authProvider = "google";
           }
           await user.save();
         }

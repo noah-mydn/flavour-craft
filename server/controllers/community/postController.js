@@ -2,6 +2,7 @@ const Post = require("../../models/community/Posts");
 const Comment = require("../../models/community/Comments");
 const User = require("../../models/Users");
 const Notification = require("../../models/community/Notification");
+const Report = require("../../models/community/Reports");
 const cloudinary = require("cloudinary").v2;
 
 exports.createPost = async (req, res) => {
@@ -49,31 +50,80 @@ exports.createPost = async (req, res) => {
 };
 
 exports.getAllPosts = async (req, res) => {
-  let { page, pageSize } = req.query;
-  page = parseInt(page) || 1;
-  pageSize = parseInt(pageSize) || 10;
-
-  const skip = (page - 1) * pageSize;
   try {
-    const posts = await Post.find()
-      .sort({ createdAt: -1 })
-      .populate("author", "firstName lastName userImg")
-      .skip(skip)
-      .limit(pageSize);
+    let { page = 1, pageSize = 10, sort = "recent" } = req.query;
+    page = parseInt(page);
+    pageSize = parseInt(pageSize);
+    const skip = (page - 1) * pageSize;
 
-    const totalCount = await Post.countDocuments();
+    console.log("Query Parameters:", req.query);
 
-    res.status(200).json({
+    let posts, totalCount;
+
+    switch (sort) {
+      case "trending": {
+        const since = new Date();
+        since.setHours(since.getHours() - 24);
+
+        // match last 24h, compute net votes
+        const agg = await Post.aggregate([
+          { $match: { createdAt: { $gte: since } } },
+          {
+            $addFields: {
+              upvoteCount: { $size: "$upvotes" },
+              downvoteCount: { $size: "$downvotes" },
+              netVoteCount: {
+                $subtract: [{ $size: "$upvotes" }, { $size: "$downvotes" }],
+              },
+            },
+          },
+          { $sort: { netVoteCount: -1 } },
+          { $skip: skip },
+          { $limit: pageSize },
+        ]);
+        posts = agg;
+        totalCount = await Post.countDocuments({ createdAt: { $gte: since } });
+        break;
+      }
+
+      case "popular": {
+        // sort by total upvotes
+        const agg = await Post.aggregate([
+          { $addFields: { upvoteCount: { $size: "$upvotes" } } },
+          { $sort: { upvoteCount: -1 } },
+          { $skip: skip },
+          { $limit: pageSize },
+        ]);
+        posts = agg;
+        totalCount = await Post.countDocuments();
+        break;
+      }
+
+      case "recent":
+      default: {
+        // default: newest first
+        posts = await Post.find()
+          .sort({ createdAt: -1 })
+          .populate("author", "firstName lastName userImg") // Check if 'author' is a valid ObjectId reference
+          .skip(skip)
+          .limit(pageSize);
+        totalCount = await Post.countDocuments();
+        break;
+      }
+    }
+
+    return res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalCount / pageSize),
       },
-      posts: posts,
+      posts,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error(error);
+    return res.status(500).json({
       status: 500,
       message: "Failed to retrieve posts",
       error: error.message,

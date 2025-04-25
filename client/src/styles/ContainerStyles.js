@@ -278,12 +278,12 @@ export const AnimatedChip = styled(Chip)(({ theme }) => ({
   },
 }));
 
-export const ActionButton = styled(Box)(({ theme, active }) => ({
+export const ActionButton = styled(Box)(({ theme, active, isAdmin }) => ({
   display: "flex",
   alignItems: "center",
   padding: "4px 6px",
   borderRadius: 20,
-  cursor: "pointer",
+  cursor: isAdmin ? "default" : "pointer",
   transition: "all 0.2s ease",
 
   background: active ? alpha(theme.palette.primary.main, 0.1) : "transparent",

@@ -3,20 +3,20 @@ import axios from "axios";
 import { getAuthConfig } from "../../utils/authHeaders";
 import { displayErrorToast } from "../../utils/toastUtil";
 
-const BASE_URL = process.env.REACT_APP_BASE_API + "/posts";
+const BASE_URL = process.env.REACT_APP_BASE_API + "/posts/";
 
 export const fetchPosts = createAsyncThunk(
   "posts/fetchPosts",
-  async ({ page, pageSize }, { rejectWithValue }) => {
+  async ({ page = 1, pageSize = 10, sort = "recent" }, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${BASE_URL}?page=${page}&pageSize=${pageSize}`,
+        `${BASE_URL}/sort?page=${page}&pageSize=${pageSize}&sort=${sort}`,
         getAuthConfig()
       );
       return response.data;
     } catch (error) {
       displayErrorToast(error);
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );

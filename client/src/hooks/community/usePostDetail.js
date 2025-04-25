@@ -27,7 +27,7 @@ export const usePostDetail = () => {
   const [uploading, setUploading] = React.useState(false);
   const [images, setImages] = React.useState([]);
   const [tagInputVal, setTagInputVal] = React.useState("");
-
+  const [sortOrder, setSortOrder] = React.useState("recent");
   const [detailPost, setDetailPost] = React.useState(null);
 
   const handlePostFieldOnChange = (e) => {
@@ -176,7 +176,7 @@ export const usePostDetail = () => {
       );
       console.log(response);
       if (response.data.status === 201) {
-        dispatch(fetchPosts(1, 10));
+        dispatch(fetchPosts(1, 10, sortOrder));
       }
       dispatch(setPost(null));
       onSuccess();
@@ -189,6 +189,21 @@ export const usePostDetail = () => {
     } finally {
       setUploading(false);
       dispatch(clearPost());
+    }
+  };
+
+  const reportPost = async (postId, reason) => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BASE_API}/community/report/${postId}`,
+        { reason },
+        getAuthConfig()
+      );
+      console.log(response.data);
+      displaySuccessToast("Post reported successfully!");
+    } catch (error) {
+      console.error(error);
+      displayErrorToast(error);
     }
   };
 
@@ -208,5 +223,6 @@ export const usePostDetail = () => {
     editPost,
     removePost,
     setImages,
+    reportPost,
   };
 };
