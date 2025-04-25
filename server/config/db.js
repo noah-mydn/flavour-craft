@@ -12,6 +12,7 @@ const {
   cleanUpOrphanedRecipes,
   recalculateRecipeRatings,
 } = require("../controllers/recipesController");
+const UserAnalytics = require("../models/UserAnalytics");
 
 const connectDB = async () => {
   try {
@@ -69,20 +70,38 @@ const connectDB = async () => {
     //   { role: { $ne: "admin" } },
     //   { $set: { isFirstLoggedIn: true } }
     // );
-    await Users.updateMany(
-      {
-        $or: [
-          { isFirstLoggedIn: { $exists: false } },
-          { authProvider: { $exists: false } },
-        ],
-      },
-      {
-        $set: {
-          isFirstLoggedIn: true,
-          authProvider: "local",
+    // await Users.updateMany(
+    //   {
+    //     $or: [
+    //       { isFirstLoggedIn: { $exists: false } },
+    //       { authProvider: { $exists: false } },
+    //     ],
+    //   },
+    //   {
+    //     $set: {
+    //       isFirstLoggedIn: true,
+    //       authProvider: "local",
+    //     },
+    //   }
+    // );
+    const users = await Users.find().lean();
+    console.log(`Found ${users.length} users. Backfilling analytics…`);
+
+    for (const u of users) {
+      const status = u.isRestricted ? "Restricted" : "Active";
+
+      // Upsert a UserAnalytics doc for each user
+      await UserAnalytics.updateOne(
+        { userId: u._id },
+        {
+          userId: u._id,
+          generatedRecipeCount: u.myRecipeGenerations?.length || 0,
+          status,
+          lastActiveAt: u.updatedAt || u.createdAt,
         },
-      }
-    );
+        { upsert: true }
+      );
+    }
     // console.log("Migration Success:", result);
 
     cleanUpOrphanedRecipes();

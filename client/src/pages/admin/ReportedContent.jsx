@@ -32,6 +32,7 @@ import {
   TableSortLabel,
   IconButton as MuiIconButton,
   Tooltip,
+  alpha,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -113,14 +114,14 @@ const ReportedContent = () => {
   const getStatusChipColor = (status) => {
     switch (status) {
       case "Pending":
-        return "warning";
+        return theme.palette.warning.main;
 
       case "Ignored":
-        return "success";
+        return theme.palette.success.main;
       case "Removed":
-        return "error";
+        return theme.palette.error.main;
       default:
-        return "default";
+        return theme.palette.gray[600];
     }
   };
 
@@ -324,8 +325,17 @@ const ReportedContent = () => {
                           <TableCell onClick={() => handleViewReport(report)}>
                             <Chip
                               label={report?.status}
-                              color={getStatusChipColor(report?.status)}
                               size="small"
+                              sx={{
+                                bgcolor: alpha(
+                                  getStatusChipColor(report?.status),
+                                  0.2
+                                ),
+                                color: getStatusChipColor(report?.status),
+                                border: `1px solid ${getStatusChipColor(
+                                  report?.status
+                                )}`,
+                              }}
                             />
                           </TableCell>
                         )}

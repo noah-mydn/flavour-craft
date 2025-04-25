@@ -9,6 +9,12 @@ const {
   updatePassword,
 } = require("../controllers/userController");
 const { profilePicUpload } = require("../middlewares/multer");
+const { adminAuth } = require("../middlewares/authVerification");
+const {
+  viewUserAnalytics,
+  issueWarning,
+  deleteUser,
+} = require("../controllers/userAnalyticsController");
 const authenticateToken =
   require("../middlewares/authVerification").authenticateToken;
 
@@ -26,4 +32,7 @@ router.put("/set/dietaryOptions", authenticateToken, addDietaryPreferences);
 router.put("/set/cuisineTypes", authenticateToken, addCuisinePreferences);
 router.get("/profile", authenticateToken, getUserProfileById);
 router.get("/me", authenticateToken, getCurrentUserProfile);
+router.get("/all", adminAuth, viewUserAnalytics);
+router.put("/:userId/warn", adminAuth, issueWarning);
+router.delete("/:userId/delete", adminAuth, deleteUser);
 module.exports = router;

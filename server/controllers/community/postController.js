@@ -6,6 +6,16 @@ const Report = require("../../models/community/Reports");
 const cloudinary = require("cloudinary").v2;
 
 exports.createPost = async (req, res) => {
+  const isUserRestricted = await User.findById(req.user.userId).select(
+    "isRestricted"
+  );
+  if (isUserRestricted) {
+    return res.status(403).json({
+      status: 403,
+      message:
+        "You cannot create posts because you are currently banned from posting",
+    });
+  }
   try {
     const user = req.user.userId;
     const { topic, description, tags } = req.body;
@@ -415,6 +425,17 @@ exports.deletePost = async (req, res) => {
 
 exports.addComment = async (req, res) => {
   console.log("Commented User:", req.user);
+
+  const isUserRestricted = await User.findById(req.user.userId).select(
+    "isRestricted"
+  );
+  if (isUserRestricted) {
+    return res.status(403).json({
+      status: 403,
+      message: "You are banned from commenting",
+    });
+  }
+
   try {
     const author = req.user.userId;
     const { content } = req.body;
@@ -445,9 +466,8 @@ exports.addComment = async (req, res) => {
     // Send notification to post's author
     if (post.author.toString() !== author.toString()) {
       const notification = new Notification({
-        author: post.author,
         type: "comment",
-        commentedUser: {
+        author: {
           firstName: commentedUser.firstName,
           lastName: commentedUser.lastName,
           userImg: commentedUser.userImg,
@@ -732,7 +752,7 @@ exports.getNotifications = async (req, res) => {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const notifications = await Notification.find({
-      author: req.user.userId,
+      recipient: req.user.userId,
       createdAt: { $gte: oneWeekAgo },
     }).sort({ createdAt: -1 });
 

@@ -288,9 +288,16 @@ Schema:
       (recipe) => !existingRecipeNames.includes(recipe.name)
     );
 
-    await Recipe.insertMany(uniqueRecipes);
-
+    const generatedRecipes = await Recipe.insertMany(uniqueRecipes);
     //await RecipeGenerationLog.create({ userId: _id });
+
+    const userId = req.user.userId;
+
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        myRecipeGenerations: { $each: generatedRecipes.map((r) => r._id) },
+      },
+    });
 
     await updateIngredientsDatabase();
 

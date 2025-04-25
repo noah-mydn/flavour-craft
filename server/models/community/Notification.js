@@ -1,8 +1,12 @@
 const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema({
-  author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  commentedUser: {
+  recipient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  author: {
     firstName: String,
     lastName: String,
     userImg: String,

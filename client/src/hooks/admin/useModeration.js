@@ -6,6 +6,9 @@ export const useModeration = () => {
   const [reports, setReports] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [reportsLoading, setReportsLoading] = React.useState(false);
+  const [users, setUsers] = React.useState([]);
+  const [userLoading, setUserLoading] = React.useState(false);
+  const [userListLoading, setUserListLoading] = React.useState(false);
 
   const viewReportedPosts = async () => {
     setReportsLoading(true);
@@ -58,7 +61,63 @@ export const useModeration = () => {
     }
   };
 
+  const viewAllUsers = async () => {
+    setUserListLoading(true);
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_API}/user/all`,
+        getAuthConfig()
+      );
+      setUsers(response?.data?.users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setUserListLoading(false);
+    }
+  };
+
+  const issueWarning = async (userId) => {
+    setUserLoading(true);
+    try {
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_API}/user/${userId}/warn`,
+        {},
+        getAuthConfig()
+      );
+      if (response.status === 200) {
+        viewAllUsers();
+      }
+    } catch (error) {
+      console.error("Error issuing warning:", error);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  const removeUser = async (userId) => {
+    setUserLoading(true);
+    try {
+      const response = await axios.delete(
+        `${process.env.REACT_APP_BASE_API}/user/${userId}/delete`,
+        getAuthConfig()
+      );
+      if (response.status === 200) {
+        viewAllUsers();
+      }
+    } catch (error) {
+      console.error("Error removing user:", error);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
   return {
+    viewAllUsers,
+    issueWarning,
+    removeUser,
+    users,
+    userLoading,
+    userListLoading,
     reports,
     loading,
     reportsLoading,

@@ -134,15 +134,15 @@ const NotificationComponent = ({ open, onClose }) => {
                 >
                   <ListItemAvatar>
                     <Avatar
-                      src={notification?.commentedUser?.userImg}
-                      alt={`${notification.commentedUser.firstName} ${notification.commentedUser.lastName}`}
+                      src={notification?.author?.userImg}
+                      alt={`${notification.author.firstName} ${notification.author.lastName}`}
                     />
                   </ListItemAvatar>
                   <ListItemText
                     primary={
                       <Typography variant="subtitle2" component="span">
-                        {notification.commentedUser.firstName}{" "}
-                        {notification.commentedUser.lastName}
+                        {notification.author.firstName}{" "}
+                        {notification.author.lastName}
                       </Typography>
                     }
                     secondary={

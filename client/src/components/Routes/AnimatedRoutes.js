@@ -37,6 +37,7 @@ import { Main } from "../Main/Main";
 import SavedRecipes from "../../pages/recipes/SavedRecipes";
 import GeneratedRecipes from "../../pages/recipes/GeneratedRecipes";
 import Preferences from "../Preferences/Preferences";
+import UserManagement from "../../pages/admin/UserManagement";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
@@ -232,6 +233,7 @@ const AnimatedRoutes = () => {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="users" element={<UserManagement />} />
         <Route path="recipes" element={<RecipeImageManagement />} />
         <Route path="recipes/:recipeId" element={<RecipeDetail />} />
         <Route path="generator" element={<RecipeGenerator />} />

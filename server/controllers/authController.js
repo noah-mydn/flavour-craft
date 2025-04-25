@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const User = require("../models/Users");
+const UserAnalytics = require("../models/UserAnalytics");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 const register = async (req, res) => {
@@ -40,6 +41,17 @@ const register = async (req, res) => {
 
     newUser.refreshToken = refreshToken;
     await newUser.save();
+
+    await UserAnalytics.updateOne(
+      { userId: newUser._id },
+      {
+        userId: newUser._id,
+        generatedRecipeCount: 0,
+        status: "Active",
+        lastActiveAt: newUser.createdAt,
+      },
+      { upsert: true }
+    );
 
     res.status(201).json({
       message: "User registered successfully!",
@@ -208,8 +220,19 @@ passport.use(
             isFirstLoggedIn: true,
             authProvider: "google",
           });
+
+          await UserAnalytics.updateOne(
+            { userId: newUser._id },
+            {
+              userId: newUser._id,
+              generatedRecipeCount: 0,
+              status: "Active",
+              lastActiveAt: newUser.createdAt,
+            },
+            { upsert: true }
+          );
         } else if (!user.googleId) {
-          // If user exists, but not been used - update their record
+          // If user exists
           user.googleId = profile.id;
           if (user.isFirstLoggedIn) {
             user.isFirstLoggedIn = false;
