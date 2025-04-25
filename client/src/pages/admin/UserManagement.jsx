@@ -17,6 +17,7 @@ import {
   Select,
   MenuItem,
   alpha,
+  CircularProgress,
 } from "@mui/material";
 import { DetailCard } from "../../styles/ContainerStyles";
 import { useModeration } from "../../hooks/admin/useModeration";
@@ -41,8 +42,14 @@ import InputAdornment from "@mui/material/InputAdornment";
 const UserManagement = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { users, userListLoading, userLoading, issueWarning, viewAllUsers } =
-    useModeration();
+  const {
+    users,
+    userListLoading,
+    userLoading,
+    issueWarning,
+    viewAllUsers,
+    removeUser,
+  } = useModeration();
 
   // States for table functionality
   const [page, setPage] = useState(0);
@@ -108,15 +115,14 @@ const UserManagement = () => {
 
   const handleWarningConfirm = () => {
     console.log("Issuing warning to user:", selectedUser);
-    issueWarning(selectedUser?.userId);
-    setWarningDialog(false);
+    issueWarning(selectedUser?.userId, setWarningDialog(false));
     setSelectedUser(null);
   };
 
   const handleDeleteConfirm = () => {
-    // Implement delete functionality here
+    removeUser(selectedUser?.userId, setDeleteDialog(false));
     console.log("Delete confirmed for user:", selectedUser);
-    setDeleteDialog(false);
+
     setSelectedUser(null);
   };
 
@@ -436,7 +442,11 @@ const UserManagement = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteDialog(false)} variant="outlined">
+          <Button
+            onClick={() => setDeleteDialog(false)}
+            variant="outlined"
+            color="gray[400]"
+          >
             Cancel
           </Button>
           <Button
@@ -445,7 +455,7 @@ const UserManagement = () => {
             color="error"
             autoFocus
           >
-            Confirm Removal
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>
@@ -459,7 +469,7 @@ const UserManagement = () => {
       >
         <DialogTitle
           id="warning-dialog-title"
-          sx={{ bgcolor: theme.palette.warning.main, color: "white" }}
+          sx={{ bgcolor: theme.palette.primary.main, color: "white" }}
         >
           {"Confirm Flag User"}
         </DialogTitle>
@@ -472,16 +482,20 @@ const UserManagement = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setWarningDialog(false)} variant="outlined">
+          <Button
+            onClick={() => setWarningDialog(false)}
+            variant="outlined"
+            color="gray[400]"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleWarningConfirm}
             variant="contained"
-            color="warning"
+            color="error"
             autoFocus
           >
-            Confirm Flag
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>

@@ -150,6 +150,21 @@ const UserProfile = () => {
                     >
                       Member since {formatDate(user?.createdAt)}
                     </Typography>
+                    <Chip
+                      label={user?.isRestricted ? "Restricted" : "Active"}
+                      sx={{
+                        mt: 1,
+                        color: "#fff",
+                        bgcolor: user?.isRestricted
+                          ? theme.palette.warning.light
+                          : theme.palette.success.light,
+                        border: `1px solid ${
+                          user?.isRestricted
+                            ? theme.palette.warning.main
+                            : theme.palette.success.main
+                        }`,
+                      }}
+                    />
                   </Box>
 
                   <Button

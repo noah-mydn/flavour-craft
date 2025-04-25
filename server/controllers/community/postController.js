@@ -6,16 +6,16 @@ const Report = require("../../models/community/Reports");
 const cloudinary = require("cloudinary").v2;
 
 exports.createPost = async (req, res) => {
-  const isUserRestricted = await User.findById(req.user.userId).select(
-    "isRestricted"
-  );
-  if (isUserRestricted) {
+  const userDoc = await User.findById(req.user.userId).select("isRestricted");
+
+  if (userDoc?.isRestricted) {
     return res.status(403).json({
       status: 403,
       message:
         "You cannot create posts because you are currently banned from posting",
     });
   }
+
   try {
     const user = req.user.userId;
     const { topic, description, tags } = req.body;
@@ -425,14 +425,13 @@ exports.deletePost = async (req, res) => {
 
 exports.addComment = async (req, res) => {
   console.log("Commented User:", req.user);
+  const userDoc = await User.findById(req.user.userId).select("isRestricted");
 
-  const isUserRestricted = await User.findById(req.user.userId).select(
-    "isRestricted"
-  );
-  if (isUserRestricted) {
+  if (userDoc?.isRestricted) {
     return res.status(403).json({
       status: 403,
-      message: "You are banned from commenting",
+      message:
+        "You cannot create posts because you are currently banned from posting",
     });
   }
 
@@ -467,6 +466,7 @@ exports.addComment = async (req, res) => {
     if (post.author.toString() !== author.toString()) {
       const notification = new Notification({
         type: "comment",
+        recipient: post.author,
         author: {
           firstName: commentedUser.firstName,
           lastName: commentedUser.lastName,

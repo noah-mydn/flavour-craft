@@ -1,6 +1,8 @@
 const User = require("../models/Users");
 const UserAnalytics = require("../models/UserAnalytics");
 const Notification = require("../models/community/Notification");
+const Post = require("../models/community/Posts");
+const Comment = require("../models/community/Comments");
 const mongoose = require("mongoose");
 
 exports.issueWarning = async (req, res) => {
@@ -118,21 +120,32 @@ exports.viewUserAnalytics = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   const { userId } = req.params;
 
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ status: 400, message: "Invalid userId" });
+  }
+
   try {
-    const user = await User.findByIdAndDelete(userId);
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ status: 404, message: "User not found" });
     }
 
     await UserAnalytics.deleteMany({ userId });
+    await Post.deleteMany({ author: userId });
+    await Comment.deleteMany({ author: userId });
+    await Notification.deleteMany({ recipient: userId });
+
+    await User.findByIdAndDelete(userId);
 
     return res
       .status(200)
-      .json({ status: 200, message: "User profile is deleted!" });
+      .json({ status: 200, message: "User profile and related data deleted." });
   } catch (error) {
     console.error("Error deleting user:", error);
-    return res
-      .status(500)
-      .json({ status: 500, message: "Error deleting user" });
+    return res.status(500).json({
+      status: 500,
+      message: "Error deleting user",
+      error: error.message,
+    });
   }
 };

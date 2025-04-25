@@ -1,6 +1,7 @@
 import axios from "axios";
 import React from "react";
 import { getAuthConfig } from "../../utils/authHeaders";
+import { displaySuccessToast } from "../../utils/toastUtil";
 
 export const useModeration = () => {
   const [reports, setReports] = React.useState([]);
@@ -76,7 +77,7 @@ export const useModeration = () => {
     }
   };
 
-  const issueWarning = async (userId) => {
+  const issueWarning = async (userId, onSuccess) => {
     setUserLoading(true);
     try {
       const response = await axios.put(
@@ -85,7 +86,9 @@ export const useModeration = () => {
         getAuthConfig()
       );
       if (response.status === 200) {
+        displaySuccessToast(response?.data?.message);
         viewAllUsers();
+        onSuccess();
       }
     } catch (error) {
       console.error("Error issuing warning:", error);
@@ -94,15 +97,19 @@ export const useModeration = () => {
     }
   };
 
-  const removeUser = async (userId) => {
+  const removeUser = async (userId, onSuccess) => {
     setUserLoading(true);
     try {
       const response = await axios.delete(
         `${process.env.REACT_APP_BASE_API}/user/${userId}/delete`,
         getAuthConfig()
       );
-      if (response.status === 200) {
+      console.log("response", response);
+      if (response?.data?.status == 200) {
         viewAllUsers();
+        console.log(response?.data?.message);
+        displaySuccessToast(response?.data?.message);
+        onSuccess();
       }
     } catch (error) {
       console.error("Error removing user:", error);
