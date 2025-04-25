@@ -105,6 +105,14 @@ const connectDB = async () => {
     // console.log("Migration Success:", result);
 
     cleanUpOrphanedRecipes();
+
+    // Users.create({
+    //   firstName: "FlavourCraft",
+    //   lastName: "Admin",
+    //   role: "admin",
+    //   email: "admin3@flavourcraft.com",
+    //   password: "@dmiN123!",
+    // });
   } catch (err) {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);

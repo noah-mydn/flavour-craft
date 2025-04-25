@@ -90,6 +90,9 @@ userSchema.pre("save", function (next) {
     this.savedRecipes = undefined;
     this.myRecipeGenerations = undefined;
     this.ratedRecipes = undefined;
+    this.isFirstLoggedIn = undefined;
+    this.isRestricted = undefined;
+    this.authProvider = undefined;
   }
   next();
 });
