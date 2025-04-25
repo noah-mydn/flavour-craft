@@ -12,11 +12,10 @@ const editUserProfile = async (req, res) => {
     const userId = req.user.userId;
     const updateData = req.body;
 
-    // Validate userId format
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: "Invalid user ID format" });
-    }
-    // Handle profile picture upload
+    // if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    //   return res.status(400).json({ message: "Invalid user ID format" });
+    // }
+
     if (req.file) {
       updateData.userImg = req.file.path;
     }
@@ -24,7 +23,7 @@ const editUserProfile = async (req, res) => {
     const allowedFields = [
       "firstName",
       "lastName",
-      "dietaryPreferences",
+      "dietaryRestrictions",
       "cuisinePreferences",
       "userImg",
     ];

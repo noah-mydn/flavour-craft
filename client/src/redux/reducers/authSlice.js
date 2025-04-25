@@ -30,14 +30,17 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       console.log("Removing accessToken from sessionStorage");
-      sessionStorage.removeItem("userData");
+
       sessionStorage.removeItem("auth");
       sessionStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
+      sessionStorage.removeItem("userData");
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
-      window.location.href = "/auth";
+      state.isVerified = false;
+      state.error = null;
+      //window.location.href = "/auth";
     },
     setIsVerified: (state, action) => {
       state.isVerified = action.payload;

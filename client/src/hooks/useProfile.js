@@ -4,7 +4,6 @@ import {
   getCurrentUserProfile,
   updateUserProfile,
 } from "../redux/apiClients/userAPI";
-import { convertBlobsToFiles } from "../utils/blobToFile";
 import { displayErrorToast, displaySuccessToast } from "../utils/toastUtil";
 import { getAuthConfig } from "../utils/authHeaders";
 import axios from "axios";
@@ -99,7 +98,6 @@ const useProfile = (user) => {
     });
 
     try {
-      // For debugging - check what's in your FormData
       for (let pair of formData.entries()) {
         console.log(pair[0] + ": " + pair[1]);
       }
