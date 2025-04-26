@@ -57,11 +57,13 @@ router.get(
 
       // Redirect to frontend with tokens (you might want a more secure approach)
       res.redirect(
-        `http://localhost:3000/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
+        `https://flavour-craft-1.onrender.com/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
       );
     } catch (error) {
       console.error("Error in callback handling:", error);
-      res.redirect("http://localhost:3000/login?error=server_error");
+      res.redirect(
+        "https://flavour-craft-1.onrender.com/login?error=server_error"
+      );
     }
   }
 );
