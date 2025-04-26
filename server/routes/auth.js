@@ -20,8 +20,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect:
-      "https://flavour-craft.onrender.com/login?error=authentication_failed",
+    failureRedirect: `${process.env.REACT_APP_BASE_API}/login?error=authentication_failed`,
   }),
   async (req, res) => {
     try {
@@ -57,12 +56,12 @@ router.get(
 
       // Redirect to frontend with tokens (you might want a more secure approach)
       res.redirect(
-        `https://flavour-craft-1.onrender.com/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
+        `${process.env.REACT_APP_BASE_API}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
       );
     } catch (error) {
       console.error("Error in callback handling:", error);
       res.redirect(
-        "https://flavour-craft-1.onrender.com/login?error=server_error"
+        `${process.env.REACT_APP_BASE_API}/login?error=server_error`
       );
     }
   }

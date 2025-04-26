@@ -132,7 +132,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.BACKEND_URL + "/auth/google/callback",
+      callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
@@ -201,7 +201,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "https://flavour-craft.onrender.com/auth/google/callback",
+      callbackURL: `${process.env.REACT_APP_BASE_API}/auth/google/callback`,
       userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
     },
     async (accessToken, refreshToken, profile, done) => {

@@ -108,8 +108,7 @@ const LoginForm = (props) => {
           fullWidth
           variant="outlined"
           onClick={() =>
-            (window.location.href =
-              "https://flavour-craft.onrender.com/auth/google")
+            (window.location.href = `${process.env.REACT_APP_BASE_API}/auth/google`)
           }
           startIcon={
             <img src="./google-icon.svg" alt="google-icon" width={18} />

@@ -3,10 +3,14 @@ const express = require("express");
 const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
-require("dotenv").config();
-require("./config/db");
-const http = require("http");
 
+const dotenv = require("dotenv");
+const env = process.env.NODE_ENV || "development";
+dotenv.config({ path: `.env${env === "production" ? ".production" : ""}` });
+
+require("./config/db");
+
+const http = require("http");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const preferenceRoutes = require("./routes/preferences");
@@ -19,8 +23,12 @@ const reportedPostRoutes = require("./routes/reportedPost");
 
 const app = express();
 app.use("/uploads", express.static("public/uploads"));
+const allowedOrigins = [
+  "https://flavour-craft-1.onrender.com",
+  "http://localhost:3000",
+];
 const corsOptions = {
-  origin: "*",
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
 };
@@ -30,7 +38,7 @@ app.use(express.json());
 
 app.use(
   session({
-    secret: "eGfCNdTNek",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
   })
@@ -69,24 +77,11 @@ app.get("/auth/google/callback", (req, res, next) => {
 
 const server = http.createServer(app);
 
-// const io = socket.init(server);
-// io.on("connection", (socket) => {
-//   console.log("a new client connected");
-
-//   socket.on("joinRoom", (userId) => {
-//     socket.join(userId);
-//     console.log(`User ${userId} has joined the room`);
-//   });
-//   socket.on("disconnect", () => {
-//     console.log("a user disconnected");
-//   });
-// });
-
 app.get("/", (req, res) => {
   res.status(200).send("FlavourCraft backend is running");
 });
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on PORT:${PORT}`);
+  console.log(`Server running on PORT:${PORT}, env: ${process.env.NODE_ENV}`);
 });

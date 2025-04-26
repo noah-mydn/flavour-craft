@@ -31,7 +31,7 @@ const GenerateRecipe = () => {
     generatedRecipe,
   } = useContext(GenerateRecipeContext);
 
-  // Media queries for responsive design
+  // Media queries
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   React.useEffect(() => {
@@ -76,7 +76,6 @@ const GenerateRecipe = () => {
             </Box>
           </Grid>
 
-          {/* Divider - vertical for desktop/tablet, horizontal for mobile */}
           <Grid
             item
             xs={12}
@@ -90,7 +89,7 @@ const GenerateRecipe = () => {
             )}
           </Grid>
 
-          {/* Right column for recipe results */}
+          {/*recipe results */}
           <Grid item md={12} lg={7}>
             <Paper
               sx={{
