@@ -97,13 +97,7 @@ const FilterSort = ({ page, pageSize }) => {
   ];
 
   const handleClearFilters = () => {
-    setSelectedCuisines([]);
-    setSelectedTags([]);
-    setSelectedDietaryPreferences([]);
-    setCookingTimeOperator("");
-    setCookingTimeValue();
-    dispatch(removeFilters());
-    dispatch(fetchRecipes({ sortOption, page, pageSize }));
+    window.location.reload();
   };
 
   const handleFilterRecipes = () => {

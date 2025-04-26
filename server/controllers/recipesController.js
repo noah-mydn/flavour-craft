@@ -795,11 +795,14 @@ const getPersonalizedRecipes = async (req, res) => {
 
     // Filter by dietary preferences
     if (user.dietaryRestrictions.length > 0) {
-      filterCriteria.dietaryPreferences = { $in: user.dietaryRestrictions };
+      filterCriteria.dietaryPreferences = { $all: user.dietaryRestrictions };
     }
 
     // Filter by cuisine preferences
-    if (user.cuisinePreferences.length > 0) {
+    if (
+      user.cuisinePreferences.length > 0 &&
+      !user.cuisinePreferences.includes("All")
+    ) {
       filterCriteria.cuisineTypes = { $in: user.cuisinePreferences };
     }
 
