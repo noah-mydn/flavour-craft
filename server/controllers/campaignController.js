@@ -76,50 +76,28 @@ exports.createCampaign = async (req, res) => {
 // Update Campaign
 exports.updateCampaign = async (req, res) => {
   try {
-    const { title, startDate, endDate, hashtag } = req.body;
-    let updateData = { title, hashtag };
-
-    if (startDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const start = new Date(startDate);
-
-      if (start < today) {
-        return res
-          .status(400)
-          .json({ message: "Start date cannot be in the past" });
-      }
-      updateData.startDate = startDate;
-    }
-
-    if (endDate) {
-      const start = new Date(req.body.startDate || updateData.startDate);
-      const end = new Date(endDate);
-
-      if (end <= start) {
-        return res.status(400).json({
-          message: "End date must be at least one day after start date",
-        });
-      }
-      updateData.endDate = endDate;
-    }
-
-    if (req.files["desktopImage"])
-      updateData.desktopImage = req.files["desktopImage"][0].path;
-    if (req.files["mobileImage"])
-      updateData.mobileImage = req.files["mobileImage"][0].path;
+    const { title, endDate, hashtag } = req.body;
+    const updateData = { title, hashtag };
 
     const currentCampaign = await Campaign.findById(req.params.id);
     if (!currentCampaign) {
       return res.status(404).json({ message: "Campaign not found" });
     }
 
-    const newStartDate = startDate
-      ? new Date(startDate)
-      : currentCampaign.startDate;
-    const newEndDate = endDate ? new Date(endDate) : currentCampaign.endDate;
+    const newStartDate = currentCampaign.startDate;
 
-    // Validate new range doesn't overlap others
+    let newEndDate = currentCampaign.endDate;
+    if (endDate) {
+      const end = new Date(endDate);
+      if (end <= newStartDate) {
+        return res.status(400).json({
+          message: "End date must be at least one day after start date",
+        });
+      }
+      updateData.endDate = endDate;
+      newEndDate = end;
+    }
+
     const overlapping = await isOverlapping(
       newStartDate,
       newEndDate,
@@ -132,6 +110,15 @@ exports.updateCampaign = async (req, res) => {
       });
     }
 
+    // Handle images
+    if (req.files["desktopImage"]) {
+      updateData.desktopImage = req.files["desktopImage"][0].path;
+    }
+    if (req.files["mobileImage"]) {
+      updateData.mobileImage = req.files["mobileImage"][0].path;
+    }
+
+    // Update campaign
     const updatedCampaign = await Campaign.findByIdAndUpdate(
       req.params.id,
       updateData,

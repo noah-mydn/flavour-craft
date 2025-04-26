@@ -298,6 +298,7 @@ const CampaignManagement = () => {
                 <TextField
                   fullWidth
                   required
+                  disabled={mode === "edit"}
                   type="datetime-local"
                   name="startDate"
                   label="Start Date & Time"
