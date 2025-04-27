@@ -56,13 +56,11 @@ router.get(
 
       // Redirect to frontend with tokens (you might want a more secure approach)
       res.redirect(
-        `${process.env.REACT_APP_BASE_API}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
+        `${process.env.HOST_URL}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
       );
     } catch (error) {
       console.error("Error in callback handling:", error);
-      res.redirect(
-        `${process.env.REACT_APP_BASE_API}/login?error=server_error`
-      );
+      res.redirect(`${process.env.HOST_URL}/login?error=server_error`);
     }
   }
 );

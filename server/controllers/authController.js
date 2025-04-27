@@ -43,12 +43,12 @@ const register = async (req, res) => {
     await newUser.save();
 
     await UserAnalytics.updateOne(
-      { userId: newUser._id },
+      { userId: user._id },
       {
-        userId: newUser._id,
+        userId: user._id,
         generatedRecipeCount: 0,
         status: "Active",
-        lastActiveAt: newUser.createdAt,
+        lastActiveAt: user.createdAt,
       },
       { upsert: true }
     );
@@ -116,7 +116,7 @@ const login = async (req, res) => {
         email: user.email,
         role: user.role,
         isFirstLoggedIn: user.isFirstLoggedIn,
-        authProvider: "user.authProvider",
+        authProvider: user.authProvider,
       },
     });
   } catch (error) {
@@ -125,61 +125,6 @@ const login = async (req, res) => {
       .json({ message: "Internal Server Error", error: error.message });
   }
 };
-
-//Google Auth Config
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
-      passReqToCallback: true,
-    },
-    async (req, accessToken, refreshToken, profile, done) => {
-      try {
-        let user = await User.findOne({ email: profile.emails[0].value });
-
-        if (!user) {
-          // Create new user if not found
-          user = await User.create({
-            firstName:
-              profile.name.givenName || profile.displayName.split(" ")[0],
-            lastName:
-              profile.name.familyName ||
-              profile.displayName.split(" ").slice(1).join(" "),
-            email: profile.emails[0].value,
-            googleId: profile.id,
-            profileImage: profile.photos[0]?.value || "",
-            password:
-              Math.random().toString(36).slice(-8) +
-              Math.random().toString(36).slice(-8),
-          });
-          isFirstLoggedIn = true;
-        } else {
-          // Only update firstName and lastName
-          if (
-            user.firstName === profile.name.givenName &&
-            user.lastName === profile.name.familyName
-          ) {
-            user.firstName = profile.name.givenName;
-            user.lastName = profile.name.familyName;
-          }
-
-          // Always update Google ID & profile image
-          user.googleId = profile.id;
-          user.profileImage = profile.photos[0]?.value || user.profileImage;
-
-          await user.save();
-        }
-
-        return done(null, user);
-      } catch (error) {
-        console.error("Error in Google Strategy:", error);
-        return done(error, null);
-      }
-    }
-  )
-);
 
 // Serialize and deserialize user
 passport.serializeUser((user, done) => {
@@ -206,15 +151,15 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        //check existing users
         let user = await User.findOne({ email: profile.emails[0].value });
 
         if (!user) {
-          // Create new user - not found
           user = await User.create({
             firstName:
               profile.name.givenName || profile.displayName.split(" ")[0],
-            lastName: profile.name?.familyName || profile.name.givenName,
+            lastName:
+              profile.name.familyName ||
+              profile.displayName.split(" ").slice(1).join(" "),
             email: profile.emails[0].value,
             googleId: profile.id,
             isFirstLoggedIn: true,
@@ -222,17 +167,16 @@ passport.use(
           });
 
           await UserAnalytics.updateOne(
-            { userId: newUser._id },
+            { userId: user._id },
             {
-              userId: newUser._id,
+              userId: user._id,
               generatedRecipeCount: 0,
               status: "Active",
-              lastActiveAt: newUser.createdAt,
+              lastActiveAt: user.createdAt,
             },
             { upsert: true }
           );
         } else if (!user.googleId) {
-          // If user exists
           user.googleId = profile.id;
           if (user.isFirstLoggedIn) {
             user.isFirstLoggedIn = false;
