@@ -48,9 +48,9 @@ export const useAuth = () => {
     // }
   };
 
-  //Register
-  const accountRegister = (e) => {
+  const accountRegister = async (e) => {
     e.preventDefault();
+
     if (!accountUser?.termsAndConditions) {
       displayErrorToast({
         title: "Error",
@@ -58,7 +58,8 @@ export const useAuth = () => {
       });
       return;
     }
-    dispatch(
+
+    await dispatch(
       register({
         firstName: accountUser.firstName,
         lastName: accountUser.lastName,
@@ -67,23 +68,23 @@ export const useAuth = () => {
       })
     );
 
-    if (user && isVerified && user?.role !== "admin") {
-      dispatch(setUserProfile(user));
-      if (user.isFirstLoggedIn) {
+    const updatedUser = user;
+
+    if (updatedUser && isVerified) {
+      console.log("is User First LoggedIn?", updatedUser?.isFirstLoggedIn);
+
+      dispatch(setUserProfile(updatedUser));
+
+      if (updatedUser.isFirstLoggedIn) {
         navigate("/pref");
       } else {
         navigate("/home");
       }
-    } else if (user && isVerified && user?.role === "admin") {
+    } else if (updatedUser && updatedUser?.role === "admin") {
       navigate("/admin");
     } else {
       navigate("/auth");
     }
-    // console.log(user);
-    // dispatch(setUserProfile(user));
-    // if (isVerified) {
-    //   return navigate("/home");
-    // }
   };
 
   //Logout

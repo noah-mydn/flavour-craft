@@ -75,24 +75,49 @@ exports.getAllPosts = async (req, res) => {
         const since = new Date();
         since.setHours(since.getHours() - 24);
 
-        // match last 24h, compute net votes
+        // Compute a simple trending score for ALL posts based on
+        // up/down votes & comments in the last 24h
         const agg = await Post.aggregate([
-          { $match: { createdAt: { $gte: since } } },
           {
             $addFields: {
-              upvoteCount: { $size: "$upvotes" },
-              downvoteCount: { $size: "$downvotes" },
-              netVoteCount: {
-                $subtract: [{ $size: "$upvotes" }, { $size: "$downvotes" }],
+              recentUpvotes: {
+                $size: {
+                  $filter: {
+                    input: "$upvotes",
+                    as: "uv",
+                    cond: { $gte: ["$$uv.timestamp", since] },
+                  },
+                },
+              },
+
+              recentComments: {
+                $size: {
+                  $filter: {
+                    input: "$comments",
+                    as: "cm",
+                    cond: { $gte: ["$$cm.createdAt", since] },
+                  },
+                },
               },
             },
           },
-          { $sort: { netVoteCount: -1 } },
+          {
+            $addFields: {
+              trendingScore: {
+                $add: ["$recentUpvotes", "$recentComments"],
+              },
+            },
+          },
+          { $sort: { trendingScore: -1, createdAt: -1 } },
           { $skip: skip },
           { $limit: pageSize },
         ]);
-        posts = agg;
-        totalCount = await Post.countDocuments({ createdAt: { $gte: since } });
+
+        posts = await Post.populate(agg, {
+          path: "author",
+          select: "firstName lastName userImg",
+        });
+        totalCount = await Post.countDocuments();
         break;
       }
 
@@ -147,30 +172,62 @@ exports.getTrendingPosts = async (req, res) => {
   pageSize = parseInt(pageSize) || 10;
 
   const skip = (page - 1) * pageSize;
-  const day = new Date();
-  day.setHours(day.getHours() - 24);
+  const recentThreshold = new Date();
+  recentThreshold.setHours(recentThreshold.getHours() - 24); // last 24h
+
   try {
     const posts = await Post.aggregate([
-      { $match: { createdAt: { $gte: day } } },
       {
         $addFields: {
-          upvoteCount: { $size: "$upvotes" },
-          downvoteCount: { $size: "$downvotes" },
-          netVoteCount: {
-            $subtract: [{ $size: "$upvotes" }, { $size: "$downvotes" }],
+          recentUpvotes: {
+            $size: {
+              $filter: {
+                input: "$upvotes",
+                as: "upvote",
+                cond: { $gte: ["$$upvote.timestamp", recentThreshold] },
+              },
+            },
+          },
+          recentDownvotes: {
+            $size: {
+              $filter: {
+                input: "$downvotes",
+                as: "downvote",
+                cond: { $gte: ["$$downvote.timestamp", recentThreshold] },
+              },
+            },
+          },
+          recentComments: {
+            $size: {
+              $filter: {
+                input: "$comments",
+                as: "comment",
+                cond: { $gte: ["$$comment.createdAt", recentThreshold] },
+              },
+            },
           },
         },
       },
-      { $sort: { netVoteCount: -1 } },
-    ])
-      .skip(skip)
-      .limit(pageSize);
+      {
+        $addFields: {
+          trendingScore: {
+            $add: [
+              { $subtract: ["$recentUpvotes", "$recentDownvotes"] },
+              "$recentComments",
+            ],
+          },
+        },
+      },
+      { $sort: { trendingScore: -1 } },
+      { $skip: skip },
+      { $limit: pageSize },
+    ]);
 
-    const totalCount = await Post.countDocuments({ createdAt: { $gte: day } });
+    const totalCount = await Post.countDocuments();
 
     res.status(200).json({
       status: 200,
-      message: "Posts retrieved successfully",
+      message: "Trending posts retrieved successfully",
       posts: posts,
       pagination: {
         currentPage: page,

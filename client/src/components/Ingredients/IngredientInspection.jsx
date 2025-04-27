@@ -22,10 +22,8 @@ import AddIcon from "@mui/icons-material/Add";
 
 import { useSelector } from "react-redux";
 import {
-  cuisinePrefSelector,
   cuisinesSelector,
   dietaryOptionsSelector,
-  dietaryRestrictionsSelectors,
 } from "../../redux/selectors/selectors";
 import { GenerateRecipeContext } from "../../context/GenerateRecipeContext";
 

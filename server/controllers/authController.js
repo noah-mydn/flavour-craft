@@ -9,7 +9,6 @@ const register = async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res
@@ -17,12 +16,13 @@ const register = async (req, res) => {
         .json({ status: 400, message: "User already exists!" });
     }
 
-    // Create new user and save
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       firstName,
       lastName,
       email,
-      password,
+      password: hashedPassword,
       isFirstLoggedIn: true,
     });
     await newUser.save();
@@ -43,12 +43,12 @@ const register = async (req, res) => {
     await newUser.save();
 
     await UserAnalytics.updateOne(
-      { userId: user._id },
+      { userId: newUser._id },
       {
-        userId: user._id,
+        userId: newUser._id,
         generatedRecipeCount: 0,
         status: "Active",
-        lastActiveAt: user.createdAt,
+        lastActiveAt: newUser.createdAt,
       },
       { upsert: true }
     );
@@ -61,7 +61,6 @@ const register = async (req, res) => {
         id: newUser._id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
-        username: newUser.username,
         email: newUser.email,
         isFirstLoggedIn: newUser.isFirstLoggedIn,
         authProvider: "local",
@@ -99,6 +98,7 @@ const login = async (req, res) => {
     );
 
     user.refreshToken = refreshToken;
+
     if (user.isFirstLoggedIn) {
       user.isFirstLoggedIn = false;
       await user.save();
@@ -112,10 +112,9 @@ const login = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
-        username: user.username,
         email: user.email,
         role: user.role,
-        isFirstLoggedIn: user.isFirstLoggedIn,
+        isFirstLoggedIn: user.isFirstLoggedIn, // This will now be false after first login
         authProvider: user.authProvider,
       },
     });

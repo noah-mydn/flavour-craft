@@ -10,6 +10,7 @@ import {
   MenuItem,
   InputLabel,
   Chip,
+  Typography,
 } from "@mui/material";
 import WhatshotIcon from "@mui/icons-material/Whatshot";
 import { ContentContainer } from "../../styles/ContainerStyles";
@@ -18,6 +19,7 @@ import PostCard from "./PostCard";
 import { useDispatch, useSelector } from "react-redux";
 import {
   postListSelector,
+  postsLoadingSelector,
   postsPaginationSelector,
 } from "../../redux/selectors/selectors";
 import { fetchPosts } from "../../redux/apiClients/postsAPI";
@@ -27,9 +29,10 @@ const CompactPosts = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const postsList = useSelector(postListSelector);
+  const loading = useSelector(postsLoadingSelector);
   const pagination = useSelector(postsPaginationSelector);
   const [page, setPage] = React.useState(1);
-  const [sortOrder, setSortOrder] = React.useState("trending");
+  const [sortOrder, setSortOrder] = React.useState("recent");
   const pageSize = 10;
 
   React.useEffect(() => {
@@ -128,6 +131,15 @@ const CompactPosts = () => {
               size="large"
               onChange={handlePageChange}
             />
+          )}
+          {postsList.length === 0 && !loading && (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <Typography color="text.secondary" gutterBottom>
+                {sortOrder === "trending"
+                  ? "No posts are trending at the moment"
+                  : "No posts available"}
+              </Typography>
+            </Box>
           )}
         </Grid>
       </Grid>

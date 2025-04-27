@@ -103,31 +103,36 @@ const Preferences = () => {
   };
 
   const finishSetup = () => {
-    // Convert Set to array of IDs
-    const dietarySelections = Array.from(tempDietarySelections);
-    const cuisineSelections = Array.from(tempCuisineSelections);
+    if (tempDietarySelections.size < 1 || tempCuisineSelections.size < 1) {
+      // Convert Set to array of IDs
+      const dietarySelections = Array.from(tempDietarySelections);
+      const cuisineSelections = Array.from(tempCuisineSelections);
 
-    setLoading(true);
+      setLoading(true);
 
-    const promises = [];
-    if (dietarySelections.length > 0) {
-      promises.push(
-        dispatch(setDietaryPreferences({ dietaryOptions: dietarySelections }))
-      );
+      const promises = [];
+      if (dietarySelections.length > 0) {
+        promises.push(
+          dispatch(setDietaryPreferences({ dietaryOptions: dietarySelections }))
+        );
+      }
+      if (cuisineSelections.length > 0) {
+        promises.push(
+          dispatch(setCuisinePreferences({ cuisineTypes: cuisineSelections }))
+        );
+      }
+
+      Promise.all(promises).finally(() => {
+        setTimeout(() => {
+          setLoading(false);
+
+          navigate("/home");
+        }, 3000);
+      });
+    } else {
+      setLoading(false);
+      navigate("/home");
     }
-    if (cuisineSelections.length > 0) {
-      promises.push(
-        dispatch(setCuisinePreferences({ cuisineTypes: cuisineSelections }))
-      );
-    }
-
-    Promise.all(promises).finally(() => {
-      setTimeout(() => {
-        setLoading(false);
-
-        navigate("/home");
-      }, 3000);
-    });
   };
 
   React.useEffect(() => {

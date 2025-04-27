@@ -10,17 +10,23 @@ import { getAuthConfig } from "../../utils/authHeaders";
 // Fetch all dietary options
 export const fetchDietaryOptions = createAsyncThunk(
   "dietary/fetchDietaryOptions",
-  async ({ page, pageSize }, { rejectWithValue }) => {
+  async ({ page, pageSize } = {}, { rejectWithValue }) => {
+    const BASE_API = process.env.REACT_APP_BASE_API;
+    const API_URL =
+      page !== undefined && pageSize !== undefined
+        ? `${BASE_API}/preferences/dietary-options?page=${page}&pageSize=${pageSize}`
+        : `${BASE_API}/preferences/dietary-options`;
+
+    console.log("IT RUNS:", API_URL);
     try {
-      const API_URL =
-        page && pageSize
-          ? `${process.env.REACT_APP_BASE_API}/preferences/dietary-options?page=${page}&pageSize=${pageSize}`
-          : `${process.env.REACT_APP_BASE_API}/preferences/dietary-options`;
       const response = await axios.get(API_URL, getAuthConfig());
       return response.data;
     } catch (error) {
       displayErrorToast(error);
-      return rejectWithValue(error.response.data);
+      console.log("CUISINES FETCHING ERROR:", error);
+      return rejectWithValue(
+        error.response?.data || "An unexpected error occurred"
+      );
     }
   }
 );
