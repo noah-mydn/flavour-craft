@@ -194,12 +194,13 @@ const generateRecipe = async (req, res) => {
     console.log("No matching recipes found. Generating with AI...");
 
     const prompt = `
-Generate 4 recipes using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects.
+Generate 4 recipes using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects. If you cannot find authentic recipes, you can just say, "Sorry, I cannot find any recipes for the given ingredients and dietary preferences."
+Don't add made up recipes. Also, strictly provide nutritional information for each recipe, just the estimations based on ingredients and cooking style. Not false information.
 
 Use the following:
 - Ingredients: ${ingredients.join(", ")}
-- Cuisine types: ${cuisines.join(", ")}
-- Dietary preferences: ${dietaryPreferences.join(", ")}
+- Cuisine types: ${cuisines.join(", ")} [only one]
+- Dietary preferences: ${dietaryPreferences.join(", ")} [max 2 tags]
 
 STRICT VALIDATION RULES:
 - If given cuisine type is "All", analyze the origin of the recipe and label its cuisine, do not label it as All.
@@ -289,10 +290,8 @@ Schema:
     );
 
     const generatedRecipes = await Recipe.insertMany(uniqueRecipes);
-    //await RecipeGenerationLog.create({ userId: _id });
 
     const userId = req.user.userId;
-
     await User.findByIdAndUpdate(userId, {
       $push: {
         myRecipeGenerations: { $each: generatedRecipes.map((r) => r._id) },
@@ -303,8 +302,8 @@ Schema:
 
     return res.status(200).json({
       status: 200,
-      message: `${uniqueRecipes.length} new recipes saved to the database.`,
-      data: uniqueRecipes,
+      message: `${generatedRecipes.length} new recipes saved to the database.`,
+      data: generatedRecipes,
     });
   } catch (error) {
     console.error("Error generating or saving recipes:", error.message);
@@ -785,60 +784,110 @@ const getPersonalizedRecipes = async (req, res) => {
     const { page = 1, pageSize = 10 } = req.query;
     const skip = (page - 1) * pageSize;
 
-    // Get user preferences
+    // 1. Load User
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // 2. Separate strict and optional diets
+    const strictDiets = [
+      "Vegan",
+      "Vegetarian",
+      "Halal",
+      "Kosher",
+      "Pescatarian",
+      "Diabetes-Friendly",
+      "Low-Sugar",
+    ];
+    const userStrictDiets = user.dietaryRestrictions.filter((diet) =>
+      strictDiets.includes(diet)
+    );
+    const userOptionalDiets = user.dietaryRestrictions.filter(
+      (diet) => !strictDiets.includes(diet)
+    );
+
+    // 3. Build filter
+    let strictFilter = [];
+    if (userStrictDiets.length > 0) {
+      strictFilter = [{ dietaryPreferences: { $in: userStrictDiets } }];
     }
 
-    let filterCriteria = {};
-
-    // Filter by dietary preferences
-    if (user.dietaryRestrictions.length > 0) {
-      filterCriteria.dietaryPreferences = { $all: user.dietaryRestrictions };
+    let optionalFilter = [];
+    if (userOptionalDiets.length > 0) {
+      optionalFilter = [{ dietaryPreferences: { $in: userOptionalDiets } }];
     }
 
-    // Filter by cuisine preferences
+    let cuisineFilter = [];
     if (
       user.cuisinePreferences.length > 0 &&
       !user.cuisinePreferences.includes("All")
     ) {
-      filterCriteria.cuisineTypes = { $in: user.cuisinePreferences };
+      cuisineFilter = [{ cuisineTypes: { $in: user.cuisinePreferences } }];
     }
 
-    // Get personalized recipes based on both dietary and cuisine preferences
-    let recipes = await Recipe.find(filterCriteria)
-      .skip(skip) // Skip results based on page
-      .limit(10); // Limit the number of recipes per page
+    const combinedFilter = {
+      $and: [
+        ...(strictFilter.length > 0 ? strictFilter : []),
+        ...(cuisineFilter.length > 0 ? cuisineFilter : []),
+      ],
+    };
 
-    // Get the total number of matching personalized recipes for pagination info
-    const totalRecipes = recipes.length;
+    let recipes = await Recipe.find(combinedFilter)
+      .skip(skip)
+      .limit(parseInt(pageSize));
+    let totalRecipes = recipes.length;
 
-    // If no recipes are found, show similar recipes from saved ones
+    // 4. If no recipes matching strict + cuisine, try strict only
+    if (recipes.length === 0 && strictFilter.length > 0) {
+      recipes = await Recipe.find({ $and: strictFilter })
+        .skip(skip)
+        .limit(parseInt(pageSize));
+      totalRecipes = recipes.length;
+    }
+
+    // 5. Prefer recipes that also match optional diets
+    if (recipes.length > 0 && userOptionalDiets.length > 0) {
+      recipes = recipes.sort((a, b) => {
+        const aMatches = a.dietaryPreferences.filter((pref) =>
+          userOptionalDiets.includes(pref)
+        ).length;
+        const bMatches = b.dietaryPreferences.filter((pref) =>
+          userOptionalDiets.includes(pref)
+        ).length;
+        return bMatches - aMatches; // Recipes matching more optional diets come first
+      });
+    }
+
+    // 6. If still no recipes, fallback to savedRecipes (must match strict)
     if (recipes.length === 0 && user.savedRecipes.length > 0) {
       const savedRecipes = await Recipe.find({
         _id: { $in: user.savedRecipes },
+        dietaryPreferences: { $in: userStrictDiets },
       })
         .skip(skip)
-        .limit(parseInt(pageSize)); // Limit saved recipes as well
+        .limit(parseInt(pageSize));
+      totalRecipes = savedRecipes.length;
 
       return res.status(200).json({
         status: 200,
         recipes: savedRecipes,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(savedRecipes?.length / pageSize),
+          totalPages: Math.ceil(totalRecipes / pageSize),
           totalRecipes,
         },
       });
     }
 
-    // If no saved recipes, show random recipes
-    if (recipes.length === 0) {
-      const randomRecipes = await Recipe.aggregate([{ $sample: { size: 10 } }]);
+    // 7. If still no recipes, fallback to random recipes (must match strict)
+    if (recipes.length === 0 && userStrictDiets.length > 0) {
+      const randomRecipes = await Recipe.aggregate([
+        { $match: { dietaryPreferences: { $in: userStrictDiets } } },
+        { $sample: { size: parseInt(pageSize) } },
+      ]);
       return res.status(200).json({ recipes: randomRecipes });
     }
 
+    // 8. Normal Response
     return res.status(200).json({
       recipes,
       pagination: {

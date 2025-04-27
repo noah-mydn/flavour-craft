@@ -29,11 +29,9 @@ import {
 } from "../../redux/selectors/selectors";
 import { GenerateRecipeContext } from "../../context/GenerateRecipeContext";
 
-function IngredientFilterUI({ onGenerateClick }) {
+function IngredientFilterUI({ loading }) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Get hooks and state from your existing hooks
   const {
     recipeInput,
     customIngredient,
@@ -44,22 +42,17 @@ function IngredientFilterUI({ onGenerateClick }) {
     handleGenerateRecipe,
   } = useContext(GenerateRecipeContext);
 
-  // Get user preferences and available options from Redux store
-  const user = useSelector((state) => state.auth.user);
   const dietaryOptions = useSelector(dietaryOptionsSelector);
   const cuisines = useSelector(cuisinesSelector);
 
-  // UI state
   const [searchValue, setSearchValue] = useState("");
   const [showAddIngredient, setShowAddIngredient] = useState(false);
   const [moreDietaryDialog, setMoreDietaryDialog] = useState(false);
   const [moreCuisineDialog, setMoreCuisineDialog] = useState(false);
 
-  // Temporary states for dialog selections before confirming with "DONE"
   const [tempDietarySelections, setTempDietarySelections] = useState([]);
   const [tempCuisineSelections, setTempCuisineSelections] = useState([]);
 
-  //userProfile
   const myCuisines = useSelector(
     (state) => state.userProfile.cuisinePreferences
   );
@@ -67,7 +60,6 @@ function IngredientFilterUI({ onGenerateClick }) {
     (state) => state.userProfile.dietaryRestrictions
   );
 
-  // Initialize temporary selections when opening dialogs
   useEffect(() => {
     if (moreDietaryDialog) {
       setTempDietarySelections([...recipeInput.dietaryPreferences]);
@@ -80,16 +72,13 @@ function IngredientFilterUI({ onGenerateClick }) {
     }
   }, [moreCuisineDialog]);
 
-  // Handle adding an ingredient from autocomplete
   const handleAddIngredient = (event, newValue) => {
     if (!newValue) return;
 
     if (typeof newValue === "string") {
-      // Handle custom ingredient input
       setCustomIngredient(newValue);
       setShowAddIngredient(true);
     } else {
-      // Add ingredient from database
       if (!recipeInput.ingredients.includes(newValue.name)) {
         setRecipeInput({
           ...recipeInput,
@@ -100,7 +89,6 @@ function IngredientFilterUI({ onGenerateClick }) {
     setSearchValue("");
   };
 
-  // Handle removing an ingredient
   const handleRemoveIngredient = (ingredient) => {
     setRecipeInput({
       ...recipeInput,
@@ -110,7 +98,6 @@ function IngredientFilterUI({ onGenerateClick }) {
     });
   };
 
-  // Handle toggle dietary preference in the temporary selections
   const handleToggleTempDietaryPref = (pref) => {
     if (tempDietarySelections.some((item) => item._id === pref._id)) {
       setTempDietarySelections(
@@ -121,7 +108,6 @@ function IngredientFilterUI({ onGenerateClick }) {
     }
   };
 
-  // Handle toggle cuisine preference in the temporary selections
   const handleToggleTempCuisine = (cuisine) => {
     if (tempCuisineSelections.some((item) => item._id === cuisine._id)) {
       setTempCuisineSelections(
@@ -132,7 +118,6 @@ function IngredientFilterUI({ onGenerateClick }) {
     }
   };
 
-  // Save dietary preferences when dialog is closed with DONE
   const saveDietaryPreferences = () => {
     setRecipeInput({
       ...recipeInput,
@@ -141,7 +126,6 @@ function IngredientFilterUI({ onGenerateClick }) {
     setMoreDietaryDialog(false);
   };
 
-  // Save cuisine preferences when dialog is closed with DONE
   const saveCuisinePreferences = () => {
     setRecipeInput({
       ...recipeInput,
@@ -150,19 +134,16 @@ function IngredientFilterUI({ onGenerateClick }) {
     setMoreCuisineDialog(false);
   };
 
-  // Cancel changes to dietary preferences
   const cancelDietaryChanges = () => {
     setTempDietarySelections([...recipeInput.dietaryPreferences]);
     setMoreDietaryDialog(false);
   };
 
-  // Cancel changes to cuisine preferences
   const cancelCuisineChanges = () => {
     setTempCuisineSelections([...recipeInput.cuisines]);
     setMoreCuisineDialog(false);
   };
 
-  // Handle removing a dietary preference chip
   const handleRemoveDietaryPref = (pref) => {
     setRecipeInput({
       ...recipeInput,
@@ -245,16 +226,18 @@ function IngredientFilterUI({ onGenerateClick }) {
               {...params}
               placeholder="Which ingredients do you have?"
               variant="standard"
-              InputProps={{
-                ...params.InputProps,
-                disableUnderline: true,
-                sx: {
-                  ml: 1,
-                  // Fix for the cancel/clear button positioning
-                  "& .MuiAutocomplete-endAdornment": {
-                    right: 12, // Adjust this value as needed
-                    top: "50%",
-                    transform: "translateY(-50%)",
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  disableUnderline: true,
+                  sx: {
+                    ml: 1,
+
+                    "& .MuiAutocomplete-endAdornment": {
+                      right: 12,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                    },
                   },
                 },
               }}
@@ -286,7 +269,14 @@ function IngredientFilterUI({ onGenerateClick }) {
           }
         />
       </Paper>
-
+      <Typography
+        variant="subtitle2"
+        color="info.dark"
+        ml={2}
+        fontStyle={"italic"}
+      >
+        Press enter to add custom ingredients
+      </Typography>
       {/* Selected Ingredient Chips */}
       <Box maxHeight={200} py={2} borderRadius={2} overflow="auto">
         <Typography gutterBottom py={1} variant="body1" color="text.secondary">
@@ -406,6 +396,7 @@ function IngredientFilterUI({ onGenerateClick }) {
       {/* Find Button */}
       <Button
         variant="contained"
+        disabled={loading}
         fullWidth
         color="primary"
         onClick={handleGenerateRecipe}

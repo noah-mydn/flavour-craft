@@ -70,9 +70,8 @@ const GenerateRecipe = () => {
         <Grid container spacing={3}>
           {/* Left column for ingredient filter */}
           <Grid item xs={12} md={12} lg={4}>
-            {/* Wrap the IngredientFilterUI and modify it to use a callback for generation */}
             <Box sx={{ height: "100%" }}>
-              <IngredientFilterUI onGenerateClick={handleGenerateRecipe} />
+              <IngredientFilterUI loading={generateLoading} />
             </Box>
           </Grid>
 
@@ -169,11 +168,16 @@ const GenerateRecipe = () => {
                     alignContent="center"
                     gap={2}
                   >
-                    {generatedRecipe?.map((recipe, index) => (
-                      <Grid item xs={10} md={5} key={recipe._id || index}>
-                        <RecipeCard recipe={recipe} />
-                      </Grid>
-                    ))}
+                    {generatedRecipe?.map(
+                      (recipe, index) => (
+                        console.log(recipe),
+                        (
+                          <Grid item xs={10} md={5} key={recipe._id || index}>
+                            <RecipeCard recipe={recipe} />
+                          </Grid>
+                        )
+                      )
+                    )}
                   </Grid>
                 )}
             </Paper>
