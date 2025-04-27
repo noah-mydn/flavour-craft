@@ -50,11 +50,9 @@ router.get(
         { expiresIn: "7d" }
       );
 
-      // Store refresh token in DB
       req.user.refreshToken = refreshToken;
       await req.user.save();
 
-      // Redirect to frontend with tokens (you might want a more secure approach)
       res.redirect(
         `${process.env.HOST_URL}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
       );
