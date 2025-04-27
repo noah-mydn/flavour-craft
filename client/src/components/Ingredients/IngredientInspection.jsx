@@ -413,6 +413,12 @@ function IngredientFilterUI({ loading }) {
 
       {/* Add Custom Ingredient Dialog */}
       <Dialog
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          addCustomIngredient();
+          setShowAddIngredient(false);
+        }}
         open={showAddIngredient}
         onClose={() => setShowAddIngredient(false)}
       >
@@ -430,14 +436,7 @@ function IngredientFilterUI({ loading }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAddIngredient(false)}>Cancel</Button>
-          <Button
-            onClick={() => {
-              addCustomIngredient();
-              setShowAddIngredient(false);
-            }}
-            variant="contained"
-            color="primary"
-          >
+          <Button type="submit" variant="contained" color="primary">
             Add
           </Button>
         </DialogActions>

@@ -25,7 +25,16 @@ const RegisterForm = (props) => {
   const { accountUser, handleInputChange, accountRegister, handleGoogleLogin } =
     useAuth();
   return (
-    <form onSubmit={accountRegister} style={{ padding: "1rem 0" }}>
+    <form
+      onSubmit={accountRegister}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          accountRegister(e);
+        }
+      }}
+      style={{ padding: "1rem 0" }}
+    >
       <Typography variant={isMobile ? "h3" : "h1"} className="text-center">
         Create an account
       </Typography>

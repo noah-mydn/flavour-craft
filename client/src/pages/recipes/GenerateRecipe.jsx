@@ -16,14 +16,13 @@ import { useDispatch } from "react-redux";
 import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
 import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
 import IngredientFilterUI from "../../components/Ingredients/IngredientInspection";
-import RecipeCard from "../../components/Recipes/RecipeCard";
 import AIRecipeLoading from "./AIRecipeLoading";
 import { GenerateRecipeContext } from "../../context/GenerateRecipeContext";
+import GeneratedRecipeCard from "../../components/Recipes/GeneratedRecipeCard";
 
 const GenerateRecipe = () => {
   const dispatch = useDispatch();
 
-  // States for recipe generation
   const {
     handleGenerateRecipe,
     generateLoading,
@@ -31,7 +30,6 @@ const GenerateRecipe = () => {
     generatedRecipe,
   } = useContext(GenerateRecipeContext);
 
-  // Media queries
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   React.useEffect(() => {
@@ -130,7 +128,7 @@ const GenerateRecipe = () => {
               )}
 
               {/* Empty state */}
-              {!generateLoading &&
+              {/* {!generateLoading &&
                 !errorGeneration &&
                 generatedRecipe?.length === 0 && (
                   <Box
@@ -153,7 +151,7 @@ const GenerateRecipe = () => {
                       Generate" to create recipe suggestion.
                     </Typography>
                   </Box>
-                )}
+                )} */}
 
               {/* Recipe results */}
               {!generateLoading &&
@@ -168,16 +166,11 @@ const GenerateRecipe = () => {
                     alignContent="center"
                     gap={2}
                   >
-                    {generatedRecipe?.map(
-                      (recipe, index) => (
-                        console.log(recipe),
-                        (
-                          <Grid item xs={10} md={5} key={recipe._id || index}>
-                            <RecipeCard recipe={recipe} />
-                          </Grid>
-                        )
-                      )
-                    )}
+                    <Grid item xs={12}>
+                      <Box>
+                        <GeneratedRecipeCard recipe={generatedRecipe[0]} />
+                      </Box>
+                    </Grid>
                   </Grid>
                 )}
             </Paper>

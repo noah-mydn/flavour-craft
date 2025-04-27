@@ -194,7 +194,7 @@ const generateRecipe = async (req, res) => {
     console.log("No matching recipes found. Generating with AI...");
 
     const prompt = `
-Generate 4 recipes using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects. If you cannot find authentic recipes, you can just say, "Sorry, I cannot find any recipes for the given ingredients and dietary preferences."
+Generate 1 recipe using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects. If you cannot find authentic recipes, you can just say, "Sorry, I cannot find any recipes for the given ingredients and dietary preferences."
 Don't add made up recipes. Also, strictly provide nutritional information for each recipe, just the estimations based on ingredients and cooking style. Not false information.
 
 Use the following:
