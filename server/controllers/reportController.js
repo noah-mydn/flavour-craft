@@ -255,7 +255,7 @@ const getCuisineDistribution = async (req, res) => {
       { $unwind: "$cuisineTypes" },
       { $group: { _id: "$cuisineTypes", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
-      { $skip: 10 }, // Skip top 10
+      { $skip: 10 },
       {
         $group: {
           _id: "Others",

@@ -722,16 +722,16 @@ const getPopularRecipes = async (req, res) => {
         $addFields: {
           popularityScore: {
             $add: [
-              { $multiply: ["$saves", 0.5] }, // Saves carry the most weight
-              { $multiply: ["$views", 0.3] }, // Views have medium influence
-              { $multiply: ["$ratings.average", 0.2] }, // Consider average rating
+              { $multiply: ["$saves", 0.5] },
+              { $multiply: ["$views", 0.3] },
+              { $multiply: ["$ratings.average", 0.2] },
             ],
           },
         },
       },
-      { $sort: { popularityScore: -1 } }, // Sort by popularity
-      { $skip: skip }, // Skip previous pages
-      { $limit: parseInt(pageSize) }, // Limit results per page
+      { $sort: { popularityScore: -1 } },
+      { $skip: skip },
+      { $limit: parseInt(pageSize) },
     ]);
 
     const totalRecipes = await Recipe.countDocuments();
