@@ -20,6 +20,7 @@ export const displaySuccessToast = (message) => {
 
 export const displayInfoToast = (message) => {
   toast.success(message, {
-    icon: "📝",
+    //lightbulb icon
+    icon: "💡",
   });
 };

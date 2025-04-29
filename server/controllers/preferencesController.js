@@ -183,7 +183,7 @@ exports.getDietaryOptions = async (req, res) => {
       }
     }
 
-    const dietaryOptions = await query; // Either paginated OR full
+    const dietaryOptions = await query;
     const total = await DietaryOption.countDocuments();
 
     res.status(200).json({

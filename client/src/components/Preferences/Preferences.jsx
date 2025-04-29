@@ -24,10 +24,16 @@ import {
 
 import { CookingAnimation } from "../Animation/CookingAnimation";
 import {
+  getCurrentUserProfile,
   setCuisinePreferences,
   setDietaryPreferences,
 } from "../../redux/apiClients/userAPI";
-import { useCategory } from "../../hooks/admin/useCategory";
+
+import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
+import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
+import { displayErrorToast } from "../../utils/toastUtil";
+import axios from "axios";
+import { getAuthConfig } from "../../utils/authHeaders";
 
 const Preferences = () => {
   const [step, setStep] = React.useState(0);
@@ -50,11 +56,23 @@ const Preferences = () => {
   const cuisines = useSelector(cuisinesSelector);
   const dietaryOptions = useSelector(dietaryOptionsSelector);
 
-  const { dietaryManagement, cuisineManagement } = useCategory();
-  const { fetchAllDietaryOptions } = dietaryManagement;
-  const { fetchAllCuisines } = cuisineManagement;
+  const updateLoginStatus = async () => {
+    try {
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_API}/auth/update`,
+        {},
+        getAuthConfig()
+      );
+      if (response.status === 200) {
+        console.log("Login status updated successfully.");
+        dispatch(getCurrentUserProfile());
+      }
+    } catch (error) {
+      console.error("Error updating login status:", error);
+      displayErrorToast(error);
+    }
+  };
 
-  // Modify handler to work directly with IDs
   const handleTempDietarySelections = (option) => {
     const optionId = typeof option === "string" ? option : option._id;
     setTempDietarySelections((prev) => {
@@ -66,7 +84,6 @@ const Preferences = () => {
     });
   };
 
-  // Modify handler to work directly with IDs
   const handleTempCuisineSelections = (cuisine) => {
     const cuisineId = typeof cuisine === "string" ? cuisine : cuisine._id;
     setTempCuisineSelections((prev) => {
@@ -103,8 +120,7 @@ const Preferences = () => {
   };
 
   const finishSetup = () => {
-    if (tempDietarySelections.size < 1 || tempCuisineSelections.size < 1) {
-      // Convert Set to array of IDs
+    if (tempDietarySelections.size > 0 || tempCuisineSelections.size > 0) {
       const dietarySelections = Array.from(tempDietarySelections);
       const cuisineSelections = Array.from(tempCuisineSelections);
 
@@ -125,20 +141,22 @@ const Preferences = () => {
       Promise.all(promises).finally(() => {
         setTimeout(() => {
           setLoading(false);
-
           navigate("/home");
         }, 3000);
       });
+
+      updateLoginStatus();
     } else {
       setLoading(false);
       navigate("/home");
+      updateLoginStatus();
     }
   };
 
   React.useEffect(() => {
-    fetchAllCuisines();
-    fetchAllDietaryOptions();
-  }, []);
+    dispatch(fetchDietaryOptions());
+    dispatch(fetchCuisines());
+  }, [dispatch]);
 
   React.useEffect(() => {
     if (tempDietarySelections.size > 0 || tempCuisineSelections.size > 0) {
@@ -289,8 +307,11 @@ const Preferences = () => {
             <Button
               onClick={finishSetup}
               variant="contained"
-              color="warning"
-              sx={{ cursor: "pointer", textTransform: "uppercase" }}
+              sx={{
+                cursor: "pointer",
+                textTransform: "uppercase",
+                bgcolor: "secondary.main",
+              }}
             >
               Next
             </Button>

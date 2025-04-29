@@ -43,9 +43,6 @@ export const useAuth = () => {
     dispatch(login(accountUser));
     console.log(user);
     dispatch(setUserProfile(user));
-    // if (isVerified) {
-    //   return navigate("/home");
-    // }
   };
 
   const accountRegister = async (e) => {
@@ -68,22 +65,9 @@ export const useAuth = () => {
       })
     );
 
-    const updatedUser = user;
-
-    if (updatedUser && isVerified) {
-      console.log("is User First LoggedIn?", updatedUser?.isFirstLoggedIn);
-
-      dispatch(setUserProfile(updatedUser));
-
-      if (updatedUser.isFirstLoggedIn) {
-        navigate("/pref");
-      } else {
-        navigate("/home");
-      }
-    } else if (updatedUser && updatedUser?.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/auth");
+    if (user && isVerified) {
+      console.log("This runs!");
+      dispatch(setUserProfile(user));
     }
   };
 

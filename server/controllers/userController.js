@@ -184,7 +184,7 @@ const addCuisinePreferences = async (req, res) => {
       userId,
       { $set: { cuisinePreferences: cuisineObjectIds } },
       { new: true, runValidators: true }
-    ).populate("cuisinePreferences"); // Populate to return full objects
+    ).populate("cuisinePreferences");
 
     if (!updatedUser) {
       return res.status(404).json({ status: 404, message: "User not found." });
@@ -193,7 +193,7 @@ const addCuisinePreferences = async (req, res) => {
     return res.status(200).json({
       status: 200,
       message: "Cuisine preferences updated successfully.",
-      data: updatedUser.cuisinePreferences, // Now contains full objects
+      data: updatedUser.cuisinePreferences,
     });
   } catch (error) {
     console.error("Error updating cuisine preferences:", error);
@@ -234,7 +234,7 @@ const addDietaryPreferences = async (req, res) => {
     return res.status(200).json({
       status: 200,
       message: "Dietary preferences updated successfully.",
-      data: updatedUser.dietaryRestrictions, // Now contains full objects
+      data: updatedUser.dietaryRestrictions,
     });
   } catch (error) {
     console.error("Error updating dietary preferences:", error);

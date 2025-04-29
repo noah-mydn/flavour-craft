@@ -166,7 +166,7 @@ const TopNavigationBar = () => {
       icon: <LocalDining />,
       hasSubmenu: true,
     },
-    // { label: "Favourites", link: "/favourites", icon: <Favorite /> },
+
     { label: "Community", link: "/post", icon: <Forum /> },
   ];
 

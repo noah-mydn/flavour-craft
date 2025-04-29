@@ -50,11 +50,18 @@ const AnimatedRoutes = () => {
   const location = useLocation();
 
   React.useEffect(() => {
-    console.log("This runs!");
     if (user && isVerified) {
-      dispatch(getCurrentUserProfile());
+      console.log("User is verified and logged in:", user);
+      dispatch(getCurrentUserProfile()).then((res) => {
+        console.log("Fetching latest profile...", res);
+        const updatedUser = res.payload;
+        if (updatedUser?.role === "user" && updatedUser?.isFirstLoggedIn) {
+          console.log("Redirecting after fetching latest profile");
+          navigate("/pref");
+        }
+      });
     }
-  }, [dispatch, user]);
+  }, [dispatch, user, isVerified]);
 
   React.useEffect(() => {
     if (accessToken) {

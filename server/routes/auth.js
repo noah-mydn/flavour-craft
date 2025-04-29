@@ -1,13 +1,20 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const { register, login, logout } = require("../controllers/authController");
+const {
+  register,
+  login,
+  logout,
+  updateLoginStatus,
+} = require("../controllers/authController");
 const passport = require("passport");
+const { authenticateToken } = require("../middlewares/authVerification");
 
 const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
+router.put("/update", authenticateToken, updateLoginStatus);
 
 // Route to initiate Google OAuth flow
 router.get(

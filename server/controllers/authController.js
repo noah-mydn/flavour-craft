@@ -125,6 +125,26 @@ const login = async (req, res) => {
   }
 };
 
+const updateLoginStatus = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.isFirstLoggedIn = false;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ status: 200, message: "Login status updated successfully" });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
 // Serialize and deserialize user
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -210,4 +230,5 @@ module.exports = {
   register,
   login,
   logout,
+  updateLoginStatus,
 };
