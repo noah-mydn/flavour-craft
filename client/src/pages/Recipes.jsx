@@ -34,7 +34,7 @@ import {
 } from "../redux/apiClients/recipeAPI";
 import FilterSort from "../components/FilterSort/FilterSort";
 import { SearchOff } from "@mui/icons-material";
-import { removeFilters, setSortType } from "../redux/reducers/recipesSlice";
+import { removeFilters } from "../redux/reducers/recipesSlice";
 
 const Recipes = () => {
   const theme = useTheme();
@@ -61,18 +61,23 @@ const Recipes = () => {
     setPage(value);
   };
 
+  const clearFilters = () => {
+    dispatch(removeFilters());
+    window.location.reload();
+  };
+
   React.useEffect(() => {
-    console.log(filters);
-    if (filterExists && filters && Object?.keys(filters)?.length > 0) {
+    if (filters && Object?.keys(filters)?.length > 0) {
+      console.log("It runs");
       dispatch(fetchFilteredRecipes({ filters, page, pageSize }));
+    } else {
+      console.log("Default runs");
+      dispatch(fetchRecipes({ sortValue, page, pageSize }));
     }
-  }, [filters, page, pageSize, dispatch]);
+  }, [filters, page, pageSize, dispatch, sortValue]);
 
-  React.useEffect(() => {
-    dispatch(fetchRecipes({ sortValue, page, pageSize }));
-  }, [sortValue, page, dispatch]);
+  console.log("FILTERs:", filters);
 
-  //console.log("Recipes:", recipes);
   return (
     <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
       <Grid container direction="column" spacing={3}>
@@ -145,7 +150,7 @@ const Recipes = () => {
                 variant="contained"
                 color="primary"
                 sx={{ mt: 2, borderRadius: 2, textTransform: "none", px: 4 }}
-                onClick={() => window.location.reload()}
+                onClick={clearFilters}
               >
                 Clear All Filters
               </Button>

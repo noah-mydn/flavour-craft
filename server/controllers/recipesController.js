@@ -477,7 +477,6 @@ const filterRecipes = async (req, res) => {
 
     let filterCriteria = [];
 
-    // Convert ingredients to array properly
     if (ingredients) {
       const ingredientsArray = Array.isArray(ingredients)
         ? ingredients
@@ -485,13 +484,11 @@ const filterRecipes = async (req, res) => {
       filterCriteria.push({ ingredients: { $in: ingredientsArray } });
     }
 
-    // Convert cuisine types to array and apply strict filtering
     if (cuisineTypes && cuisineTypes.length > 0) {
       const cuisineArray = Array.isArray(cuisineTypes)
         ? cuisineTypes
         : cuisineTypes.toString().split(",");
 
-      // Apply case-insensitive regex filtering for each cuisine type
       const regexCuisines = cuisineArray.map((cuisine) => ({
         cuisineTypes: { $regex: new RegExp(`^${cuisine.trim()}$`, "i") },
       }));
@@ -499,7 +496,6 @@ const filterRecipes = async (req, res) => {
       filterCriteria.push({ $or: regexCuisines });
     }
 
-    // Convert dietary preferences to array
     if (dietaryPreferences && dietaryPreferences.length > 0) {
       const dietaryArray = Array.isArray(dietaryPreferences)
         ? dietaryPreferences
@@ -507,14 +503,11 @@ const filterRecipes = async (req, res) => {
       filterCriteria.push({ dietaryPreferences: { $in: dietaryArray } });
     }
 
-    // Convert tags to array
     if (tags && tags.length > 0) {
       const tagArray = Array.isArray(tags) ? tags : tags.toString().split(",");
       filterCriteria.push({ tags: { $in: tagArray } });
     }
 
-    // Filter by cooking time
-    // Filter by cooking time
     if (cookingTime) {
       const operatorMap = {
         "<": "$lt",
@@ -530,26 +523,83 @@ const filterRecipes = async (req, res) => {
         const time = parseInt(match[2], 10);
 
         if (!isNaN(time)) {
-          // Extract just the numeric part from the cookingTime string and convert to number for comparison
           filterCriteria.push({
             $expr: {
               [operatorMap[operator]]: [
                 {
-                  $toInt: {
-                    $arrayElemAt: [
-                      {
-                        $split: [
-                          {
-                            $arrayElemAt: [
-                              { $split: ["$cookingTime", ","] },
-                              0,
-                            ],
-                          },
-                          " ",
-                        ],
-                      },
-                      0,
-                    ],
+                  $let: {
+                    vars: {
+                      ct: { $toLower: "$cookingTime" },
+                    },
+                    in: {
+                      $add: [
+                        {
+                          $cond: [
+                            {
+                              $regexMatch: {
+                                input: "$$ct",
+                                regex: /([\d.]+)\s*(hour|hours|hr|hrs)/,
+                              },
+                            },
+                            {
+                              $multiply: [
+                                {
+                                  $toDouble: {
+                                    $arrayElemAt: [
+                                      {
+                                        $getField: {
+                                          field: "captures",
+                                          input: {
+                                            $regexFind: {
+                                              input: "$$ct",
+                                              regex:
+                                                /([\d.]+)\s*(hour|hours|hr|hrs)/,
+                                            },
+                                          },
+                                        },
+                                      },
+                                      0,
+                                    ],
+                                  },
+                                },
+                                60,
+                              ],
+                            },
+                            0,
+                          ],
+                        },
+                        {
+                          $cond: [
+                            {
+                              $regexMatch: {
+                                input: "$$ct",
+                                regex: /(\d+)\s*(minute|minutes|min|mins)/,
+                              },
+                            },
+                            {
+                              $toInt: {
+                                $arrayElemAt: [
+                                  {
+                                    $getField: {
+                                      field: "captures",
+                                      input: {
+                                        $regexFind: {
+                                          input: "$$ct",
+                                          regex:
+                                            /(\d+)\s*(minute|minutes|min|mins)/,
+                                        },
+                                      },
+                                    },
+                                  },
+                                  0,
+                                ],
+                              },
+                            },
+                            0,
+                          ],
+                        },
+                      ],
+                    },
                   },
                 },
                 time,
@@ -560,11 +610,9 @@ const filterRecipes = async (req, res) => {
       }
     }
 
-    // Convert pagination values to numbers
     const pageNumber = parseInt(page, 10) || 1;
     const pageSizeNumber = parseInt(pageSize, 10) || 10;
 
-    // Construct query properly
     const query = filterCriteria.length ? { $and: filterCriteria } : {};
     console.log("Filtered Query:", JSON.stringify(query, null, 2));
 
@@ -1108,19 +1156,19 @@ const getTimeBasedRecipe = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Fetch user and populate dietary restrictions
     const user = await User.findById(userId).populate(
       "dietaryRestrictions",
       "_id name"
     );
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const dietaryIds = user.dietaryRestrictions.map((d) => d._id);
+    const dietaryNames = user.dietaryRestrictions.map((d) => d.name);
 
     const time = getTimePeriod();
     console.log("Time:", time);
+    console.log("Dietary Names:", dietaryNames);
 
-    const recipes = await getRecipesByTimeAndDietary(time, dietaryIds);
+    const recipes = await getRecipesByTimeAndDietary(time, dietaryNames);
 
     res.status(200).json({ time, recipes });
   } catch (error) {

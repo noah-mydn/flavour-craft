@@ -121,8 +121,8 @@ export const useRecipe = () => {
         `${process.env.REACT_APP_BASE_API}/recipes/recommend`,
         getAuthConfig()
       );
-      console.log(response.data);
-      if (response.data.status === 200) {
+
+      if (response.data.recipes) {
         setTimeBasedRecipes(response?.data?.recipes);
         setTime(response?.data?.time);
       }

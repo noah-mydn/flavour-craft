@@ -89,6 +89,9 @@ const useProfile = (user) => {
     const cuisines = profileData.cuisinePreferences.map((item) => item._id);
     const dietary = profileData.dietaryRestrictions.map((item) => item._id);
 
+    console.log("Cuisines:", cuisines);
+    console.log("Dietary:", dietary);
+
     dietary.forEach((id) => {
       formData.append("dietaryRestrictions", id);
     });

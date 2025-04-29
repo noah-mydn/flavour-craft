@@ -12,14 +12,31 @@ const editUserProfile = async (req, res) => {
     const userId = req.user.userId;
     const updateData = req.body;
 
-    // if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-    //   return res.status(400).json({ message: "Invalid user ID format" });
-    // }
-
     if (req.file) {
       updateData.userImg = req.file.path;
     }
-    // Only allow particular fields
+
+    if (!Object.hasOwn(req.body, "cuisinePreferences")) {
+      updateData.cuisinePreferences = [];
+    }
+
+    if (!Object.hasOwn(req.body, "dietaryRestrictions")) {
+      updateData.dietaryRestrictions = [];
+    }
+
+    const normalizeArray = (field) => {
+      const value = updateData[field];
+      if (value === undefined) return undefined;
+      if (Array.isArray(value)) return value;
+      return [value];
+    };
+
+    ["cuisinePreferences", "dietaryRestrictions"].forEach((field) => {
+      if (updateData[field]) {
+        updateData[field] = normalizeArray(field);
+      }
+    });
+
     const allowedFields = [
       "firstName",
       "lastName",
@@ -33,7 +50,6 @@ const editUserProfile = async (req, res) => {
       )
     );
 
-    // If no valid fields are provided, return an error
     if (Object.keys(filteredUpdateData).length === 0) {
       return res
         .status(400)

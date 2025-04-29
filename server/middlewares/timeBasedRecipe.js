@@ -1,3 +1,4 @@
+const { strictDietaryRestrictions } = require("../constants/data");
 const Recipe = require("../models/Recipes");
 
 const getTimePeriod = () => {
@@ -12,11 +13,31 @@ const getTimePeriod = () => {
 const getRecipesByTimeAndDietary = async (time, dietaryPreference) => {
   let timeTags = [];
 
-  // Define time-based tags
   if (time === "morning") {
-    timeTags = ["Breakfast", "Brunch", "Smoothie", "Porridge", "Beverage"];
+    timeTags = [
+      "Breakfast",
+      "Brunch",
+      "Smoothie",
+      "Porridge",
+      "Beverage",
+      "Quick",
+      "Muffins",
+      "Pancakes",
+      "Waffles",
+      "Omelette",
+      "Eggs",
+    ];
   } else if (time === "afternoon") {
-    timeTags = ["Lunch", "Rice Bowls", "Salad", "Soups", "Stir-Fry"];
+    timeTags = [
+      "Lunch",
+      "Rice Bowls",
+      "Salad",
+      "Soups",
+      "Stir-Fry",
+      "Curry",
+      "Pasta",
+      "Noodles",
+    ];
   } else if (time === "evening") {
     timeTags = [
       "Dinner",
@@ -25,6 +46,11 @@ const getRecipesByTimeAndDietary = async (time, dietaryPreference) => {
       "Noodles",
       "Pasta",
       "Barbecue",
+      "Soup",
+      "Salad",
+      "Stir-Fry",
+      "Curry",
+      "Stew",
     ];
   } else {
     timeTags = [
@@ -34,22 +60,85 @@ const getRecipesByTimeAndDietary = async (time, dietaryPreference) => {
       "Drinks",
       "Pizza Night",
       "Appetizer",
+      "Muffins",
     ];
   }
+  // Lowercase dietary prefs
+  //const lowerPrefs = dietaryPreference.map((p) => p.toLowerCase());
 
-  try {
-    const query = {
-      tags: { $in: timeTags }, // Filter recipes with matching time tags
-    };
+  const strictPrefs = dietaryPreference.filter((p) =>
+    strictDietaryRestrictions.includes(p)
+  );
+  const optionalPrefs = dietaryPreference.filter(
+    (p) => !strictDietaryRestrictions.includes(p)
+  );
 
-    console.log("First QUERY:", query);
+  const baseExpr = {
+    $expr: {
+      $gt: [
+        {
+          $size: {
+            $setIntersection: [
+              {
+                $map: { input: "$tags", as: "tag", in: { $toLower: "$$tag" } },
+              },
+              timeTags.map((tag) => tag.toLowerCase()),
+            ],
+          },
+        },
+        0,
+      ],
+    },
+  };
 
-    if (dietaryPreference && dietaryPreference.length > 0) {
-      query.dietaryPreferences = { $in: dietaryPreference };
+  let query;
+
+  if (strictPrefs.length > 0) {
+    const strictFilter = { dietaryPreferences: { $all: strictPrefs } };
+
+    if (optionalPrefs.length > 0) {
+      const optionalFilter = {
+        dietaryPreferences: { $in: optionalPrefs },
+      };
+
+      query = {
+        $and: [
+          baseExpr,
+          {
+            $or: [
+              { dietaryPreferences: { $all: strictPrefs } },
+              {
+                $and: [
+                  { dietaryPreferences: { $all: strictPrefs } },
+                  optionalFilter,
+                ],
+              },
+            ],
+          },
+        ],
+      };
+    } else {
+      query = {
+        $and: [baseExpr, strictFilter],
+      };
     }
+  } else if (optionalPrefs.length > 0) {
+    query = {
+      $and: [baseExpr, { dietaryPreferences: { $in: optionalPrefs } }],
+    };
+  } else {
+    query = baseExpr;
+  }
 
-    console.log("Final QUERY:", query);
+  console.log("Final Query:", JSON.stringify(query, null, 2));
+  const allMatchingTime = await Recipe.find(baseExpr);
+  console.log("Recipes matching timeTags only:", allMatchingTime.length);
 
+  const allMatchingStrict = await Recipe.find({
+    dietaryPreferences: { $all: strictPrefs },
+  });
+  console.log("Recipes matching strict only:", allMatchingStrict.length);
+  try {
     const recipes = await Recipe.find(query).limit(5);
     return recipes;
   } catch (error) {

@@ -75,7 +75,6 @@ const recipesSlice = createSlice({
       .addCase(fetchFilteredRecipes.pending, (state) => {
         state.recipesLoading = true;
         state.recipesError = null;
-        state.filterExists = false;
       })
       .addCase(fetchFilteredRecipes.fulfilled, (state, action) => {
         console.log("Filtered recipes:", action.payload);

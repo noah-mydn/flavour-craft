@@ -1,11 +1,10 @@
 import { Box, Typography } from "@mui/material";
 import React from "react";
 import theme from "../../theme/theme";
-import PostDialog from "../Community/PostDialog";
 import { setPost } from "../../redux/reducers/postSlice";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-const LabelOnBanner = ({ isMobile, campaign }) => {
+const LabelOnBanner = ({ isMobile, isTablet, campaign }) => {
   const { title, hashtag } = campaign;
   const navigate = useNavigate();
 
@@ -28,9 +27,9 @@ const LabelOnBanner = ({ isMobile, campaign }) => {
         cursor: "pointer",
         position: "absolute",
         top: isMobile ? "18%" : "50%",
-        left: "50%",
+        left: isMobile ? "50%" : isTablet ? "40%" : "50%",
         transform: isMobile ? "translate(-50%, -50%)" : "translate(20%, -50%)",
-        width: isMobile ? "80%" : "30%",
+        width: isMobile ? "80%" : isTablet ? "40%" : "30%",
         textAlign: "center",
       }}
     >

@@ -97,6 +97,7 @@ const FilterSort = ({ page, pageSize }) => {
   ];
 
   const handleClearFilters = () => {
+    dispatch(removeFilters());
     window.location.reload();
   };
 

@@ -6,7 +6,7 @@ import { Box, Typography, useMediaQuery } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import theme from "../../../theme/theme";
-import CarouselRecpieCard from "./CarouselRecipeCard";
+
 import RecipeCard from "../RecipeCard";
 
 const NextArrow = (props) => {
@@ -47,16 +47,14 @@ const PrevArrow = (props) => {
   );
 };
 
-const Carousel = ({ recipes, heading }) => {
+const Carousel = ({ recipes, infinite }) => {
   const isDesktop = useMediaQuery(theme.breakpoints.down("xl"));
   const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  console.log("Trending Recipes:", recipes);
-
   const settings = {
     dots: true,
-    infinite: true,
+    infinite: infinite,
     speed: 500,
     slidesToShow: isMobile ? 1.5 : isTablet ? 3.7 : isDesktop ? 4.5 : 5,
     slidesToScroll: 1,
@@ -86,17 +84,6 @@ const Carousel = ({ recipes, heading }) => {
 
   return (
     <React.Fragment>
-      <Typography
-        fontWeight="bold"
-        width="100%"
-        variant={isMobile ? "h5" : "h4"}
-        color="primary.light"
-        gutterBottom
-        textAlign="center"
-        fontFamily={theme.typography.fontFamily[0]}
-      >
-        "{heading}"
-      </Typography>
       <Box my={3}>
         <Slider {...settings}>
           {recipes?.map((recipe) => (
