@@ -5,6 +5,7 @@ import {
 } from "../../redux/selectors/selectors";
 import { Navigate, Outlet } from "react-router-dom";
 import TopNavigationBar from "../Navigations/TopNavigationBar";
+import Footer from "../Footer/Footer";
 
 const PrivateRoute = ({ adminOnly = false, children }) => {
   const isVerified = useSelector(isVerifiedSelector);
@@ -28,6 +29,7 @@ const PrivateRoute = ({ adminOnly = false, children }) => {
     <>
       {!adminOnly && <TopNavigationBar />}
       {children || <Outlet />}
+      {!adminOnly && <Footer />}
     </>
   );
 };
