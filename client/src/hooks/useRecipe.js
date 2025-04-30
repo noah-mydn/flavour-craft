@@ -59,11 +59,6 @@ export const useRecipe = () => {
   const handleSaveRecipe = async (recipeId) => {
     try {
       await dispatch(toggleSavedRecipe(recipeId)).unwrap();
-      if (profile?.savedRecipes?.includes(recipeId)) {
-        dispatch(saveRecipe(recipeId));
-      } else {
-        dispatch(removeRecipe(recipeId));
-      }
 
       return true;
     } catch (error) {

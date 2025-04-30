@@ -102,7 +102,7 @@ const RecipeOfTheDay = ({ recipe }) => {
           {" "}
           {/* Recipe Name */}
           <Typography
-            variant="h4"
+            variant={isMobile ? "h5" : "h4"}
             component="h1"
             fontWeight="bold"
             gutterBottom

@@ -31,12 +31,12 @@ const Footer = () => {
       sx={{
         bgcolor: "primary.dark",
         color: "primary.contrastText",
-        py: 6,
-        mt: "auto",
+        py: 2,
+        mt: 3,
       }}
     >
       <Container maxWidth="lg">
-        <Grid container spacing={4}>
+        <Grid container spacing={3}>
           {/* Logo and About */}
           <Grid item xs={12} sm={6} md={4}>
             <Typography
@@ -63,11 +63,11 @@ const Footer = () => {
               <Stack direction="row" spacing={1} alignItems="center">
                 <EmailIcon fontSize="small" />
                 <Link
-                  href="mailto:info@reciperecommender.com"
+                  href="mailto:info@flavourcraft.com"
                   color="inherit"
                   underline="hover"
                 >
-                  info@reciperecommender.com
+                  info@flavourcraft.com
                 </Link>
               </Stack>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -170,7 +170,7 @@ const Footer = () => {
           </Grid>
         </Grid>
 
-        <Divider sx={{ borderColor: "primary.light", my: 4 }} />
+        <Divider sx={{ borderColor: "primary.light", my: 2 }} />
 
         {/* Copyright */}
         <Box

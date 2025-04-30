@@ -41,10 +41,10 @@ const RecipeCard = ({ recipe, recipeId }) => {
     setSaved(saved);
   }, [profile, recipe]);
 
-  const likeRecipe = () => {
-    let success = handleSaveRecipe(recipe?._id);
+  const likeRecipe = async () => {
+    const success = await handleSaveRecipe(recipe._id);
     if (success) {
-      setSaved(!saved);
+      setSaved((prev) => !prev);
     }
   };
 
