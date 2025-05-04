@@ -27,6 +27,7 @@ import {
 } from "@mui/icons-material";
 import useProfile from "../../hooks/useProfile";
 import { useAuth } from "../../hooks/useAuth";
+import { displaySuccessToast } from "../../utils/toastUtil";
 
 const AccountSettingsDialog = ({ open, onClose, user }) => {
   const theme = useTheme();
@@ -84,10 +85,11 @@ const AccountSettingsDialog = ({ open, onClose, user }) => {
     handleChangePassword(onClose);
   };
 
-  const accountDeleteSuccess = () => {
+  const accountDeleteSuccess = (successMsg) => {
+    displaySuccessToast(successMsg);
     setTimeout(() => {
       accountLogout();
-    }, [1000]);
+    }, 2000);
   };
 
   const handleDeleteAccount = async () => {

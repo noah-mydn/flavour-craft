@@ -36,7 +36,6 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
   const dispatch = useDispatch();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const user = useSelector(userSelector);
-  // const isResetState = useSelector(isResetSelector);
 
   const {
     images,
@@ -368,7 +367,7 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
               transition: "all 0.2s",
             }}
           >
-            {uploading ? "Posting..." : "Post"}
+            {uploading ? "Saving..." : isEdit ? "Update Post" : "Post"}
           </Button>
         </DialogActions>
       </Box>

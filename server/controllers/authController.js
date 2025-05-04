@@ -16,13 +16,11 @@ const register = async (req, res) => {
         .json({ status: 400, message: "User already exists!" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = new User({
       firstName,
       lastName,
       email,
-      password: hashedPassword,
+      password,
       isFirstLoggedIn: true,
     });
     await newUser.save();
@@ -114,7 +112,7 @@ const login = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        isFirstLoggedIn: user.isFirstLoggedIn, // This will now be false after first login
+        isFirstLoggedIn: user.isFirstLoggedIn,
         authProvider: user.authProvider,
       },
     });

@@ -59,7 +59,7 @@ const AddPost = () => {
 
         <InputBase
           fullWidth
-          placeholder="What are you cooking today?"
+          placeholder="What are you cooking..."
           sx={{
             flexGrow: 1,
             fontSize: "1rem",

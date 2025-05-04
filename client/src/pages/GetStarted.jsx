@@ -69,13 +69,13 @@ const GetStarted = ({ isMobile, isTablet }) => {
               Turn Ingredients Into Masterpieces
             </Typography>
             <Typography
-              textAlign={isTablet ? "justify" : "left"}
               variant={isMobile ? "body2" : "body1"}
               fontFamily={theme.typography.fontFamily[1]}
               paddingTop={4}
               color="text.secondary"
               fontSize={14}
               fontWeight="400"
+              textAlign={isMobile ? "justify" : ""}
               sx={{
                 width: isMobile ? "100%" : isTablet ? "70%" : "auto",
                 margin: "0 auto",

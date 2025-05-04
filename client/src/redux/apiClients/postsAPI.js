@@ -145,7 +145,7 @@ export const fetchComments = createAsyncThunk(
   async (postId, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${BASE_URL}/${postId}/comments`,
+        `${BASE_URL}${postId}/comments`,
         getAuthConfig()
       );
       return response.data.comments;

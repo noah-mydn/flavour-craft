@@ -153,8 +153,8 @@ const useProfile = (user) => {
       );
       console.log(response.data);
       if (response?.data?.status === 200) {
-        onSuccess();
-        displaySuccessToast(response?.data?.message);
+        onSuccess(response?.data?.message);
+        //displaySuccessToast(response?.data?.message);
       }
     } catch (error) {
       console.error("Delete account failed:", error);

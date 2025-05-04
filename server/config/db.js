@@ -13,6 +13,7 @@ const {
   recalculateRecipeRatings,
 } = require("../controllers/recipesController");
 const UserAnalytics = require("../models/UserAnalytics");
+const Posts = require("../models/community/Posts");
 
 const connectDB = async () => {
   try {
@@ -113,6 +114,15 @@ const connectDB = async () => {
     //   email: "admin3@flavourcraft.com",
     //   password: "@dmiN123!",
     // });
+    // await Posts.find({ downvotes: { $exists: true } });
+
+    // await Posts.updateMany(
+    //   {},
+    //   {
+    //     $set: { isRemoved: false },
+    //     $unset: { downvotes: 1 },
+    //   }
+    // );
   } catch (err) {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);

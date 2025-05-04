@@ -30,11 +30,7 @@ import PostAuthorInfo from "../DetailedPost/PostAuthorInfo";
 import CommentSection from "../DetailedPost/CommentSection";
 import PostImageGallery from "../DetailedPost/PostImageGallery";
 import { Link, useParams } from "react-router-dom";
-import {
-  fetchPostById,
-  fetchPosts,
-  likePost,
-} from "../../redux/apiClients/postsAPI";
+import { fetchPosts, likePost } from "../../redux/apiClients/postsAPI";
 import { usePostDetail } from "../../hooks/community/usePostDetail";
 
 const DetailedPostCard = ({ isAdmin }) => {
@@ -54,10 +50,10 @@ const DetailedPostCard = ({ isAdmin }) => {
   };
 
   React.useEffect(() => {
-    if (postId && posts.some((p) => p._id === postId)) {
+    if (postId) {
       getPostByPostId(postId);
     }
-  }, [postId, posts]);
+  }, [postId]);
 
   React.useEffect(() => {
     dispatch(fetchPosts(1, 100));

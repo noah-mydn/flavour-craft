@@ -12,7 +12,7 @@ const {
 const router = express.Router();
 
 router.get("/", adminAuth, viewReports);
-router.delete("/:postId/remove", adminAuth, removePost);
+router.put("/:postId/remove", adminAuth, removePost);
 router.put("/:postId/ignore", adminAuth, ignoreReport);
 router.post("/:postId", authenticateToken, reportPost);
 module.exports = router;

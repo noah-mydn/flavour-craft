@@ -15,7 +15,7 @@ const PostSchema = new mongoose.Schema({
   tags: { type: [String], default: [] },
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  downvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  isRemoved: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

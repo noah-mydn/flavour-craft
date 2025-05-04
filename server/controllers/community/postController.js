@@ -66,8 +66,6 @@ exports.getAllPosts = async (req, res) => {
     pageSize = parseInt(pageSize);
     const skip = (page - 1) * pageSize;
 
-    console.log("Query Parameters:", req.query);
-
     let posts, totalCount;
 
     switch (sort) {
@@ -75,9 +73,8 @@ exports.getAllPosts = async (req, res) => {
         const since = new Date();
         since.setHours(since.getHours() - 24);
 
-        // Compute a simple trending score for ALL posts based on
-        // up/down votes & comments in the last 24h
         const agg = await Post.aggregate([
+          { $match: { isRemoved: { $ne: true } } },
           {
             $addFields: {
               recentUpvotes: {
@@ -89,7 +86,6 @@ exports.getAllPosts = async (req, res) => {
                   },
                 },
               },
-
               recentComments: {
                 $size: {
                   $filter: {
@@ -117,32 +113,36 @@ exports.getAllPosts = async (req, res) => {
           path: "author",
           select: "firstName lastName userImg",
         });
-        totalCount = await Post.countDocuments();
+        totalCount = await Post.countDocuments({ isRemoved: { $ne: true } });
         break;
       }
 
       case "popular": {
-        // sort by total upvotes
         const agg = await Post.aggregate([
+          { $match: { isRemoved: { $ne: true } } }, // exclude removed posts
           { $addFields: { upvoteCount: { $size: "$upvotes" } } },
           { $sort: { upvoteCount: -1 } },
           { $skip: skip },
           { $limit: pageSize },
         ]);
-        posts = agg;
-        totalCount = await Post.countDocuments();
+
+        posts = await Post.populate(agg, {
+          path: "author",
+          select: "firstName lastName userImg",
+        });
+        totalCount = await Post.countDocuments({ isRemoved: { $ne: true } });
         break;
       }
 
       case "recent":
       default: {
-        // default: newest first
-        posts = await Post.find()
+        posts = await Post.find({ isRemoved: { $ne: true } }) // filter here
           .sort({ createdAt: -1 })
-          .populate("author", "firstName lastName userImg") // Check if 'author' is a valid ObjectId reference
+          .populate("author", "firstName lastName userImg")
           .skip(skip)
           .limit(pageSize);
-        totalCount = await Post.countDocuments();
+
+        totalCount = await Post.countDocuments({ isRemoved: { $ne: true } });
         break;
       }
     }
@@ -161,6 +161,39 @@ exports.getAllPosts = async (req, res) => {
     return res.status(500).json({
       status: 500,
       message: "Failed to retrieve posts",
+      error: error.message,
+    });
+  }
+};
+
+exports.getPostById = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId.toString()).populate(
+      "author",
+      "firstName lastName userImg"
+    );
+
+    if (!post) {
+      return res.status(404).json({
+        status: 404,
+        message: "Post not found",
+      });
+    }
+
+    // Log post status
+    if (post.isRemoved) {
+      console.log(`Post ${post._id} is removed but shown explicitly`);
+    }
+
+    return res.status(200).json({
+      status: 200,
+      post,
+    });
+  } catch (error) {
+    console.error("Error fetching post:", error.message);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to retrieve post",
       error: error.message,
     });
   }
@@ -306,38 +339,6 @@ exports.getPostsByTags = async (req, res) => {
     res.status(500).json({
       status: 500,
       message: "Failed to retrieve posts by tags",
-      error: error.message,
-    });
-  }
-};
-
-exports.getPostById = async (req, res) => {
-  try {
-    console.time("getPostById Query");
-
-    const post = await Post.findById(req.params.postId.toString()).populate(
-      "author",
-      "firstName lastName userImg"
-    );
-
-    console.timeEnd("getPostById Query");
-
-    if (!post) {
-      return res.status(404).json({
-        status: 404,
-        message: "Post not found",
-      });
-    }
-
-    res.status(200).json({
-      status: 200,
-      post,
-    });
-  } catch (error) {
-    console.error("Error fetching post:", error.message);
-    res.status(500).json({
-      status: 500,
-      message: "Failed to retrieve post",
       error: error.message,
     });
   }

@@ -29,8 +29,9 @@ export const useModeration = () => {
   const removeReportedPost = async (postId) => {
     setLoading(true);
     try {
-      const response = await axios.delete(
+      const response = await axios.put(
         `${process.env.REACT_APP_BASE_API}/community/report/${postId}/remove`,
+        {},
         getAuthConfig()
       );
       if (response.status === 200) {

@@ -128,7 +128,7 @@ const GenerateRecipe = () => {
               )}
 
               {/* Empty state */}
-              {/* {!generateLoading &&
+              {!generateLoading &&
                 !errorGeneration &&
                 generatedRecipe?.length === 0 && (
                   <Box
@@ -151,7 +151,7 @@ const GenerateRecipe = () => {
                       Generate" to create recipe suggestion.
                     </Typography>
                   </Box>
-                )} */}
+                )}
 
               {/* Recipe results */}
               {!generateLoading &&

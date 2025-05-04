@@ -475,7 +475,7 @@ const RecipeManagement = () => {
           <Button
             onClick={updateRecipeThumbnail}
             variant="contained"
-            color="success"
+            color="primary"
             disabled={loading}
           >
             {loading ? (

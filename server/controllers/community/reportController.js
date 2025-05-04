@@ -1,6 +1,6 @@
 const Report = require("../../models/community/Reports");
 const Post = require("../../models/community/Posts");
-
+const mongoose = require("mongoose");
 exports.reportPost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -68,19 +68,27 @@ exports.removePost = async (req, res) => {
     if (!req.user || req.user.role !== "admin") {
       return res.status(401).json({ message: "Unauthorized" });
     }
+
     const { postId } = req.params;
 
-    // delete the post
-    const deleted = await Post.findByIdAndDelete(postId);
-    if (!deleted) {
+    const post = await Post.findByIdAndUpdate(
+      postId,
+      { isRemoved: true, status: "Removed" },
+      { new: true }
+    );
+
+    if (!post) {
       return res.status(404).json({ message: "Post not found." });
     }
 
-    // mark all related reports as Removed
-    await Report.updateMany({ post: postId }, { status: "Removed" });
+    const result = await Report.updateMany(
+      { post: postId },
+      { status: "Removed" }
+    );
 
     return res.status(200).json({
-      message: "Post removed and reports marked Removed.",
+      message: "Post soft-deleted and reports marked Removed.",
+      updatedReports: result.modifiedCount ?? result.nModified,
     });
   } catch (err) {
     return res.status(500).json({

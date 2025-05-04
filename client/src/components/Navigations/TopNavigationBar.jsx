@@ -198,7 +198,12 @@ const TopNavigationBar = () => {
                 <MenuIcon color="primary" />
               </IconButton>
 
-              <Box display="flex" justifyContent="center">
+              <Box
+                display="flex"
+                justifyContent="center"
+                component="a"
+                href="/home"
+              >
                 <img src="/logo.png" alt="Logo" width={130} height={60} />
               </Box>
             </Box>
@@ -214,7 +219,12 @@ const TopNavigationBar = () => {
             </IconButton>
           )}
           {(isMobile || isDesktop) && (
-            <Box display="flex" justifyContent="center">
+            <Box
+              display="flex"
+              justifyContent="center"
+              component="a"
+              href="/home"
+            >
               <img src="/logo.png" alt="Logo" width={130} height={60} />
             </Box>
           )}
@@ -272,7 +282,7 @@ const TopNavigationBar = () => {
                                   textDecoration: "none",
                                   color: theme.palette.secondary.dark,
                                   "&:hover": {
-                                    bgcolor: theme.palette.primary.light,
+                                    bgcolor: theme.palette.secondary.dark,
                                     color: theme.palette.common.white,
                                   },
                                 }}
@@ -311,7 +321,7 @@ const TopNavigationBar = () => {
                                             color: theme.palette.secondary.dark,
                                             "&:hover": {
                                               bgcolor:
-                                                theme.palette.primary.light,
+                                                theme.palette.secondary.dark,
                                               color: theme.palette.common.white,
                                             },
                                           }}
@@ -371,7 +381,13 @@ const TopNavigationBar = () => {
           },
         }}
       >
-        <Box display="flex" justifyContent="center" py={2}>
+        <Box
+          display="flex"
+          justifyContent="center"
+          py={2}
+          component="a"
+          href="/home"
+        >
           <img src="/logo.png" alt="Logo" width={130} height={60} />
         </Box>
 
@@ -385,7 +401,7 @@ const TopNavigationBar = () => {
           px={2}
           py={1}
           sx={{
-            bgcolor: theme.palette.secondary.main,
+            bgcolor: theme.palette.primary.main,
             color: "white",
           }}
         >
@@ -436,7 +452,7 @@ const TopNavigationBar = () => {
                   >
                     <ListItemIcon
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                       }}
                     >
                       {nav.icon}
@@ -444,7 +460,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={nav.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -470,7 +486,7 @@ const TopNavigationBar = () => {
                   >
                     <ListItemIcon
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                       }}
                     >
                       {nav.icon}
@@ -478,7 +494,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={nav.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -519,7 +535,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={item.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -546,7 +562,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={item.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -591,7 +607,7 @@ const TopNavigationBar = () => {
                   <ListItemText
                     primary={cuisine.name}
                     sx={{
-                      color: theme.palette.secondary.dark,
+                      color: theme.palette.primary.light,
                       fontWeight: "bold",
                     }}
                   />

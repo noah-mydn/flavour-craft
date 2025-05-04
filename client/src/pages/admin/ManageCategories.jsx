@@ -414,6 +414,8 @@ const ManageCategories = () => {
             borderBottom: "1px solid #e0e0e0",
             pb: 2,
             position: "relative",
+            color: "white",
+            bgcolor: theme.palette.primary.main,
           }}
         >
           {editMode ? "Edit Category" : "Add New Category"}
@@ -472,7 +474,9 @@ const ManageCategories = () => {
                       });
                     }}
                     color={
-                      currentCategory?.type === "dietary" ? "info" : "default"
+                      currentCategory?.type === "dietary"
+                        ? "primary"
+                        : "default"
                     }
                     clickable
                   />
@@ -489,7 +493,9 @@ const ManageCategories = () => {
                       });
                     }}
                     color={
-                      currentCategory?.type === "cuisine" ? "info" : "default"
+                      currentCategory?.type === "cuisine"
+                        ? "primary"
+                        : "default"
                     }
                     clickable
                   />

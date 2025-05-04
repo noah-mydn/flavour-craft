@@ -24,7 +24,7 @@ import cuisineFlags from "../../../constants/flags";
 
 const RecipeOfTheDay = ({ recipe }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
 
   return (
@@ -44,9 +44,9 @@ const RecipeOfTheDay = ({ recipe }) => {
       <DetailCard
         sx={{
           display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gridTemplateRows: isMobile ? "auto 1fr" : "1fr",
-          gap: 2,
+          gap: 1,
           mt: 4,
           boxShadow: 1.5,
         }}

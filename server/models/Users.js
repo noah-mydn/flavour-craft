@@ -85,14 +85,14 @@ userSchema.pre("save", async function (next) {
 // Remove unnecessary fields for admin
 userSchema.pre("save", function (next) {
   if (this.role === "admin") {
-    this.dietaryRestrictions = undefined;
-    this.cuisinePreferences = undefined;
-    this.savedRecipes = undefined;
-    this.myRecipeGenerations = undefined;
-    this.ratedRecipes = undefined;
-    this.isFirstLoggedIn = undefined;
-    this.isRestricted = undefined;
-    this.authProvider = undefined;
+    delete this.dietaryRestrictions;
+    delete this.cuisinePreferences;
+    delete this.savedRecipes;
+    delete this.myRecipeGenerations;
+    delete this.ratedRecipes;
+    delete this.isFirstLoggedIn;
+    delete this.isRestricted;
+    delete this.authProvider;
   }
   next();
 });

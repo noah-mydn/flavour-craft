@@ -44,6 +44,7 @@ import PageHeader from "../../components/Admin/PageHeader";
 import { useModeration } from "../../hooks/admin/useModeration";
 import { formatDate } from "../../utils/timeFormatter";
 import { useNavigate } from "react-router-dom";
+import { DetailCard } from "../../styles/ContainerStyles";
 
 const ReportedContent = () => {
   const theme = useTheme();
@@ -57,7 +58,7 @@ const ReportedContent = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
 
-  let fullScreen = theme.breakpoints.down("sm");
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const {
     reports,
@@ -96,8 +97,9 @@ const ReportedContent = () => {
     setDialogOpen(true);
   };
 
-  const handleRemovePost = (postId) => {
-    removeReportedPost(postId);
+  const handleRemovePost = (reportedPost) => {
+    console.log("Reported Post:", reportedPost);
+    removeReportedPost(reportedPost?.post?._id);
     setDialogOpen(false);
   };
 
@@ -161,7 +163,7 @@ const ReportedContent = () => {
   const visibleColumns = getVisibleColumns();
 
   return (
-    <Box>
+    <Box sx={{ p: isMobile ? 0 : 3, maxWidth: 1200, margin: "0 auto" }}>
       <PageHeader
         title="Reported Content"
         description="Review and manage content reported by users"
@@ -170,221 +172,221 @@ const ReportedContent = () => {
         onButtonClick={() => console.log("Export reports")}
       />
 
-      <Card elevation={2}>
-        <CardContent>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            mb={2}
-            flexWrap="wrap"
-            gap={2}
-          >
-            <FormControl sx={{ minWidth: 200 }} size="small">
-              <InputLabel>Filter by Status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Filter by Status"
-                onChange={handleStatusFilterChange}
-              >
-                <MenuItem value="All">All</MenuItem>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="Ignored">Ignored</MenuItem>
-                <MenuItem value="Removed">Removed</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-
-          {reportsLoading ? (
-            <Box display="flex" justifyContent="center" p={3}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableContainer
-              component={Paper}
-              elevation={0}
-              sx={{ overflow: "auto" }}
+      <DetailCard>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          mb={2}
+          flexWrap="wrap"
+          gap={2}
+        >
+          <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Filter by Status</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Filter by Status"
+              onChange={handleStatusFilterChange}
             >
-              <Table sx={{ minWidth: 650 }}>
-                <TableHead
-                  sx={{
-                    backgroundColor: theme.palette.primary.main,
-                  }}
-                >
-                  <TableRow>
-                    {visibleColumns.includes("Post") && (
-                      <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
-                        Post
-                      </TableCell>
-                    )}
+              <MenuItem value="All">All</MenuItem>
+              <MenuItem value="Pending">Pending</MenuItem>
+              <MenuItem value="Ignored">Ignored</MenuItem>
+              <MenuItem value="Removed">Removed</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-                    {visibleColumns.includes("Reported By") && (
-                      <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
-                        Reported By
-                      </TableCell>
-                    )}
+        {reportsLoading ? (
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer
+            component={Paper}
+            elevation={0}
+            sx={{ overflow: "auto" }}
+          >
+            <Table sx={{ minWidth: 650 }}>
+              <TableHead
+                sx={{
+                  backgroundColor: theme.palette.primary.main,
+                }}
+              >
+                <TableRow>
+                  {visibleColumns.includes("Post") && (
+                    <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
+                      Post
+                    </TableCell>
+                  )}
 
-                    {visibleColumns.includes("Reason") && (
-                      <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
-                        Reason
-                      </TableCell>
-                    )}
+                  {visibleColumns.includes("Reported By") && (
+                    <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
+                      Reported By
+                    </TableCell>
+                  )}
 
-                    {visibleColumns.includes("Date") && (
-                      <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
-                        <TableSortLabel
-                          active={true}
-                          direction={sortDirection}
-                          onClick={toggleSortDirection}
-                          sx={{
-                            color: "#fff !important",
-                            "&.MuiTableSortLabel-root:hover": {
-                              color: "#fff",
-                            },
-                            "& .MuiTableSortLabel-icon": {
-                              color: "#fff !important",
-                            },
-                          }}
-                        >
-                          Date
-                        </TableSortLabel>
-                      </TableCell>
-                    )}
+                  {visibleColumns.includes("Reason") && (
+                    <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
+                      Reason
+                    </TableCell>
+                  )}
 
-                    {visibleColumns.includes("Status") && (
-                      <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
-                        Status
-                      </TableCell>
-                    )}
-
-                    {visibleColumns.includes("Actions") && (
-                      <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
-                        Actions
-                      </TableCell>
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedData.length > 0 ? (
-                    paginatedData.map((report) => (
-                      <TableRow
-                        key={report?._id}
-                        hover
+                  {visibleColumns.includes("Date") && (
+                    <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
+                      <TableSortLabel
+                        active={true}
+                        direction={sortDirection}
+                        onClick={toggleSortDirection}
                         sx={{
-                          cursor: "pointer",
-                          "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
+                          color: "#fff !important",
+                          "&.MuiTableSortLabel-root:hover": {
+                            color: "#fff",
+                          },
+                          "& .MuiTableSortLabel-icon": {
+                            color: "#fff !important",
                           },
                         }}
                       >
-                        {visibleColumns.includes("Post") && (
-                          <TableCell onClick={() => handleViewReport(report)}>
-                            <Typography
-                              fontWeight={"bold"}
-                              variant="subtitle2"
-                              noWrap
-                              sx={{ maxWidth: isMobile ? 120 : 200 }}
-                            >
-                              {report?.post?.topic || "Untitled Post"}
-                            </Typography>
-                          </TableCell>
-                        )}
-
-                        {visibleColumns.includes("Reported By") && (
-                          <TableCell onClick={() => handleViewReport(report)}>
-                            <Box display="flex" alignItems="center">
-                              <Avatar
-                                sx={{ width: 24, height: 24, mr: 1 }}
-                                src={
-                                  report?.reportedBy?.userImg || "../avatar.png"
-                                }
-                              />
-                              <Typography variant="body2">
-                                {report?.reportedBy?.firstName +
-                                  " " +
-                                  report?.reportedBy?.lastName}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                        )}
-
-                        {visibleColumns.includes("Reason") && (
-                          <TableCell onClick={() => handleViewReport(report)}>
-                            <Typography noWrap sx={{ maxWidth: 200 }}>
-                              {report?.reason}
-                            </Typography>
-                          </TableCell>
-                        )}
-
-                        {visibleColumns.includes("Date") && (
-                          <TableCell onClick={() => handleViewReport(report)}>
-                            {formatDate(report?.createdAt)}
-                          </TableCell>
-                        )}
-
-                        {visibleColumns.includes("Status") && (
-                          <TableCell onClick={() => handleViewReport(report)}>
-                            <Chip
-                              label={report?.status}
-                              size="small"
-                              sx={{
-                                bgcolor: alpha(
-                                  getStatusChipColor(report?.status),
-                                  0.2
-                                ),
-                                color: getStatusChipColor(report?.status),
-                                border: `1px solid ${getStatusChipColor(
-                                  report?.status
-                                )}`,
-                              }}
-                            />
-                          </TableCell>
-                        )}
-
-                        {visibleColumns.includes("Actions") && (
-                          <TableCell>
-                            <Tooltip title="View Details">
-                              <IconButton
-                                color="primary"
-                                size="small"
-                                onClick={() => handleViewReport(report)}
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={visibleColumns.length} align="center">
-                        <Typography variant="body1" p={2}>
-                          No reported posts found
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
+                        Date
+                      </TableSortLabel>
+                    </TableCell>
                   )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredAndSortedData.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </CardContent>
-      </Card>
+
+                  {visibleColumns.includes("Status") && (
+                    <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
+                      Status
+                    </TableCell>
+                  )}
+
+                  {visibleColumns.includes("Actions") && (
+                    <TableCell sx={{ color: "#fff", fontWeight: "bold" }}>
+                      Actions
+                    </TableCell>
+                  )}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedData.length > 0 ? (
+                  paginatedData.map((report) => (
+                    <TableRow
+                      key={report?._id}
+                      hover
+                      sx={{
+                        cursor: "pointer",
+                        "&:hover": {
+                          backgroundColor: theme.palette.action.hover,
+                        },
+                      }}
+                    >
+                      {visibleColumns.includes("Post") && (
+                        <TableCell onClick={() => handleViewReport(report)}>
+                          <Typography
+                            fontWeight={"bold"}
+                            variant="subtitle2"
+                            noWrap
+                            sx={{ maxWidth: isMobile ? 120 : 200 }}
+                          >
+                            {report?.post?.topic || "Untitled Post"}
+                          </Typography>
+                        </TableCell>
+                      )}
+
+                      {visibleColumns.includes("Reported By") && (
+                        <TableCell onClick={() => handleViewReport(report)}>
+                          <Box display="flex" alignItems="center">
+                            <Avatar
+                              sx={{ width: 24, height: 24, mr: 1 }}
+                              src={
+                                report?.reportedBy?.userImg || "../avatar.png"
+                              }
+                            />
+                            <Typography variant="body2">
+                              {report?.reportedBy?.firstName +
+                                " " +
+                                report?.reportedBy?.lastName}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      )}
+
+                      {visibleColumns.includes("Reason") && (
+                        <TableCell onClick={() => handleViewReport(report)}>
+                          <Typography noWrap sx={{ maxWidth: 200 }}>
+                            {report?.reason}
+                          </Typography>
+                        </TableCell>
+                      )}
+
+                      {visibleColumns.includes("Date") && (
+                        <TableCell onClick={() => handleViewReport(report)}>
+                          {formatDate(report?.createdAt)}
+                        </TableCell>
+                      )}
+
+                      {visibleColumns.includes("Status") && (
+                        <TableCell onClick={() => handleViewReport(report)}>
+                          <Chip
+                            label={report?.status}
+                            size="small"
+                            sx={{
+                              bgcolor: alpha(
+                                getStatusChipColor(report?.status),
+                                0.1
+                              ),
+                              fontWeight: "bold",
+                              color: getStatusChipColor(report?.status),
+                              border: `1px solid ${getStatusChipColor(
+                                report?.status
+                              )}`,
+                            }}
+                          />
+                        </TableCell>
+                      )}
+
+                      {visibleColumns.includes("Actions") && (
+                        <TableCell>
+                          <Tooltip title="View Details">
+                            <IconButton
+                              color="primary"
+                              size="small"
+                              onClick={() => handleViewReport(report)}
+                            >
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={visibleColumns.length} align="center">
+                      <Typography variant="body1" p={2}>
+                        No reported posts found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filteredAndSortedData.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      </DetailCard>
 
       {/* View Report Dialog */}
       <Dialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        maxWidth="lg"
+        fullScreen={fullScreen}
+        fullWidth="md"
         slotProps={{
           paper: {
             elevation: 3,
@@ -416,7 +418,7 @@ const ReportedContent = () => {
               </IconButton>
             </DialogTitle>
             <DialogContent sx={{ p: 3 }}>
-              <Grid container spacing={3}>
+              <Grid container spacing={3} my={1}>
                 <Grid item xs={12} md={6}>
                   <Paper
                     elevation={0}
@@ -489,9 +491,19 @@ const ReportedContent = () => {
                         Current Status:
                       </Typography>
                       <Chip
-                        label={selectedReport.status}
-                        color={getStatusChipColor(selectedReport.status)}
+                        label={selectedReport?.status}
                         size="small"
+                        sx={{
+                          fontWeight: "bold",
+                          bgcolor: alpha(
+                            getStatusChipColor(selectedReport?.status),
+                            0.1
+                          ),
+                          color: getStatusChipColor(selectedReport?.status),
+                          border: `1px solid ${getStatusChipColor(
+                            selectedReport?.status
+                          )}`,
+                        }}
                       />
                     </Box>
                   </Paper>
@@ -521,7 +533,7 @@ const ReportedContent = () => {
                         color="primary"
                         gutterBottom
                       >
-                        Reported Post Content
+                        Content
                       </Typography>
                       <Button
                         size="small"
@@ -584,7 +596,7 @@ const ReportedContent = () => {
                             <DeleteIcon sx={{ color: "#fff" }} />
                           )
                         }
-                        onClick={() => handleRemovePost(selectedReport._id)}
+                        onClick={() => handleRemovePost(selectedReport)}
                         disabled={loading}
                       >
                         Remove
