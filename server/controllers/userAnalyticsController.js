@@ -14,9 +14,6 @@ exports.issueWarning = async (req, res) => {
     return res.status(400).json({ status: 400, message: "Invalid userId" });
   }
 
-  const restrictionUntil = new Date();
-  restrictionUntil.setDate(restrictionUntil.getDate() + restrictionPeriod);
-
   try {
     const user = await User.findByIdAndUpdate(
       userId,
@@ -27,20 +24,21 @@ exports.issueWarning = async (req, res) => {
       return res.status(404).json({ status: 404, message: "User not found" });
     }
 
-    // 4) Upsert analytics record
+    const restrictionUntil = new Date();
+    restrictionUntil.setDate(restrictionUntil.getDate() + restrictionPeriod);
     await UserAnalytics.findOneAndUpdate(
       { userId },
       {
         status: "Restricted",
-        restrictedUntil: restrictionUntil, // <— use the correct variable name
+        restrictedUntil: restrictionUntil,
         lastActiveAt: new Date(),
       },
       { upsert: true }
     );
 
-    // 5) Create a notification
-    const notificationMessage = `Hello ${user.firstName}, your account has been temporarily restricted for 2 weeks due to a violation of community guidelines.`;
-
+    const notificationMessage = `Hello ${user.firstName}, 
+    your account has been temporarily restricted for 2 weeks 
+    due to a violation of community guidelines.`;
     await new Notification({
       recipient: userId,
       author: { firstName: "Admin" },

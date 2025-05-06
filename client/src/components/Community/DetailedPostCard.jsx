@@ -21,6 +21,7 @@ import { QuestionAnswerTwoTone } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
 import {
   commentsSelector,
+  postByIdSelector,
   postListSelector,
   postLoadingSelector,
   profileSelector,
@@ -30,8 +31,11 @@ import PostAuthorInfo from "../DetailedPost/PostAuthorInfo";
 import CommentSection from "../DetailedPost/CommentSection";
 import PostImageGallery from "../DetailedPost/PostImageGallery";
 import { Link, useParams } from "react-router-dom";
-import { fetchPosts, likePost } from "../../redux/apiClients/postsAPI";
-import { usePostDetail } from "../../hooks/community/usePostDetail";
+import {
+  fetchPostById,
+  fetchPosts,
+  likePost,
+} from "../../redux/apiClients/postsAPI";
 
 const DetailedPostCard = ({ isAdmin }) => {
   const theme = useTheme();
@@ -39,32 +43,27 @@ const DetailedPostCard = ({ isAdmin }) => {
   const profile = useSelector(profileSelector);
   const loading = useSelector(postLoadingSelector);
   const comments = useSelector(commentsSelector);
+  const postById = useSelector(postByIdSelector);
   const [liked, setLiked] = useState(false);
   const postId = useParams().postId;
-  const posts = useSelector(postListSelector);
-  const { getPostByPostId, detailPost } = usePostDetail();
 
   const handleLikePost = async () => {
     await dispatch(likePost(postId)).unwrap();
-    setLiked(!liked);
+    setLiked(postById?.upvotes?.includes(profile?._id));
+    await dispatch(likePost(postId)).unwrap();
+    //await getPostByPostId(postId);
   };
-
-  React.useEffect(() => {
-    if (postId) {
-      getPostByPostId(postId);
-    }
-  }, [postId]);
 
   React.useEffect(() => {
     dispatch(fetchPosts(1, 100));
   }, []);
 
   React.useEffect(() => {
-    let alreadyLiked = detailPost?.upvotes?.includes(profile?._id);
+    let alreadyLiked = postById?.upvotes?.includes(profile?._id);
     console.log("Post Liked:", alreadyLiked);
 
     setLiked(alreadyLiked);
-  }, [detailPost]);
+  }, [postById]);
 
   return (
     <React.Fragment>
@@ -86,20 +85,16 @@ const DetailedPostCard = ({ isAdmin }) => {
             color: theme.palette.secondary.dark,
           }}
         >
-          {detailPost?.topic}
+          {postById?.topic}
         </Link>
       </Breadcrumbs>
       <DetailCard>
         <CardContent sx={{ position: "relative", zIndex: 1, p: 2.5 }}>
           {/* Author and post content */}
-          <PostAuthorInfo
-            post={detailPost}
-            loading={loading}
-            isAdmin={isAdmin}
-          />
+          <PostAuthorInfo post={postById} loading={loading} isAdmin={isAdmin} />
 
           {/* Images section */}
-          {!loading && <PostImageGallery images={detailPost?.images} />}
+          {!loading && <PostImageGallery images={postById?.images} />}
 
           {/* Tags section */}
           <Box display="flex" flexWrap="wrap" gap={1} mt={1} mb={2}>
@@ -107,7 +102,7 @@ const DetailedPostCard = ({ isAdmin }) => {
               ? [...Array(3)].map((_, i) => (
                   <Skeleton key={i} variant="rounded" width={60} height={25} />
                 ))
-              : detailPost?.tags.map((tag, idx) => (
+              : postById?.tags.map((tag, idx) => (
                   <AnimatedChip
                     key={idx}
                     label={`#${tag}`}
@@ -160,7 +155,7 @@ const DetailedPostCard = ({ isAdmin }) => {
                       color={liked ? "primary" : "textPrimary"}
                       sx={{ fontSize: "0.8rem", fontWeight: liked ? 600 : 500 }}
                     >
-                      {detailPost?.upvotes?.length}
+                      {postById?.upvotes?.length}
                     </Typography>
                   </ActionButton>
                   <ActionButton>
@@ -175,7 +170,7 @@ const DetailedPostCard = ({ isAdmin }) => {
                       variant="body2"
                       sx={{ fontSize: "0.8rem", fontWeight: 500 }}
                     >
-                      {comments?.length || detailPost?.comments?.length}
+                      {comments?.length || postById?.comments?.length}
                     </Typography>
                   </ActionButton>
                 </>

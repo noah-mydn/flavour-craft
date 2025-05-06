@@ -23,30 +23,25 @@ const {
 } = require("../controllers/recipesController");
 const { adminAuth } = require("../middlewares/authVerification");
 const { recipeImgUpload } = require("../middlewares/multer");
-const authenticateToken =
-  require("../middlewares/authVerification").authenticateToken;
+const userAuth = require("../middlewares/authVerification").userAuth;
 
 const router = express.Router();
 
 router.post("/search", adminAuth, searchRecipe);
 router.post("/batch-generate", adminAuth, generateRecipesInBatch);
-router.post("/generate", authenticateToken, generateRecipe);
+router.post("/generate", userAuth, generateRecipe);
 router.delete("/delete", adminAuth, deleteRecipesInBatch);
-router.get("/recommend", authenticateToken, getTimeBasedRecipe);
-router.get("/all", authenticateToken, getAllRecipes);
-router.get("/trending", authenticateToken, getTrendingRecipes);
-router.get("/popular", authenticateToken, getPopularRecipes);
-router.get("/personalized", authenticateToken, getPersonalizedRecipes);
-router.get("/mostViewed", authenticateToken, getMostViewedRecipes);
-router.get("/recipe-of-the-day", authenticateToken, getRecipeOfTheDay);
-router.post("/filter", authenticateToken, filterRecipes);
-router.post(
-  "/personalized-filter",
-  authenticateToken,
-  filterPersonalizedRecipe
-);
+router.get("/recommend", userAuth, getTimeBasedRecipe);
+router.get("/all", userAuth, getAllRecipes);
+router.get("/trending", userAuth, getTrendingRecipes);
+router.get("/popular", userAuth, getPopularRecipes);
+router.get("/personalized", userAuth, getPersonalizedRecipes);
+router.get("/mostViewed", userAuth, getMostViewedRecipes);
+router.get("/recipe-of-the-day", userAuth, getRecipeOfTheDay);
+router.post("/filter", userAuth, filterRecipes);
+router.post("/personalized-filter", userAuth, filterPersonalizedRecipe);
 
-router.get("/:id", authenticateToken, getRecipeById);
+router.get("/:id", userAuth, getRecipeById);
 router.delete("/:id", adminAuth, deleteRecipe);
 router.put(
   "/:id/upload",
@@ -54,8 +49,8 @@ router.put(
   adminAuth,
   uploadRecipeThumbnail
 );
-router.put("/:id/view", authenticateToken, trackRecipeViews);
-router.post("/:id/save", authenticateToken, saveRecipe);
-router.post("/:id/rate", authenticateToken, rateRecipe);
+router.put("/:id/view", userAuth, trackRecipeViews);
+router.post("/:id/save", userAuth, saveRecipe);
+router.post("/:id/rate", userAuth, rateRecipe);
 
 module.exports = router;

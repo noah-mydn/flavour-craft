@@ -16,11 +16,20 @@ import {
   setPost,
   clearPost,
 } from "../../redux/reducers/postSlice";
+import {
+  setCurrentPost,
+  removeCurrentPost,
+} from "../../redux/reducers/postListSlice";
 import { convertBlobsToFiles } from "../../utils/blobToFile";
-import { deletePost, fetchPosts } from "../../redux/apiClients/postsAPI";
+import {
+  deletePost,
+  fetchPostById,
+  fetchPosts,
+} from "../../redux/apiClients/postsAPI";
 
 export const usePostDetail = () => {
   const post = useSelector(postSelector);
+  const postById = useSelector(postByIdSelector);
   const dispatch = useDispatch();
 
   const [showPostForm, setShowPostForm] = React.useState(false);
@@ -28,7 +37,7 @@ export const usePostDetail = () => {
   const [images, setImages] = React.useState([]);
   const [tagInputVal, setTagInputVal] = React.useState("");
   const [sortOrder, setSortOrder] = React.useState("recent");
-  const [detailPost, setDetailPost] = React.useState(null);
+  //const [detailPost, setDetailPost] = React.useState(null);
 
   const handlePostFieldOnChange = (e) => {
     const { name, value } = e.target;
@@ -58,19 +67,20 @@ export const usePostDetail = () => {
     dispatch(deleteImage(index));
   };
 
-  const getPostByPostId = async (postId) => {
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_BASE_API}/posts/${postId}`,
-        getAuthConfig()
-      );
-      console.log(response.data.post);
-      setDetailPost(response.data.post);
-    } catch (error) {
-      console.log(error);
-      displayErrorToast(error);
-    }
-  };
+  // const getPostByPostId = async (postId) => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${process.env.REACT_APP_BASE_API}/posts/${postId}`,
+  //       getAuthConfig()
+  //     );
+  //     console.log(response.data.post);
+  //     return response.data.post;
+  //   } catch (error) {
+  //     console.log(error);
+  //     displayErrorToast(error);
+  //     return null;
+  //   }
+  // };
 
   const removePost = async (postId, onSuccess) => {
     try {
@@ -130,11 +140,14 @@ export const usePostDetail = () => {
 
       if (response.data.status === 200) {
         if (onSuccess) {
-          dispatch(clearPost());
+          //dispatch(clearPost());
+          displaySuccessToast("Post edited!");
           const res = await dispatch(fetchPosts(1, 10)).unwrap();
           console.log(res);
           if (res?.status === 200) {
-            getPostByPostId(postId);
+            dispatch(fetchPostById(postId));
+            //dispatch(setCurrentPost(updatedPost));
+
             onSuccess();
           }
         }
@@ -213,12 +226,11 @@ export const usePostDetail = () => {
     post,
     tagInputVal,
     uploading,
-    detailPost,
     setTagInputVal,
     handlePostFieldOnChange,
     handleImageUpload,
     removeImage,
-    getPostByPostId,
+    //getPostByPostId,
     createPost,
     editPost,
     removePost,

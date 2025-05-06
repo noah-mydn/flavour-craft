@@ -1,6 +1,5 @@
 const express = require("express");
-const authenticateToken =
-  require("../middlewares/authVerification").authenticateToken;
+const userAuth = require("../middlewares/authVerification").userAuth;
 const adminAuth = require("../middlewares/authVerification").adminAuth;
 const {
   addDietaryOption,
@@ -16,8 +15,8 @@ const {
 } = require("../controllers/preferencesController");
 const router = express.Router();
 
-router.get("/dietary-options", authenticateToken, getDietaryOptions);
-router.get("/cuisines", authenticateToken, getCuisineTypes);
+router.get("/dietary-options", userAuth, getDietaryOptions);
+router.get("/cuisines", userAuth, getCuisineTypes);
 
 //Create/Update/Delete Cuisines (Admin Only)
 router.post("/cuisines", adminAuth, addNewCuisineType);
@@ -30,7 +29,7 @@ router.put("/dietary-options/:id", adminAuth, updateDietaryOption);
 router.delete("/dietary-options/:id", adminAuth, deleteDietaryOption);
 ///break///
 
-router.delete("/cuisines/:id", authenticateToken, deleteCuisineTypes);
-router.get("/dietary-options/:id", authenticateToken, getDietaryOptionsById);
+router.delete("/cuisines/:id", userAuth, deleteCuisineTypes);
+router.get("/dietary-options/:id", userAuth, getDietaryOptionsById);
 
 module.exports = router;

@@ -41,6 +41,7 @@ const cuisineSlice = createSlice({
       .addCase(fetchCuisines.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        console.error("Rejected payload:", action);
       })
       .addCase(fetchCuisineById.pending, (state) => {
         state.cuisineLoading = true;

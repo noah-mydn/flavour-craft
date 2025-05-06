@@ -154,9 +154,13 @@ const Preferences = () => {
   };
 
   React.useEffect(() => {
-    dispatch(fetchDietaryOptions());
-    dispatch(fetchCuisines());
-  }, [dispatch]);
+    if (!cuisines.length) {
+      dispatch(fetchCuisines());
+    }
+    if (!dietaryOptions.length) {
+      dispatch(fetchDietaryOptions());
+    }
+  }, [dispatch, cuisines, dietaryOptions]);
 
   React.useEffect(() => {
     if (tempDietarySelections.size > 0 || tempCuisineSelections.size > 0) {

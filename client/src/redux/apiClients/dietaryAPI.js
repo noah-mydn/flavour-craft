@@ -23,7 +23,7 @@ export const fetchDietaryOptions = createAsyncThunk(
       return response.data;
     } catch (error) {
       displayErrorToast(error);
-      console.log("CUISINES FETCHING ERROR:", error);
+      console.log("DIETARY FETCHING ERROR:", error);
       return rejectWithValue(
         error.response?.data || "An unexpected error occurred"
       );

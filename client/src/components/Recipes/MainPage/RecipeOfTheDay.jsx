@@ -44,9 +44,9 @@ const RecipeOfTheDay = ({ recipe }) => {
       <DetailCard
         sx={{
           display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr",
           gridTemplateRows: isMobile ? "auto 1fr" : "1fr",
-          gap: 1,
+          gap: 2,
           mt: 4,
           boxShadow: 1.5,
         }}

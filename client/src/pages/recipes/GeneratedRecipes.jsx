@@ -85,7 +85,7 @@ const GeneratedRecipes = () => {
             <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
               <Link
                 color="text.secondary"
-                to="/recipes"
+                href={"/recipes"}
                 sx={{ textDecoration: "none", cursor: "pointer" }}
               >
                 Recipes

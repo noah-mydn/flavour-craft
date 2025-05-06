@@ -6,6 +6,7 @@ import {
 import { Navigate, Outlet } from "react-router-dom";
 import TopNavigationBar from "../Navigations/TopNavigationBar";
 import Footer from "../Footer/Footer";
+import { Box } from "@mui/material";
 
 const PrivateRoute = ({ adminOnly = false, children }) => {
   const isVerified = useSelector(isVerifiedSelector);
@@ -28,7 +29,7 @@ const PrivateRoute = ({ adminOnly = false, children }) => {
   return (
     <>
       {!adminOnly && <TopNavigationBar />}
-      {children || <Outlet />}
+      <Box minHeight={"50vh"}>{children || <Outlet />}</Box>
       {!adminOnly && <Footer />}
     </>
   );

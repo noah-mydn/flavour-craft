@@ -7,6 +7,7 @@ import {
   useTheme,
   Typography,
   Button,
+  Link,
 } from "@mui/material";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import SearchIcon from "@mui/icons-material/Search";
@@ -19,7 +20,6 @@ import {
   recipeLoadingSelector,
 } from "../../redux/selectors/selectors";
 
-import { Link } from "react-router-dom";
 import { fetchRecipeById } from "../../redux/apiClients/recipeAPI";
 
 const SavedRecipes = () => {
@@ -85,7 +85,7 @@ const SavedRecipes = () => {
           <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
             <Link
               color="text.secondary"
-              to="/recipes"
+              href={"/recipes"}
               sx={{ textDecoration: "none", cursor: "pointer" }}
             >
               Recipes

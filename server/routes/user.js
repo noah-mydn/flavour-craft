@@ -15,23 +15,22 @@ const {
   issueWarning,
   deleteUser,
 } = require("../controllers/userAnalyticsController");
-const authenticateToken =
-  require("../middlewares/authVerification").authenticateToken;
+const userAuth = require("../middlewares/authVerification").userAuth;
 
 const router = express.Router();
 
 router.put(
   "/edit",
   profilePicUpload.single("userImg"),
-  authenticateToken,
+  userAuth,
   editUserProfile
 );
-router.put("/update-password", authenticateToken, updatePassword);
-router.post("/delete", authenticateToken, deleteUserProfile);
-router.put("/set/dietaryOptions", authenticateToken, addDietaryPreferences);
-router.put("/set/cuisineTypes", authenticateToken, addCuisinePreferences);
-router.get("/profile", authenticateToken, getUserProfileById);
-router.get("/me", authenticateToken, getCurrentUserProfile);
+router.put("/update-password", userAuth, updatePassword);
+router.post("/delete", userAuth, deleteUserProfile);
+router.put("/set/dietaryOptions", userAuth, addDietaryPreferences);
+router.put("/set/cuisineTypes", userAuth, addCuisinePreferences);
+router.get("/profile", userAuth, getUserProfileById);
+router.get("/me", userAuth, getCurrentUserProfile);
 router.get("/all", adminAuth, viewUserAnalytics);
 router.put("/:userId/warn", adminAuth, issueWarning);
 router.delete("/:userId/delete", adminAuth, deleteUser);

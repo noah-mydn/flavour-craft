@@ -26,10 +26,7 @@ export const fetchPostById = createAsyncThunk(
   async (postId, { rejectWithValue }) => {
     console.log("POST ID:", postId);
     try {
-      const response = await axios.get(
-        `${BASE_URL}/${postId}`,
-        getAuthConfig()
-      );
+      const response = await axios.get(`${BASE_URL}${postId}`, getAuthConfig());
       console.log("FETCH POST BY ID RESPONSE:", response.data.post);
       return response.data.post;
     } catch (error) {

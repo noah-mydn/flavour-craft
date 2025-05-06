@@ -31,8 +31,9 @@ import { useDispatch, useSelector } from "react-redux";
 import HashtagInput from "./HashtagInput";
 import { clearPost, setPost } from "../../redux/reducers/postSlice";
 import { useParams } from "react-router-dom";
+import { fetchPostById } from "../../redux/apiClients/postsAPI";
 
-const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
+const PostDialog = ({ open, isEdit = false, onClose }) => {
   const dispatch = useDispatch();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const user = useSelector(userSelector);
@@ -54,6 +55,8 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
   };
 
   const post = useSelector(postSelector);
+  const editedPost = useSelector(postByIdSelector);
+
   const postId = useParams().postId;
   const isResetState = useSelector(isResetSelector);
 
@@ -67,7 +70,6 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
     e.preventDefault();
     console.log("Updating post:", post);
     await editPost(postId, onClose);
-    //await dispatch(fetchPostById(postId)).unwrap();
   };
 
   const handlePostEdit = () => {
@@ -102,6 +104,7 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
       open={open}
       onClose={cancelDialog}
       fullScreen={fullScreen}
+      maxWidth="sm"
       slots={{
         transition: Fade,
       }}
@@ -113,8 +116,6 @@ const PostDialog = ({ open, isEdit = false, onClose, editedPost }) => {
           sx: {
             borderRadius: { xs: 0, sm: 3 },
             width: "100%",
-            maxHeight: "90vh",
-            height: "auto",
           },
         },
       }}

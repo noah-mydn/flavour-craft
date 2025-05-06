@@ -15,6 +15,8 @@ const {
 } = require("../controllers/preferencesController");
 const mongoose = require("mongoose");
 const Users = require("../models/Users");
+const { DietaryOption } = require("../models/DietaryOptions");
+const { strictDietaryRestrictions } = require("../constants/data");
 
 const cohere = new CohereClient({
   token: process.env.COHERE_TOKEN,
@@ -25,7 +27,7 @@ const generateRecipesInBatch = async (req, res) => {
   if (req.user?.role !== "admin") {
     return;
   }
-  const { _id } = req.user;
+
   const { tags, cuisines, dietaryOptions, count } = req.body;
 
   try {
@@ -101,24 +103,20 @@ const generateRecipesInBatch = async (req, res) => {
       message: prompt,
       temperature: 0.3,
     });
-
     let responseText = "";
     for await (const chat of stream) {
       if (chat.eventType === "text-generation") {
         responseText += chat.text;
       }
     }
-
-    console.log(responseText);
-    // Clean and parse AI response
+    // parse AI response
     const cleanRecipeDataString = responseText
       .replace(/^```json\n/, "")
       .replace(/\n```$/, "");
 
     const recipes = JSON.parse(cleanRecipeDataString);
-    console.log("Generated Recipes:", recipes);
 
-    // Filter out duplicate recipes based on the name
+    // Filter duplicates
     const existingRecipeNames = await Recipe.find({}, "name").then((docs) =>
       docs.map((doc) => doc.name)
     );
@@ -126,14 +124,8 @@ const generateRecipesInBatch = async (req, res) => {
     const uniqueRecipes = recipes.filter(
       (recipe) => !existingRecipeNames.includes(recipe.name)
     );
-
     // Save unique recipes to MongoDB
     await Recipe.insertMany(uniqueRecipes);
-
-    // await RecipeGenerationLog.create({
-    //   userId: _id,
-    // });
-
     await updateIngredientsDatabase();
 
     return res.status(200).json({
@@ -190,8 +182,6 @@ const generateRecipe = async (req, res) => {
         .status(200)
         .json({ status: 200, message: "Recipes found.", data: recipesFromDB });
     }
-
-    console.log("No matching recipes found. Generating with AI...");
 
     const prompt = `
 Generate 1 recipe using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects. If you cannot find authentic recipes, you can just say, "Sorry, I cannot find any recipes for the given ingredients and dietary preferences."
@@ -259,7 +249,7 @@ Schema:
 }
     `;
 
-    // Call Cohere API for recipe generation
+    // Call Cohere API
     const stream = await cohere.chatStream({
       model: "command-r-08-2024",
       message: prompt,
@@ -273,7 +263,6 @@ Schema:
       }
     }
 
-    console.log(responseText);
     const cleanRecipeDataString = responseText
       .replace(/^```json\n/, "")
       .replace(/\n```$/, "");
@@ -832,67 +821,64 @@ const getPersonalizedRecipes = async (req, res) => {
     const { page = 1, pageSize = 10 } = req.query;
     const skip = (page - 1) * pageSize;
 
-    // 1. Load User
+    // Get user
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // 2. Separate strict and optional diets
-    const strictDiets = [
-      "Vegan",
-      "Vegetarian",
-      "Halal",
-      "Kosher",
-      "Pescatarian",
-      "Diabetes-Friendly",
-      "Low-Sugar",
-    ];
-    const userStrictDiets = user.dietaryRestrictions.filter((diet) =>
-      strictDiets.includes(diet)
+    const dietaryOptions = await DietaryOption.find({
+      _id: { $in: user.dietaryRestrictions },
+    });
+
+    const userDietNames = dietaryOptions.map((d) => d.name);
+    const userStrictDiets = userDietNames.filter((diet) =>
+      strictDietaryRestrictions.includes(diet)
     );
-    const userOptionalDiets = user.dietaryRestrictions.filter(
-      (diet) => !strictDiets.includes(diet)
+    const userOptionalDiets = userDietNames.filter(
+      (diet) => !strictDietaryRestrictions.includes(diet)
     );
+    // Build filters
+    const strictFilter = userStrictDiets.length
+      ? [{ dietaryPreferences: { $all: userStrictDiets } }]
+      : [];
 
-    // 3. Build filter
-    let strictFilter = [];
-    if (userStrictDiets.length > 0) {
-      strictFilter = [{ dietaryPreferences: { $in: userStrictDiets } }];
-    }
+    const optionalFilter = userOptionalDiets.length
+      ? [{ dietaryPreferences: { $in: userOptionalDiets } }]
+      : [];
 
-    let optionalFilter = [];
-    if (userOptionalDiets.length > 0) {
-      optionalFilter = [{ dietaryPreferences: { $in: userOptionalDiets } }];
-    }
-
-    let cuisineFilter = [];
-    if (
+    const cuisineFilter =
       user.cuisinePreferences.length > 0 &&
       !user.cuisinePreferences.includes("All")
-    ) {
-      cuisineFilter = [{ cuisineTypes: { $in: user.cuisinePreferences } }];
-    }
+        ? [{ cuisineTypes: { $in: user.cuisinePreferences } }]
+        : [];
 
     const combinedFilter = {
       $and: [
-        ...(strictFilter.length > 0 ? strictFilter : []),
-        ...(cuisineFilter.length > 0 ? cuisineFilter : []),
+        ...(strictFilter.length > 0 ? strictFilter : optionalFilter),
+        ...cuisineFilter,
       ],
     };
-
+    // Fetch combined filter
     let recipes = await Recipe.find(combinedFilter)
       .skip(skip)
       .limit(parseInt(pageSize));
     let totalRecipes = recipes.length;
 
-    // 4. If no recipes matching strict + cuisine, try strict only
-    if (recipes.length === 0 && strictFilter.length > 0) {
-      recipes = await Recipe.find({ $and: strictFilter })
+    //Fallback to only dietary preferences
+    if (
+      recipes.length === 0 &&
+      (strictFilter.length > 0 || optionalFilter.length > 0)
+    ) {
+      const fallbackFilter = {
+        $and: [...(strictFilter.length > 0 ? strictFilter : optionalFilter)],
+      };
+
+      recipes = await Recipe.find(fallbackFilter)
         .skip(skip)
         .limit(parseInt(pageSize));
       totalRecipes = recipes.length;
     }
 
-    // 5. Prefer recipes that also match optional diets
+    //Sort results
     if (recipes.length > 0 && userOptionalDiets.length > 0) {
       recipes = recipes.sort((a, b) => {
         const aMatches = a.dietaryPreferences.filter((pref) =>
@@ -901,11 +887,11 @@ const getPersonalizedRecipes = async (req, res) => {
         const bMatches = b.dietaryPreferences.filter((pref) =>
           userOptionalDiets.includes(pref)
         ).length;
-        return bMatches - aMatches; // Recipes matching more optional diets come first
+        return bMatches - aMatches;
       });
     }
 
-    // 6. If still no recipes, fallback to savedRecipes (must match strict)
+    // Fallback to user's saved recipes
     if (recipes.length === 0 && user.savedRecipes.length > 0) {
       const savedRecipes = await Recipe.find({
         _id: { $in: user.savedRecipes },
@@ -926,7 +912,7 @@ const getPersonalizedRecipes = async (req, res) => {
       });
     }
 
-    // 7. If still no recipes, fallback to random recipes (must match strict)
+    // Fallback to random recipes (still matching strict diets)
     if (recipes.length === 0 && userStrictDiets.length > 0) {
       const randomRecipes = await Recipe.aggregate([
         { $match: { dietaryPreferences: { $in: userStrictDiets } } },
@@ -935,7 +921,7 @@ const getPersonalizedRecipes = async (req, res) => {
       return res.status(200).json({ recipes: randomRecipes });
     }
 
-    // 8. Normal Response
+    //  Final response
     return res.status(200).json({
       recipes,
       pagination: {
@@ -945,7 +931,7 @@ const getPersonalizedRecipes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching personalized recipes:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

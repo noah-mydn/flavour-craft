@@ -183,7 +183,7 @@ exports.getDietaryOptions = async (req, res) => {
       }
     }
 
-    const dietaryOptions = await query;
+    const dietaryOptions = await query.exec();
     const total = await DietaryOption.countDocuments();
 
     res.status(200).json({
@@ -204,22 +204,23 @@ exports.getDietaryOptions = async (req, res) => {
   }
 };
 
-// Get all cuisine types
 exports.getCuisineTypes = async (req, res) => {
   try {
     const { page, pageSize } = req.query;
 
     let query = Cuisine.find();
 
-    if (page && pageSize) {
-      const pageNumber = parseInt(page, 10) || 1;
-      const limit = parseInt(pageSize, 10) || 10;
-      const skip = (pageNumber - 1) * limit;
+    if (page !== undefined && pageSize !== undefined) {
+      const pageNumber = Number(page);
+      const limit = Number(pageSize);
 
-      query = query.skip(skip).limit(limit);
+      if (!isNaN(pageNumber) && !isNaN(limit) && pageNumber > 0 && limit > 0) {
+        const skip = (pageNumber - 1) * limit;
+        query = query.skip(skip).limit(limit);
+      }
     }
 
-    const cuisines = await query;
+    const cuisines = await query.exec();
     const total = await Cuisine.countDocuments();
 
     res.status(200).json({
@@ -227,8 +228,8 @@ exports.getCuisineTypes = async (req, res) => {
       cuisines,
       pagination: {
         total,
-        page: page ? parseInt(page, 10) : null,
-        pageSize: pageSize ? parseInt(pageSize, 10) : null,
+        page: page !== undefined ? Number(page) : null,
+        pageSize: pageSize !== undefined ? Number(pageSize) : null,
       },
     });
   } catch (error) {

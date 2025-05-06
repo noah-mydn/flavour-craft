@@ -31,9 +31,9 @@ import ManageCategories from "../../pages/admin/ManageCategories";
 import CampaignManager from "../../pages/admin/CampaignManager";
 import RecipeImageManagement from "../../pages/admin/RecipeManagement";
 import RecipesByCuisines from "../../pages/recipes/RecipeByCuisines";
-import { displayErrorToast, displaySuccessToast } from "../../utils/toastUtil";
+import { displayErrorToast } from "../../utils/toastUtil";
 import Post from "../Community/Post";
-import { Main } from "../Main/Main";
+
 import SavedRecipes from "../../pages/recipes/SavedRecipes";
 import GeneratedRecipes from "../../pages/recipes/GeneratedRecipes";
 import Preferences from "../Preferences/Preferences";

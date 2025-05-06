@@ -5,6 +5,8 @@ import {
   Pagination,
   useMediaQuery,
   useTheme,
+  Link,
+  Typography,
 } from "@mui/material";
 import React from "react";
 
@@ -18,7 +20,7 @@ import {
   recipesListSelector,
 } from "../../redux/selectors/selectors";
 
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { setFilters } from "../../redux/reducers/recipesSlice";
 
 const RecipesByCuisines = () => {
@@ -67,7 +69,7 @@ const RecipesByCuisines = () => {
           <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
             <Link
               color="text.secondary"
-              to="/recipes"
+              href={"/recipes"}
               sx={{ textDecoration: "none", cursor: "pointer" }}
             >
               Recipes
@@ -82,33 +84,6 @@ const RecipesByCuisines = () => {
               {cuisineType.charAt(0).toUpperCase() + cuisineType.slice(1)}
             </Link>
           </Breadcrumbs>
-          {/* <Box
-              display="flex"
-              justifyContent={isMobile ? "center" : "flex-end"}
-              width="100%"
-              mt={isMobile ? 7 : 3}
-            >
-              <Stack direction={isMobile ? "column" : "row"} spacing={3}>
-                <FormControl sx={{ width: "150px", maxWidth: "225px" }}>
-                  <InputLabel id="sort-label">Sort By</InputLabel>
-                  <Select
-                    labelId="sort-label"
-                    id="sort-select"
-                    label="Sort By"
-                    size="small"
-                    value={sortValue}
-                    onChange={handleSortChange}
-                  >
-                    <MenuItem value="all" selected>
-                      Most Recent
-                    </MenuItem>
-                    <MenuItem value="popular">Most Popular</MenuItem>
-                    <MenuItem value="mostViewed">Most Viewed</MenuItem>
-                    <MenuItem value="personalized">Personalized</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Box> */}
         </Grid>
 
         {/* Recipe Cards Grid */}
@@ -121,6 +96,26 @@ const RecipesByCuisines = () => {
           justifyItems="center"
           alignItems="center"
         >
+          {!loading && recipes?.length === 0 && (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems={"center"}
+              gap={2}
+              my={6}
+            >
+              <Typography variant="h5" color="text.primary">
+                No recipes found
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                We couldn't find any recipes under
+                <b style={{ textTransform: "uppercase" }}>
+                  &nbsp;"{cuisineType}"
+                </b>{" "}
+                cuisine.
+              </Typography>
+            </Box>
+          )}
           {loading
             ? Array(4)
                 .fill(0)
@@ -145,14 +140,16 @@ const RecipesByCuisines = () => {
         </Grid>
 
         {/* Pagination */}
-        <Grid item container justifyContent="center">
-          <Pagination
-            count={pagination?.totalPages || 1}
-            color="primary"
-            size="large"
-            onChange={handlePageChange}
-          />
-        </Grid>
+        {!loading && recipes?.length > 0 && (
+          <Grid item container justifyContent="center">
+            <Pagination
+              count={pagination?.totalPages || 1}
+              color="primary"
+              size="large"
+              onChange={handlePageChange}
+            />
+          </Grid>
+        )}
       </Grid>
     </Box>
   );

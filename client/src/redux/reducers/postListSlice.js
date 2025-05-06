@@ -42,6 +42,12 @@ const postListSlice = createSlice({
       state.comment = null;
       state.commentMode = null;
     },
+    setCurrentPost: (state, action) => {
+      state.postById = action.payload;
+    },
+    removeCurrentPost: (state, action) => {
+      state.postById = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -101,6 +107,7 @@ const postListSlice = createSlice({
       })
       .addCase(likePost.fulfilled, (state, action) => {
         const { postId, userId } = action.payload;
+        // Update post list
         state.posts = state.posts.map((post) =>
           post._id === postId
             ? {
@@ -111,10 +118,15 @@ const postListSlice = createSlice({
               }
             : post
         );
+
+        // Update detailed post view
+        if (state.postById && state.postById._id === postId) {
+          state.postById.upvotes = state.postById.upvotes.includes(userId)
+            ? state.postById.upvotes.filter((id) => id !== userId)
+            : [...state.postById.upvotes, userId];
+        }
       })
-      .addCase(likePost.rejected, (state, action) => {
-        state.error = action.error.message || "Something went wrong";
-      })
+
       .addCase(fetchComments.pending, (state) => {
         state.commentsLoading = true;
         state.commentsError = null;
@@ -159,5 +171,11 @@ const postListSlice = createSlice({
   },
 });
 
-export const { setComment, clearComment, setComments } = postListSlice.actions;
+export const {
+  setComment,
+  clearComment,
+  setComments,
+  setCurrentPost,
+  removeCurrentPost,
+} = postListSlice.actions;
 export default postListSlice.reducer;

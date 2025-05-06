@@ -386,7 +386,7 @@ const ReportedContent = () => {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         fullScreen={fullScreen}
-        fullWidth="md"
+        maxWidth="md"
         slotProps={{
           paper: {
             elevation: 3,

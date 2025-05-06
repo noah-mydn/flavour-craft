@@ -46,12 +46,11 @@ const CompactPosts = () => {
 
   const handleSortChange = (event) => {
     setSortOrder(event.target.value);
-    setPage(1); // Reset to first page when changing sort order
+    setPage(1);
   };
 
-  // Determine if a post is in the top 5 trending posts
   const isTopTrending = (post, index) => {
-    return sortOrder === "trending" && index < 5;
+    return sortOrder === "trending" && index < 3;
   };
 
   return (
