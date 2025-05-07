@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import SearchIcon from "@mui/icons-material/Search";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
 import RecipeCard from "../../components/Recipes/RecipeCard";
@@ -21,6 +21,7 @@ import {
 } from "../../redux/selectors/selectors";
 
 import { fetchRecipeById } from "../../redux/apiClients/recipeAPI";
+import { getCurrentUserProfile } from "../../redux/apiClients/userAPI";
 
 const SavedRecipes = () => {
   const profile = useSelector(profileSelector);
@@ -42,7 +43,9 @@ const SavedRecipes = () => {
     setPage(value);
   };
 
-  const fetchSavedRecipes = async () => {
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const fetchSavedRecipes = useCallback(async () => {
     if (!profile?.savedRecipes?.length) return;
 
     try {
@@ -51,25 +54,35 @@ const SavedRecipes = () => {
       );
 
       const results = await Promise.all(fetchPromises);
-      //console.log(results);
-      // Filter successful recipes
       const successfulRecipes = results
         ?.filter((res) => res?.payload)
         ?.map((res) => res.payload);
-      //console.log(successfulRecipes);
       setRecipes(successfulRecipes);
     } catch (error) {
       console.error("Failed to fetch saved recipes:", error);
     }
-  };
+  }, [profile?.savedRecipes, dispatch]);
 
   useEffect(() => {
-    fetchSavedRecipes();
-  }, [profile?.savedRecipes]);
+    dispatch(getCurrentUserProfile());
+  }, []);
 
-  React.useEffect(() => {
-    console.log("Save Recipes Loading:", recipeLoading);
-  }, [recipeLoading]);
+  useEffect(() => {
+    if (
+      isInitialLoad &&
+      profile?.savedRecipes &&
+      profile?.savedRecipes.length > 0
+    ) {
+      fetchSavedRecipes();
+      setIsInitialLoad(false);
+    }
+  }, [profile?.savedRecipes, fetchSavedRecipes, isInitialLoad]);
+
+  const handleUnsave = (recipeId) => {
+    setRecipes((prevRecipes) =>
+      prevRecipes.filter((recipe) => recipe._id !== recipeId)
+    );
+  };
 
   return (
     <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
@@ -171,7 +184,7 @@ const SavedRecipes = () => {
 
                 <Button
                   component={Link}
-                  to="/recipes"
+                  href="/recipes"
                   variant="contained"
                   color="primary"
                   size="large"
@@ -233,7 +246,7 @@ const SavedRecipes = () => {
                       lg={2.5}
                       rowSpacing={3}
                     >
-                      <RecipeCard recipe={recipe} />
+                      <RecipeCard recipe={recipe} onUnsave={handleUnsave} />
                     </Grid>
                   ))}
             </Grid>

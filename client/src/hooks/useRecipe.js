@@ -6,11 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { toggleSavedRecipe } from "../redux/apiClients/userAPI";
 import { fetchRecipes } from "../redux/apiClients/recipeAPI";
-import {
-  rateRecipes,
-  removeRecipe,
-  saveRecipe,
-} from "../redux/reducers/userProfileSlice";
+import { rateRecipes } from "../redux/reducers/userProfileSlice";
 import { profileSelector } from "../redux/selectors/selectors";
 
 export const useRecipe = () => {

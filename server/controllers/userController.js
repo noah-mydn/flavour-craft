@@ -8,6 +8,7 @@ const Notification = require("../models/community/Notification");
 const { default: mongoose } = require("mongoose");
 
 const editUserProfile = async (req, res) => {
+  console.log("editUserProfile hit");
   try {
     const userId = req.user.userId;
     const updateData = req.body;
@@ -68,13 +69,15 @@ const editUserProfile = async (req, res) => {
     }
 
     delete updatedUser.password;
-
+    console.log("Edit Profile Response:", res);
     return res.status(200).json({
       status: 200,
       message: "User profile updated successfully",
       user: updatedUser,
     });
   } catch (err) {
+    console.error("Edit Profile Error:", err);
+
     res
       .status(500)
       .json({ message: "Error updating user profile", error: err.message });

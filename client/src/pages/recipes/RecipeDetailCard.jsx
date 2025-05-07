@@ -27,9 +27,10 @@ import { useRecipe } from "../../hooks/useRecipe";
 import theme from "../../theme/theme";
 import { useParams } from "react-router-dom";
 import cuisineFlags from "../../constants/flags";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { profileSelector } from "../../redux/selectors/selectors";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
+import { getCurrentUserProfile } from "../../redux/apiClients/userAPI";
 
 const RecipeDetail = () => {
   const recipeId = useParams()?.recipeId;
@@ -44,6 +45,7 @@ const RecipeDetail = () => {
   } = useRecipe();
 
   const [activeTab, setActiveTab] = useState(0);
+  const dispatch = useDispatch();
 
   const [rate, setRate] = useState(0);
 
@@ -58,17 +60,12 @@ const RecipeDetail = () => {
   const [saved, setSaved] = React.useState(false);
 
   React.useEffect(() => {
-    if (profile?.savedRecipes) {
-      const isSaved = profile.savedRecipes.includes(recipeId);
+    dispatch(getCurrentUserProfile());
+    if (profile && recipe?._id) {
+      const isSaved = profile.savedRecipes?.includes(recipe._id);
       setSaved(isSaved);
     }
-  }, [profile?.savedRecipes, recipeId]);
-
-  const likeRecipe = () => {
-    handleSaveRecipe(recipeId);
-
-    setSaved(!saved);
-  };
+  }, [profile, recipe?._id]);
 
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -81,6 +78,13 @@ const RecipeDetail = () => {
     rateRecipe(recipeId, event.target.value).then(() => {
       fetchRecipeInfo(recipeId);
     });
+  };
+
+  const likeRecipe = async () => {
+    const success = await handleSaveRecipe(recipe._id);
+    if (success) {
+      setSaved((prev) => !prev);
+    }
   };
 
   React.useEffect(() => {

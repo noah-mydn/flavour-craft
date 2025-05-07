@@ -24,8 +24,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { profileSelector } from "../../redux/selectors/selectors";
 import { useNavigate } from "react-router-dom";
 import { useRecipe } from "../../hooks/useRecipe";
+import { getCurrentUserProfile } from "../../redux/apiClients/userAPI";
 
-const RecipeCard = ({ recipe, recipeId }) => {
+const RecipeCard = ({ recipe, onUnsave }) => {
   const navigate = useNavigate();
   const profile = useSelector(profileSelector);
   const { handleSaveRecipe } = useRecipe();
@@ -35,6 +36,7 @@ const RecipeCard = ({ recipe, recipeId }) => {
   const calculatedMaxHeight = isMobile ? 380 : isTablet ? 430 : 450;
 
   const [saved, setSaved] = React.useState(false);
+  const dispatch = useDispatch();
 
   React.useEffect(() => {
     const saved = profile?.savedRecipes?.includes(recipe?._id);
@@ -44,7 +46,12 @@ const RecipeCard = ({ recipe, recipeId }) => {
   const likeRecipe = async () => {
     const success = await handleSaveRecipe(recipe._id);
     if (success) {
-      setSaved((prev) => !prev);
+      const newSaved = !saved;
+      setSaved(newSaved);
+
+      if (!newSaved && typeof onUnsave === "function") {
+        onUnsave(recipe._id);
+      }
     }
   };
 

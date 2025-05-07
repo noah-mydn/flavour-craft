@@ -58,14 +58,7 @@ const userProfileSlice = createSlice({
     saveRecipe: (state, action) => {
       state.profile.savedRecipes.push(action.payload);
     },
-    removeRecipe: (state, action) => {
-      const recipeIndex = state.savedRecipes.findIndex(
-        (recipe) => recipe.recipeId === action.payload
-      );
-      if (recipeIndex !== -1) {
-        state.profile.savedRecipes.splice(recipeIndex, 1);
-      }
-    },
+
     clearUserProfile: () => initialState,
   },
   extraReducers: (builder) => {
@@ -141,7 +134,6 @@ export const {
   clearUserProfile,
   rateRecipes,
   saveRecipe,
-  removeRecipe,
 } = userProfileSlice.actions;
 
 export default userProfileSlice.reducer;

@@ -45,6 +45,7 @@ import {
   fetchComments,
   addComment,
   removeComment,
+  fetchPostById,
 } from "../../redux/apiClients/postsAPI.js";
 
 const CommentSection = ({ postId, isAdmin }) => {
@@ -113,6 +114,7 @@ const CommentSection = ({ postId, isAdmin }) => {
       if (!commentLoading) {
         setDeleteDialogOpen(false);
         dispatch(clearComment());
+        await dispatch(fetchPostById(postId));
         await dispatch(fetchComments(postId));
       }
     }

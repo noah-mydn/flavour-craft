@@ -15,13 +15,28 @@ const {
   issueWarning,
   deleteUser,
 } = require("../controllers/userAnalyticsController");
+const multer = require("multer");
 const userAuth = require("../middlewares/authVerification").userAuth;
 
 const router = express.Router();
 
 router.put(
   "/edit",
-  profilePicUpload.single("userImg"),
+  (req, res, next) => {
+    profilePicUpload.single("userImg")(req, res, function (err) {
+      if (err instanceof multer.MulterError) {
+        return res
+          .status(400)
+          .json({ message: "Multer error", error: err.message });
+      } else if (err) {
+        return res
+          .status(500)
+          .json({ message: "Upload error", error: err.message });
+      }
+      next(); // Proceed to controller only if no error
+    });
+  },
+
   userAuth,
   editUserProfile
 );

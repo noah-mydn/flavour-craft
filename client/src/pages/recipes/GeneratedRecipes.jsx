@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
 import SentimentDissatisfiedIcon from "@mui/icons-material/SentimentDissatisfied";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
 import RecipeCard from "../../components/Recipes/RecipeCard";
@@ -21,11 +21,13 @@ import {
 import TopNavigationBar from "../../components/Navigations/TopNavigationBar";
 import { Link } from "react-router-dom";
 import { fetchRecipeById } from "../../redux/apiClients/recipeAPI";
+import { getCurrentUserProfile } from "../../redux/apiClients/userAPI";
 
 const GeneratedRecipes = () => {
   const profile = useSelector(profileSelector);
   const [recipes, setRecipes] = useState([]);
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = useState(1);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const theme = useTheme();
   const dispatch = useDispatch();
   const recipeLoading = useSelector(recipeLoadingSelector);
@@ -42,8 +44,11 @@ const GeneratedRecipes = () => {
     setPage(value);
   };
 
-  const fetchGeneratedRecipes = async () => {
-    if (!profile?.myRecipeGenerations?.length) return;
+  const fetchGeneratedRecipes = useCallback(async () => {
+    if (profile?.myRecipeGenerations?.length === 0) {
+      setRecipes([]);
+      return;
+    }
 
     try {
       const fetchPromises = profile.myRecipeGenerations.map((id) =>
@@ -51,24 +56,31 @@ const GeneratedRecipes = () => {
       );
 
       const results = await Promise.all(fetchPromises);
-      //console.log(results);
-      // Filter successful recipes
       const successfulRecipes = results
         ?.filter((res) => res?.payload)
         ?.map((res) => res.payload);
-      //console.log(successfulRecipes);
       setRecipes(successfulRecipes);
     } catch (error) {
-      console.error("Failed to fetch saved recipes:", error);
+      console.error("Failed to fetch generated recipes:", error);
     }
-  };
+  }, [profile?.myRecipeGenerations, dispatch]);
 
   useEffect(() => {
-    fetchGeneratedRecipes();
-  }, [profile?.myRecipeGenerations]);
+    dispatch(getCurrentUserProfile());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (
+      isInitialLoad &&
+      profile?.myRecipeGenerations &&
+      profile?.myRecipeGenerations.length > 0
+    ) {
+      fetchGeneratedRecipes();
+      setIsInitialLoad(false);
+    }
+  }, [profile?.myRecipeGenerations, fetchGeneratedRecipes, isInitialLoad]);
 
   const hasNoRecipes = !recipeLoading && (!recipes || recipes.length === 0);
-
   return (
     <React.Fragment>
       <TopNavigationBar />
@@ -103,7 +115,7 @@ const GeneratedRecipes = () => {
           </Grid>
 
           {/* Show empty state when no recipes */}
-          {!recipeLoading && profile?.myRecipeGenerations.length === 0 ? (
+          {hasNoRecipes ? (
             <Grid item container justifyContent="center">
               <Grid item xs={12} md={10} lg={8}>
                 <Box

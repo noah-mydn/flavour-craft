@@ -61,7 +61,9 @@ export const useCampaign = () => {
       setCampaigns([...campaigns, response.data.campaign]);
       displaySuccessToast("New Campaign Created!");
       resetForm();
-
+      if (response.data?.isActive) {
+        setActiveCampaign(response.data);
+      }
       return response.data.campaign;
     } catch (err) {
       setError(err.response.data.message);
@@ -236,6 +238,7 @@ export const useCampaign = () => {
   // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (mode === "create") {
       await createCampaign();
     } else {

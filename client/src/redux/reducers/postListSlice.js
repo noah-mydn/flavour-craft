@@ -105,25 +105,14 @@ const postListSlice = createSlice({
         state.commentLoading = false;
         state.commentError = action.payload;
       })
-      .addCase(likePost.fulfilled, (state, action) => {
-        const { postId, userId } = action.payload;
-        // Update post list
-        state.posts = state.posts.map((post) =>
-          post._id === postId
-            ? {
-                ...post,
-                upvotes: post.upvotes.includes(userId)
-                  ? post.upvotes.filter((id) => id !== userId)
-                  : [...post.upvotes, userId],
-              }
-            : post
-        );
 
-        // Update detailed post view
-        if (state.postById && state.postById._id === postId) {
-          state.postById.upvotes = state.postById.upvotes.includes(userId)
-            ? state.postById.upvotes.filter((id) => id !== userId)
-            : [...state.postById.upvotes, userId];
+      .addCase(likePost.fulfilled, (state, action) => {
+        const updatedPost = action.payload;
+
+        const index = state.posts.findIndex((p) => p._id === updatedPost._id);
+        if (index !== -1) {
+          state.posts[index] = updatedPost;
+          state.postById = updatedPost;
         }
       })
 

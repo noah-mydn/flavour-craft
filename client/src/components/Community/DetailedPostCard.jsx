@@ -50,8 +50,7 @@ const DetailedPostCard = ({ isAdmin }) => {
   const handleLikePost = async () => {
     await dispatch(likePost(postId)).unwrap();
     setLiked(postById?.upvotes?.includes(profile?._id));
-    await dispatch(likePost(postId)).unwrap();
-    //await getPostByPostId(postId);
+    await dispatch(fetchPostById(postId)).unwrap();
   };
 
   React.useEffect(() => {

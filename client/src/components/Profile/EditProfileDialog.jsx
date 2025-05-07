@@ -265,7 +265,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                     variant="outlined"
                     placeholder={
                       profileData?.cuisinePreferences?.length === 0
-                        ? "Select dietary restrictions"
+                        ? "Select cuisine preferences"
                         : ""
                     }
                     fullWidth

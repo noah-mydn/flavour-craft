@@ -27,11 +27,11 @@ const PrivateRoute = ({ adminOnly = false, children }) => {
   }
 
   return (
-    <>
+    <Box display="flex" flexDirection="column" minHeight="100vh">
       {!adminOnly && <TopNavigationBar />}
-      <Box minHeight={"50vh"}>{children || <Outlet />}</Box>
+      <Box flex="1">{children || <Outlet />}</Box>
       {!adminOnly && <Footer />}
-    </>
+    </Box>
   );
 };
 

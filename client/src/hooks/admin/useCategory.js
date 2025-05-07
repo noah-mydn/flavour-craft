@@ -159,9 +159,13 @@ export const useCategory = () => {
   };
 
   // Dialog management
-  const handleOpenDialog = (isEdit = false, category = null) => {
+  const handleOpenDialog = (isEdit, category = null) => {
     setEditMode(isEdit);
-    setCurrentCategory(category || { name: "", type: "dietary" });
+    if (isEdit && category) {
+      setCurrentCategory(category);
+    } else {
+      setCurrentCategory({ name: "", type: selectedType });
+    }
     setOpenDialog(true);
   };
 

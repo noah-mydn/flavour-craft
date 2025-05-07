@@ -407,7 +407,7 @@ const ManageCategories = () => {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        fullScreen={isMobile}
+        //fullScreen={isMobile}
       >
         <DialogTitle
           sx={{

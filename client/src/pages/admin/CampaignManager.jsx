@@ -324,10 +324,10 @@ const CampaignManagement = () => {
                   name="endDate"
                   label="End Date & Time"
                   value={toDateTimeLocalFormat(campaign.endDate)}
+                  inputProps={{ min: minDateTime }}
                   slotProps={{
                     inputLabel: { shrink: true },
                     input: {
-                      min: minDateTime,
                       startAdornment: (
                         <InputAdornment position="start">
                           <AccessTimeIcon />
