@@ -34,3 +34,25 @@ This project was developed as part of a final-year Bachelor's degree in Computer
 - Cloudinary
 
 ## 🛠️ Installation
+
+Set up and run **FlavourCraft** locally by following these steps:
+
+---
+
+### ✅ Prerequisites
+
+Ensure you have the following installed:
+
+- Node.js (v18 or later)
+- npm or yarn
+- Git
+- MongoDB Atlas account (or local MongoDB setup)
+
+Frontend: http://localhost:3000
+Backend: http://localhost:8080
+
+## Admin Account Credentials
+
+- admin1@flavourcraft.com (@dmiN123!)
+- admin2@flavourcraft.com (@dmiN123!)
+- admin3@flavourcraft.com (@dmiN123!)
