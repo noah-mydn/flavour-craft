@@ -2,15 +2,16 @@ import axios from "axios";
 import { displayErrorToast } from "../utils/toastUtil";
 import { getAuthConfig } from "../utils/authHeaders";
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
-import {
-  getCurrentUserProfile,
-  toggleSavedRecipe,
-} from "../redux/apiClients/userAPI";
+import { toggleSavedRecipe } from "../redux/apiClients/userAPI";
 import { fetchRecipes } from "../redux/apiClients/recipeAPI";
+import { rateRecipes } from "../redux/reducers/userProfileSlice";
+import { profileSelector } from "../redux/selectors/selectors";
 
 export const useRecipe = () => {
+  const [timeBasedRecipes, setTimeBasedRecipes] = React.useState([]);
+  const [time, setTime] = React.useState("");
   const [sortValue, setSortValue] = React.useState("all");
   const [trendingRecipes, setTrendingRecipes] = React.useState([]);
 
@@ -18,6 +19,9 @@ export const useRecipe = () => {
 
   const [recipe, setRecipe] = React.useState(null);
   const [recipeLoading, setRecipeLoading] = React.useState(false);
+  const profile = useSelector(profileSelector);
+  const [recipeDayLoading, setRecipeDayLoading] = React.useState(false);
+  const [recipeOfTheDay, setRecipeOfTheDay] = React.useState({});
 
   const fetchTrendingRecipes = async () => {
     try {
@@ -48,13 +52,33 @@ export const useRecipe = () => {
     }
   };
 
-  const saveRecipe = async (recipeId) => {
+  const handleSaveRecipe = async (recipeId) => {
     try {
       await dispatch(toggleSavedRecipe(recipeId)).unwrap();
-      await dispatch(getCurrentUserProfile()).unwrap();
+
       return true;
     } catch (error) {
       return false;
+    }
+  };
+
+  const rateRecipe = async (recipeId, rating) => {
+    const payload = {
+      rating: rating,
+    };
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BASE_API}/recipes/${recipeId}/rate`,
+        payload,
+        getAuthConfig()
+      );
+      if (response.data.status === 200) {
+        dispatch(rateRecipes({ recipeId, rating: rating }));
+      }
+
+      console.log(response.data);
+    } catch (error) {
+      displayErrorToast(error);
     }
   };
 
@@ -63,6 +87,40 @@ export const useRecipe = () => {
     setSortValue(newSortValue);
 
     dispatch(fetchRecipes({ sortValue: newSortValue, page, pageSize }));
+  };
+
+  const fetchRecipeOfTheDay = async () => {
+    setRecipeDayLoading(true);
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_API}/recipes/recipe-of-the-day`,
+        getAuthConfig()
+      );
+      console.log(response.data);
+      if (response.data.status === 200) {
+        setRecipeOfTheDay(response.data.recipe);
+      }
+    } catch (error) {
+      console.log(error);
+      displayErrorToast(error);
+    }
+  };
+
+  const getTimedBasedRecipe = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_API}/recipes/recommend`,
+        getAuthConfig()
+      );
+
+      if (response.data.recipes) {
+        setTimeBasedRecipes(response?.data?.recipes);
+        setTime(response?.data?.time);
+      }
+    } catch (error) {
+      console.log(error);
+      displayErrorToast(error);
+    }
   };
 
   const filterRecipeOption = {
@@ -75,8 +133,15 @@ export const useRecipe = () => {
     recipe,
     fetchRecipeInfo,
     fetchTrendingRecipes,
-    saveRecipe,
+    handleSaveRecipe,
+    rateRecipe,
     recipeLoading,
     filterRecipeOption,
+    fetchRecipeOfTheDay,
+    recipeOfTheDay,
+    recipeDayLoading,
+    timeBasedRecipes,
+    time,
+    getTimedBasedRecipe,
   };
 };

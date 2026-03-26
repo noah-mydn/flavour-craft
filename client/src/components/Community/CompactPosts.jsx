@@ -1,52 +1,147 @@
 import React from "react";
-import { Box, alpha, useTheme } from "@mui/material";
-
+import {
+  Box,
+  Grid,
+  Pagination,
+  alpha,
+  useTheme,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
+  Chip,
+  Typography,
+} from "@mui/material";
+import WhatshotIcon from "@mui/icons-material/Whatshot";
 import { ContentContainer } from "../../styles/ContainerStyles";
 
-import AddPost from "./AddPost";
 import PostCard from "./PostCard";
 import { useDispatch, useSelector } from "react-redux";
-import { postListSelector } from "../../redux/selectors/selectors";
+import {
+  postListSelector,
+  postsLoadingSelector,
+  postsPaginationSelector,
+} from "../../redux/selectors/selectors";
 import { fetchPosts } from "../../redux/apiClients/postsAPI";
+import AddPost from "./AddPost";
 
 const CompactPosts = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const postsList = useSelector(postListSelector);
+  const loading = useSelector(postsLoadingSelector);
+  const pagination = useSelector(postsPaginationSelector);
+  const [page, setPage] = React.useState(1);
+  const [sortOrder, setSortOrder] = React.useState("recent");
+  const pageSize = 10;
 
   React.useEffect(() => {
-    dispatch(fetchPosts());
+    dispatch(fetchPosts({ page, pageSize, sort: sortOrder }));
     console.log("POSTS:", postsList);
-  }, [dispatch]);
+  }, [dispatch, page, sortOrder]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const handleSortChange = (event) => {
+    setSortOrder(event.target.value);
+    setPage(1);
+  };
+
+  const isTopTrending = (post, index) => {
+    return sortOrder === "trending" && index < 3;
+  };
 
   return (
     <ContentContainer>
-      <Box
-        mx={{ sm: 0, md: 4, lg: 8 }}
-        sx={{
-          height: "100%",
-          overflowX: "hidden",
-          overflowY: "auto",
-          pb: 3,
-          "&::-webkit-scrollbar": {
-            width: "6px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.15),
-            borderRadius: "6px",
-          },
-        }}
-      >
-        <Box my={2.5}>
+      <Grid container spacing={4}>
+        <Grid item xs={12} justifyItems="center" alignContent="center">
           <AddPost />
-        </Box>
+        </Grid>
 
-        <Box display="flex" flexDirection="column" gap={2.5} mx={2}>
-          {postsList?.map((post) => (
-            <PostCard key={post._id} post={post} />
+        <Grid item xs={12}>
+          <Box sx={{ mb: 3, display: "flex", justifyContent: "flex-end" }}>
+            <FormControl sx={{ minWidth: 150 }} size="small">
+              <InputLabel id="sort-order-label">Sort By</InputLabel>
+              <Select
+                labelId="sort-order-label"
+                id="sort-order"
+                value={sortOrder}
+                label="Sort By"
+                onChange={handleSortChange}
+              >
+                <MenuItem value="recent">Recent</MenuItem>
+                <MenuItem value="popular">Popular</MenuItem>
+                <MenuItem value="trending">Trending</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} alignContent="center">
+          {postsList?.map((post, index) => (
+            <Box key={post._id} sx={{ position: "relative", mb: 2 }}>
+              {isTopTrending(post, index) && (
+                <Chip
+                  icon={<WhatshotIcon fontSize="small" color="#fff" />}
+                  label="Trending"
+                  size="small"
+                  sx={{
+                    position: "absolute",
+                    top: -10,
+                    right: -10,
+                    zIndex: 2,
+                    bgcolor: alpha(theme.palette.primary.main, 0.8),
+                    color: "#fff",
+                    fontWeight: "bold",
+                    fontSize: "0.7rem",
+                    transform: "rotate(3deg)",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+                    "&:before": {
+                      content: '""',
+                      position: "absolute",
+                      width: "100%",
+                      height: "100%",
+                      top: 0,
+                      left: 0,
+                      background: alpha(theme.palette.primary.main, 0.15),
+                      borderRadius: "inherit",
+                      animation: "pulse 2s infinite",
+                    },
+                    "@keyframes pulse": {
+                      "0%": { transform: "scale(1)" },
+                      "50%": { transform: "scale(1.05)" },
+                      "100%": { transform: "scale(1)" },
+                    },
+                  }}
+                />
+              )}
+              <PostCard post={post} />
+            </Box>
           ))}
-        </Box>
-      </Box>
+        </Grid>
+        <Grid item xs={12} justifyItems="center" alignContent="center" mt={3}>
+          {postsList.length > 0 && (
+            <Pagination
+              count={pagination?.totalPages}
+              page={page}
+              color="primary"
+              size="large"
+              onChange={handlePageChange}
+            />
+          )}
+          {postsList.length === 0 && !loading && (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <Typography color="text.secondary" gutterBottom>
+                {sortOrder === "trending"
+                  ? "No posts are trending at the moment"
+                  : "No posts available"}
+              </Typography>
+            </Box>
+          )}
+        </Grid>
+      </Grid>
     </ContentContainer>
   );
 };

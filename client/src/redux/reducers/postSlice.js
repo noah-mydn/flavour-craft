@@ -24,6 +24,10 @@ const postSlice = createSlice({
     removeTag: (state, action) => {
       state.tags = state.tags.filter((tag) => tag !== action.payload);
     },
+
+    clearTags: (state) => {
+      state.tags = [];
+    },
     updatePostField: (state, action) => {
       state[action.payload.name] = action.payload.value;
     },
@@ -31,7 +35,7 @@ const postSlice = createSlice({
       state.images.push(...action.payload);
     },
     deleteImage: (state, action) => {
-      state.images = state.images.filter((img) => img.id !== action.payload);
+      state.images.splice(action.payload, 1);
     },
     clearPost: () => initialState,
   },
@@ -41,6 +45,7 @@ export const {
   setPost,
   addTag,
   removeTag,
+  clearTags,
   updatePostField,
   addImages,
   deleteImage,

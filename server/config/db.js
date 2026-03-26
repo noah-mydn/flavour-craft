@@ -8,6 +8,12 @@ const {
 const { Cuisine, DietaryOption } = require("../models/DietaryOptions");
 const Recipe = require("../models/Recipes");
 const Users = require("../models/Users");
+const {
+  cleanUpOrphanedRecipes,
+  recalculateRecipeRatings,
+} = require("../controllers/recipesController");
+const UserAnalytics = require("../models/UserAnalytics");
+const Posts = require("../models/community/Posts");
 
 const connectDB = async () => {
   try {
@@ -31,6 +37,9 @@ const connectDB = async () => {
         });
       });
     });
+
+    //recalculateRecipeRatings();
+
     // await Cuisine.deleteMany({});
     //await DietaryOption.deleteMany({});
 
@@ -58,7 +67,62 @@ const connectDB = async () => {
     // );
     // console.log("All recipe thumbnails removed!");
 
-    // Set new default thumbnail
+    // const result = await Users.updateMany(
+    //   { role: { $ne: "admin" } },
+    //   { $set: { isFirstLoggedIn: true } }
+    // );
+    // await Users.updateMany(
+    //   {
+    //     $or: [
+    //       { isFirstLoggedIn: { $exists: false } },
+    //       { authProvider: { $exists: false } },
+    //     ],
+    //   },
+    //   {
+    //     $set: {
+    //       isFirstLoggedIn: true,
+    //       authProvider: "local",
+    //     },
+    //   }
+    // );
+    const users = await Users.find().lean();
+    console.log(`Found ${users.length} users. Backfilling analytics…`);
+
+    for (const u of users) {
+      const status = u.isRestricted ? "Restricted" : "Active";
+
+      // Upsert a UserAnalytics doc for each user
+      await UserAnalytics.updateOne(
+        { userId: u._id },
+        {
+          userId: u._id,
+          generatedRecipeCount: u.myRecipeGenerations?.length || 0,
+          status,
+          lastActiveAt: u.updatedAt || u.createdAt,
+        },
+        { upsert: true }
+      );
+    }
+    // console.log("Migration Success:", result);
+
+    cleanUpOrphanedRecipes();
+
+    // Users.create({
+    //   firstName: "FlavourCraft",
+    //   lastName: "Admin",
+    //   role: "admin",
+    //   email: "admin3@flavourcraft.com",
+    //   password: "@dmiN123!",
+    // });
+    // await Posts.find({ downvotes: { $exists: true } });
+
+    // await Posts.updateMany(
+    //   {},
+    //   {
+    //     $set: { isRemoved: false },
+    //     $unset: { downvotes: 1 },
+    //   }
+    // );
   } catch (err) {
     console.error(`Error connecting to MongoDB: ${err.message}`);
     process.exit(1);

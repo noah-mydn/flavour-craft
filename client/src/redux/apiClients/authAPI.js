@@ -39,9 +39,10 @@ export const register = createAsyncThunk(
 
       return { user, accessToken, refreshToken };
     } catch (error) {
-      console.log(error?.response?.data.message);
+      console.log(error.response.data);
       if (error?.response?.data.message) {
         const errorMsg = error.response.data.message || error.message;
+        displayErrorToast(error);
         return rejectWithValue(errorMsg);
       }
       //return rejectWithValue(error.response?.data || error.message);
@@ -63,7 +64,7 @@ export const googleAuth = createAsyncThunk(
 
       sessionStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
-      sessionStorage.setItem("user", JSON.stringify(response.data.user));
+      sessionStorage.setItem("auth", JSON.stringify(response.data.user));
 
       return {
         user: response.data.user,

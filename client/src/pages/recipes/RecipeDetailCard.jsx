@@ -13,7 +13,6 @@ import {
   ListItem,
   ListItemText,
   Container,
-  Paper,
   IconButton,
   Tabs,
   Tab,
@@ -28,29 +27,45 @@ import { useRecipe } from "../../hooks/useRecipe";
 import theme from "../../theme/theme";
 import { useParams } from "react-router-dom";
 import cuisineFlags from "../../constants/flags";
-import { useSelector } from "react-redux";
-import { profileSelector, userSelector } from "../../redux/selectors/selectors";
+import { useDispatch, useSelector } from "react-redux";
+import { profileSelector } from "../../redux/selectors/selectors";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
+import { getCurrentUserProfile } from "../../redux/apiClients/userAPI";
 
 const RecipeDetail = () => {
   const recipeId = useParams()?.recipeId;
-  const user = useSelector(userSelector);
   const profile = useSelector(profileSelector);
-  const { fetchRecipeInfo, recipe, saveRecipe, recipeLoading } = useRecipe();
-  const [activeTab, setActiveTab] = useState(0);
 
-  const [saved, setSaved] = React.useState(
-    profile?.savedRecipes?.includes(recipeId)
-  );
+  const {
+    fetchRecipeInfo,
+    recipe,
+    handleSaveRecipe,
+    recipeLoading,
+    rateRecipe,
+  } = useRecipe();
+
+  const [activeTab, setActiveTab] = useState(0);
+  const dispatch = useDispatch();
+
+  const [rate, setRate] = useState(0);
 
   React.useEffect(() => {
-    setSaved(profile?.savedRecipes?.includes(recipeId));
-  }, [recipeId]);
+    const initialRating = profile?.ratedRecipes.find(
+      (recipe) => recipe.recipeId === recipeId
+    )?.rating;
 
-  const handleSaveRecipe = () => {
-    saveRecipe(recipeId);
-    setSaved(!saved);
-  };
+    setRate(initialRating || 0);
+  }, [profile, recipeId]);
+
+  const [saved, setSaved] = React.useState(false);
+
+  React.useEffect(() => {
+    dispatch(getCurrentUserProfile());
+    if (profile && recipe?._id) {
+      const isSaved = profile.savedRecipes?.includes(recipe._id);
+      setSaved(isSaved);
+    }
+  }, [profile, recipe?._id]);
 
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -59,25 +74,38 @@ const RecipeDetail = () => {
     setActiveTab(newValue);
   };
 
-  const handleRateRecipe = () => {};
+  const handleRateRecipe = (event) => {
+    rateRecipe(recipeId, event.target.value).then(() => {
+      fetchRecipeInfo(recipeId);
+    });
+  };
+
+  const likeRecipe = async () => {
+    const success = await handleSaveRecipe(recipe._id);
+    if (success) {
+      setSaved((prev) => !prev);
+    }
+  };
 
   React.useEffect(() => {
     if (recipeId) {
       fetchRecipeInfo(recipeId);
     }
-  }, []);
+  }, [recipeId]);
+
+  const isAdmin = profile?.role === "admin";
 
   return (
     <Box
-      mx={isMobile || isTablet ? 0 : 8}
-      py={isMobile || isTablet ? 0 : 4}
-      my={isMobile || isTablet ? 0 : 3}
+      mx={isAdmin ? 0 : isMobile || isTablet ? 0 : 8}
+      py={isAdmin ? 0 : isMobile || isTablet ? 0 : 4}
+      my={isAdmin ? 0 : isMobile || isTablet ? 0 : 3}
     >
-      <Container maxWidth="lg" sx={{ mt: 16, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: isAdmin ? 0 : 16, mb: 4 }}>
         <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
           <Link
             color="text.secondary"
-            href="/recipes"
+            href={profile?.role === "admin" ? "/admin/recipes" : "/recipes"}
             sx={{ textDecoration: "none", cursor: "pointer" }}
           >
             Recipes
@@ -139,10 +167,10 @@ const RecipeDetail = () => {
                       component="img"
                       sx={{
                         width: "100%",
-                        maxWidth: "350px",
+                        //maxWidth: "350px",
                         height: "auto",
-                        borderRadius: 2,
-                        objectFit: "contain",
+                        //borderRadius: 2,
+                        objectFit: "cover",
                       }}
                       alt={recipe?.name}
                       src={recipe?.thumbnail}
@@ -151,25 +179,27 @@ const RecipeDetail = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6} position="relative">
-                  <Box sx={{ position: "absolute", top: 30, right: 10 }}>
-                    <IconButton
-                      size="small"
-                      onClick={handleSaveRecipe}
-                      sx={{
-                        color: "white",
-                      }}
-                    >
-                      {saved ? (
-                        <Favorite color="primary" />
-                      ) : (
-                        <FavoriteBorderOutlined
-                          sx={{
-                            color: theme.palette.primary.light,
-                          }}
-                        />
-                      )}
-                    </IconButton>
-                  </Box>
+                  {!isAdmin && (
+                    <Box sx={{ position: "absolute", top: 30, right: 10 }}>
+                      <IconButton
+                        size="small"
+                        onClick={likeRecipe}
+                        sx={{
+                          color: "white",
+                        }}
+                      >
+                        {saved ? (
+                          <Favorite color="primary" />
+                        ) : (
+                          <FavoriteBorderOutlined
+                            sx={{
+                              color: theme.palette.primary.light,
+                            }}
+                          />
+                        )}
+                      </IconButton>
+                    </Box>
+                  )}
                   <Box mt={5}>
                     <Typography variant="h4" component="h1" gutterBottom>
                       {recipe?.name}
@@ -232,9 +262,10 @@ const RecipeDetail = () => {
                       sx={{ display: "flex", alignItems: "center", my: 2.2 }}
                     >
                       <Rating
-                        value={recipe?.ratings?.average}
-                        readOnly
-                        precision={0.5}
+                        value={rate}
+                        precision={1}
+                        max={5}
+                        readOnly={isAdmin}
                         sx={{ color: "#FFD700" }}
                         onChange={handleRateRecipe}
                       />
@@ -288,7 +319,7 @@ const RecipeDetail = () => {
               </Grid>
 
               {/* Stepper for Ingredients and Instructions */}
-              <Box>
+              <Box mt={3}>
                 {/* Tab Headers */}
                 <Tabs
                   value={activeTab}

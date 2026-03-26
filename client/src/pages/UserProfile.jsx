@@ -23,7 +23,6 @@ import {
   Create,
   Settings,
   GridView,
-  Add,
   FoodBank,
 } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
@@ -32,6 +31,9 @@ import { profileSelector } from "../redux/selectors/selectors";
 import { Link, useNavigate } from "react-router-dom";
 import EditProfileDialog from "../components/Profile/EditProfileDialog";
 import { getCurrentUserProfile } from "../redux/apiClients/userAPI";
+import { formatDate } from "../utils/timeFormatter";
+import AccountSettingsDialog from "../components/Profile/AccountSettings";
+import { DetailCard } from "../styles/ContainerStyles";
 
 const UserProfile = () => {
   const theme = useTheme();
@@ -41,6 +43,7 @@ const UserProfile = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [tabValue, setTabValue] = React.useState(0);
   const [editProfileOpen, setEditProfileOpen] = React.useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = React.useState(false);
 
   React.useEffect(() => {
     dispatch(getCurrentUserProfile());
@@ -51,20 +54,17 @@ const UserProfile = () => {
     setTabValue(newValue);
   };
 
-  // Format date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   const handleEditProfileClose = (refreshData) => {
     setEditProfileOpen(false);
     if (refreshData) {
       dispatch(getCurrentUserProfile());
+    }
+  };
+
+  const handleAccountSettingsClose = (refreshData) => {
+    setAccountSettingsOpen(false);
+    if (refreshData) {
+      navigate("/login");
     }
   };
 
@@ -150,6 +150,21 @@ const UserProfile = () => {
                     >
                       Member since {formatDate(user?.createdAt)}
                     </Typography>
+                    <Chip
+                      label={user?.isRestricted ? "Restricted" : "Active"}
+                      sx={{
+                        mt: 1,
+                        color: "#fff",
+                        bgcolor: user?.isRestricted
+                          ? theme.palette.warning.light
+                          : theme.palette.success.light,
+                        border: `1px solid ${
+                          user?.isRestricted
+                            ? theme.palette.warning.main
+                            : theme.palette.success.main
+                        }`,
+                      }}
+                    />
                   </Box>
 
                   <Button
@@ -171,7 +186,10 @@ const UserProfile = () => {
 
             {/* Main Content */}
             <Grid item xs={12} md={8}>
-              <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+              <DetailCard
+                elevation={0}
+                sx={{ borderRadius: 3, overflow: "hidden" }}
+              >
                 <Tabs
                   value={tabValue}
                   onChange={handleTabChange}
@@ -217,31 +235,36 @@ const UserProfile = () => {
                             mt: 1,
                           }}
                         >
-                          {user?.cuisinePreferences?.map((cuisine, index) => (
-                            <Chip
-                              key={cuisine._id}
-                              label={cuisine.name}
-                              //color="primary"
-                              //variant="outlined"
+                          {user?.cuisinePreferences?.length > 0 ? (
+                            <Box
                               sx={{
-                                borderRadius: 15,
-                                color: "#fff",
-                                background: theme.palette.secondary.dark,
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mt: 1,
                               }}
-                            />
-                          ))}
-                          <Chip
-                            label="Add"
-                            icon={<Add color="secondary.dark" />}
-                            variant="outlined"
-                            sx={{
-                              fontWeight: "bold",
-                              borderRadius: 100,
-                              color: theme.palette.secondary.dark,
-                              border: `1px solid ${theme.palette.secondary.dark}`,
-                            }}
-                            onClick={() => {}}
-                          />
+                            >
+                              {user?.cuisinePreferences?.map(
+                                (cuisine, index) => (
+                                  <Chip
+                                    key={cuisine?._id}
+                                    label={cuisine?.name}
+                                    //color="primary"
+                                    //variant="outlined"
+                                    sx={{
+                                      borderRadius: 15,
+                                      color: "#fff",
+                                      background: theme.palette.secondary.dark,
+                                    }}
+                                  />
+                                )
+                              )}
+                            </Box>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              No cuisines preferences is set.
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
 
@@ -271,18 +294,6 @@ const UserProfile = () => {
                                 }}
                               />
                             ))}
-                            <Chip
-                              label="Add"
-                              icon={<Add color="secondary.dark" />}
-                              variant="outlined"
-                              sx={{
-                                fontWeight: "bold",
-                                borderRadius: 100,
-                                color: theme.palette.secondary.dark,
-                                border: `1px solid ${theme.palette.secondary.dark}`,
-                              }}
-                              onClick={() => {}}
-                            />
                           </Box>
                         ) : (
                           <Typography variant="body2" color="text.secondary">
@@ -379,7 +390,7 @@ const UserProfile = () => {
                             color: theme.palette.primary.main,
                             textDecoration: "underline",
                           }}
-                          to="recipes/generate/my-recipes"
+                          to="/recipes/me/generated"
                         >
                           &nbsp;here
                         </Link>
@@ -413,7 +424,7 @@ const UserProfile = () => {
                             color: theme.palette.primary.main,
                             textDecoration: "underline",
                           }}
-                          to="recipes/saved"
+                          to="/recipes/me/saved"
                         >
                           &nbsp;here
                         </Link>
@@ -421,13 +432,13 @@ const UserProfile = () => {
                     </Box>
                   )}
                 </Box>
-              </Paper>
+              </DetailCard>
             </Grid>
 
             {/* Side Panel */}
             <Grid item xs={12} md={4}>
               <Stack spacing={3}>
-                <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
+                <DetailCard elevation={0} sx={{ p: 3, borderRadius: 3 }}>
                   <Typography variant="h6" fontWeight="bold" gutterBottom>
                     Quick Actions
                   </Typography>
@@ -463,6 +474,7 @@ const UserProfile = () => {
                       variant="text"
                       fullWidth
                       startIcon={<Settings />}
+                      onClick={() => setAccountSettingsOpen(true)}
                       sx={{
                         justifyContent: "flex-start",
                         borderRadius: 2,
@@ -472,7 +484,7 @@ const UserProfile = () => {
                       Account Settings
                     </Button>
                   </Stack>
-                </Paper>
+                </DetailCard>
               </Stack>
             </Grid>
           </Grid>
@@ -482,6 +494,13 @@ const UserProfile = () => {
         <EditProfileDialog
           open={editProfileOpen}
           onClose={handleEditProfileClose}
+          user={user}
+        />
+      )}
+      {accountSettingsOpen && (
+        <AccountSettingsDialog
+          open={accountSettingsOpen}
+          onClose={handleAccountSettingsClose}
           user={user}
         />
       )}

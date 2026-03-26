@@ -16,12 +16,12 @@ import {
   DialogContent,
   DialogActions,
   Tooltip,
+  Skeleton,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import {
   commentLoadingSelector,
   commentSelector,
-  commentsLoadingSelector,
   commentsSelector,
   userSelector,
 } from "../../redux/selectors/selectors";
@@ -29,6 +29,7 @@ import {
 import {
   setComment,
   clearComment,
+  setComments,
 } from "../../redux/reducers/postListSlice.js";
 import { formatTimeAgo } from "../../utils/timeFormatter";
 import {
@@ -44,16 +45,19 @@ import {
   fetchComments,
   addComment,
   removeComment,
+  fetchPostById,
 } from "../../redux/apiClients/postsAPI.js";
 
-const CommentSection = ({ postId }) => {
+const CommentSection = ({ postId, isAdmin }) => {
   const theme = useTheme();
   const user = useSelector(userSelector);
   const comments = useSelector(commentsSelector);
   const comment = useSelector(commentSelector);
   const commentMode = useSelector((state) => state.postList.commentMode);
-  const commentLoading = useSelector(commentLoadingSelector);
-
+  const commentsLoading = useSelector(
+    (state) => state.postList.commentsLoading
+  );
+  const commentLoading = useSelector((state) => state.postList.commentLoading);
   const dispatch = useDispatch();
 
   const [newComment, setNewComment] = useState("");
@@ -76,41 +80,69 @@ const CommentSection = ({ postId }) => {
     handleCloseMenu();
   };
 
-  const handleDeleteClick = (commentItem) => {
+  const handleDeleteClick = async (commentItem) => {
     dispatch(setComment({ comment: commentItem, mode: "delete" }));
     setDeleteDialogOpen(true);
     handleCloseMenu();
+    await dispatch(fetchComments(postId));
   };
 
   const handleCancelEdit = () => {
     dispatch(clearComment());
   };
 
-  const handleSaveEdit = (commentId) => {
+  const handleSaveEdit = async (commentItem) => {
+    console.log("This is commentItem:", commentItem);
+    dispatch(setComment(commentItem));
+
     if (comment?.content?.trim()) {
-      dispatch(editComment({ commentId, content: comment.content }));
-      dispatch(clearComment());
+      console.log("After saving it to state cmmt:", comment);
+      dispatch(
+        editComment({
+          postId,
+          commentId: comment._id,
+          content: comment.content,
+        })
+      );
+      await dispatch(fetchComments(postId));
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (comment?._id) {
       dispatch(removeComment({ postId, commentId: comment._id }));
-      setDeleteDialogOpen(false);
-      dispatch(clearComment());
+      if (!commentLoading) {
+        setDeleteDialogOpen(false);
+        dispatch(clearComment());
+        await dispatch(fetchPostById(postId));
+        await dispatch(fetchComments(postId));
+      }
     }
   };
 
   const handleCommentSubmit = (e) => {
     e.preventDefault();
     if (newComment.trim()) {
-      dispatch(addComment({ postId, comment: newComment }));
+      const tempComment = {
+        _id: Date.now().toString(),
+        content: newComment,
+        author: user,
+        createdAt: new Date().toISOString(),
+      };
+
+      dispatch(setComments([...comments, tempComment]));
+
+      dispatch(addComment({ postId, comment: newComment })).then(() => {
+        dispatch(fetchComments(postId));
+      });
+
       setNewComment("");
     }
   };
 
-  const isUserComment = (commentItem) => {
-    return commentItem.author._id === user._id;
+  const isUserComment = (cmmt) => {
+    console.log(cmmt);
+    return cmmt?.author._id === user._id;
   };
 
   useEffect(() => {
@@ -133,41 +165,46 @@ const CommentSection = ({ postId }) => {
         </Typography>
 
         {/* Add comment form */}
-        <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 3 }}>
-          <Box display="flex" gap={1.5} alignItems="center">
-            <Avatar
-              sx={{ width: 36, height: 36 }}
-              src={user?.userImg || "../avatar.png"}
-            />
-            <Box sx={{ flexGrow: 1, display: "flex" }}>
-              <TextField
-                fullWidth
-                placeholder="Add a comment..."
-                variant="outlined"
-                size="small"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "20px 0 0 20px",
-                    backgroundColor: alpha(theme.palette.background.paper, 0.5),
-                  },
-                }}
+        {!isAdmin && (
+          <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 3 }}>
+            <Box display="flex" gap={1.5} alignItems="center">
+              <Avatar
+                sx={{ width: 36, height: 36 }}
+                src={user?.userImg || "../avatar.png"}
               />
-              <Button
-                type="submit"
-                variant="contained"
-                disableElevation
-                sx={{
-                  borderRadius: "0 20px 20px 0",
-                  minWidth: "auto",
-                }}
-              >
-                <SendIcon fontSize="small" />
-              </Button>
+              <Box sx={{ flexGrow: 1, display: "flex" }}>
+                <TextField
+                  fullWidth
+                  placeholder="Add a comment..."
+                  variant="outlined"
+                  size="small"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "20px 0 0 20px",
+                      backgroundColor: alpha(
+                        theme.palette.background.paper,
+                        0.5
+                      ),
+                    },
+                  }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disableElevation
+                  sx={{
+                    borderRadius: "0 20px 20px 0",
+                    minWidth: "auto",
+                  }}
+                >
+                  <SendIcon fontSize="small" />
+                </Button>
+              </Box>
             </Box>
           </Box>
-        </Box>
+        )}
 
         {/* Existing comments with improved design */}
         {comments && comments.length > 0 && (
@@ -306,7 +343,7 @@ const CommentSection = ({ postId }) => {
                             size="small"
                             variant="contained"
                             disableElevation
-                            onClick={() => handleSaveEdit(commentItem._id)}
+                            onClick={() => handleSaveEdit(commentItem)}
                             startIcon={<CheckIcon fontSize="small" />}
                             disabled={commentLoading}
                             sx={{
@@ -315,7 +352,7 @@ const CommentSection = ({ postId }) => {
                               textTransform: "none",
                             }}
                           >
-                            Save
+                            {commentLoading ? "Saving..." : "Save"}
                           </Button>
                         </Box>
                       </Box>
@@ -408,6 +445,27 @@ const CommentSection = ({ postId }) => {
             No comments yet. Be the first to comment!
           </Typography>
         )}
+
+        {commentLoading && comments?.length === 0 && (
+          <Box>
+            {[...Array(3)].map((_, index) => (
+              <Box
+                key={index}
+                display="flex"
+                gap={1.5}
+                alignItems="flex-start"
+                mb={2}
+              >
+                <Skeleton variant="circular" width={38} height={38} />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Skeleton variant="text" width="30%" height={16} />
+                  <Skeleton variant="text" width="90%" height={14} />
+                  <Skeleton variant="text" width="80%" height={14} />
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
       </Box>
 
       {/* Delete confirmation dialog */}
@@ -463,7 +521,7 @@ const CommentSection = ({ postId }) => {
               ml: 1,
             }}
           >
-            Delete
+            {commentLoading ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>

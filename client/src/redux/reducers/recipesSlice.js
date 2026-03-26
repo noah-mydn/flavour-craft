@@ -3,6 +3,7 @@ import {
   fetchFilteredRecipes,
   fetchRecipeById,
   fetchRecipes,
+  searchRecipe,
 } from "../apiClients/recipeAPI";
 
 const initialState = {
@@ -13,7 +14,7 @@ const initialState = {
   recipesLoading: false,
   recipesError: null,
   // Filtering
-  filters: false,
+  filters: [],
   filterExists: false,
   //Single recipe
   recipe: null,
@@ -27,6 +28,8 @@ const recipesSlice = createSlice({
   reducers: {
     setRecipes(state, action) {
       state.recipes = action.payload.recipes;
+    },
+    setPagination(state, action) {
       state.pagination = action.payload.pagination;
     },
     setSortType(state, action) {
@@ -35,6 +38,7 @@ const recipesSlice = createSlice({
     },
     setFilters(state, action) {
       state.filters = action.payload;
+      state.filterExists = true;
     },
     addRecipe(state, action) {
       state.recipes.push(action.payload);
@@ -43,6 +47,10 @@ const recipesSlice = createSlice({
       state.recipes = state.recipes.filter(
         (recipe) => recipe._id !== action.payload
       );
+    },
+    removeFilters(state) {
+      state.filters = [];
+      state.filterExists = false;
     },
   },
   extraReducers: (builder) => {
@@ -67,7 +75,6 @@ const recipesSlice = createSlice({
       .addCase(fetchFilteredRecipes.pending, (state) => {
         state.recipesLoading = true;
         state.recipesError = null;
-        state.filterExists = false;
       })
       .addCase(fetchFilteredRecipes.fulfilled, (state, action) => {
         console.log("Filtered recipes:", action.payload);
@@ -91,11 +98,32 @@ const recipesSlice = createSlice({
       .addCase(fetchRecipeById.rejected, (state, action) => {
         state.recipeLoading = false;
         state.recipeError = action.payload;
+      })
+      .addCase(searchRecipe.pending, (state) => {
+        state.recipesLoading = true;
+        state.recipesError = null;
+      })
+      .addCase(searchRecipe.fulfilled, (state, action) => {
+        console.log("ACTION:", action.payload);
+        state.recipesLoading = false;
+        state.recipes = action.payload.recipes;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(searchRecipe.rejected, (state, action) => {
+        state.recipesLoading = false;
+        state.recipesError = action.payload;
       });
   },
 });
 
-export const { setRecipes, addRecipe, deleteRecipe, setSortType, setFilters } =
-  recipesSlice.actions;
+export const {
+  setRecipes,
+  addRecipe,
+  deleteRecipe,
+  setSortType,
+  setFilters,
+  removeFilters,
+  setPagination,
+} = recipesSlice.actions;
 
 export default recipesSlice.reducer;

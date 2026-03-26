@@ -6,7 +6,8 @@ import { Box, Typography, useMediaQuery } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import theme from "../../../theme/theme";
-import CarouselRecpieCard from "./CarouselRecipeCard";
+
+import RecipeCard from "../RecipeCard";
 
 const NextArrow = (props) => {
   const { onClick } = props;
@@ -46,16 +47,16 @@ const PrevArrow = (props) => {
   );
 };
 
-const Carousel = ({ recipes, heading }) => {
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  console.log("Trending Recipes:", recipes);
+const Carousel = ({ recipes, infinite }) => {
+  const isDesktop = useMediaQuery(theme.breakpoints.down("xl"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const settings = {
     dots: true,
-    infinite: true,
+    infinite: infinite,
     speed: 500,
-    slidesToShow: isMobile ? 1.5 : 5,
+    slidesToShow: isMobile ? 1.5 : isTablet ? 3.7 : isDesktop ? 4.5 : 5,
     slidesToScroll: 1,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
@@ -83,21 +84,11 @@ const Carousel = ({ recipes, heading }) => {
 
   return (
     <React.Fragment>
-      <Typography
-        fontWeight="bold"
-        width="100%"
-        variant={isMobile ? "h5" : "h4"}
-        color="primary.light"
-        gutterBottom
-        textAlign="center"
-      >
-        "{heading}"
-      </Typography>
       <Box my={3}>
         <Slider {...settings}>
           {recipes?.map((recipe) => (
-            <Box key={recipe._id} px={1}>
-              <CarouselRecpieCard recipe={recipe} />
+            <Box key={recipe._id} px={1} py={3}>
+              <RecipeCard recipe={recipe} />
             </Box>
           ))}
         </Slider>

@@ -1,4 +1,3 @@
-// src/pages/RecipeGenerator.js
 import React, { useState } from "react";
 import {
   Box,
@@ -17,61 +16,113 @@ import {
   TextField,
   Divider,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   alpha,
   Container,
-  InputBase,
+  FormHelperText,
+  CircularProgress,
 } from "@mui/material";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import SendIcon from "@mui/icons-material/Send";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
 import PageHeader from "../../components/Admin/PageHeader";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
 import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
+
+import theme from "../../theme/theme";
 import {
   cuisinesSelector,
   dietaryOptionsSelector,
 } from "../../redux/selectors/selectors";
-import theme from "../../theme/theme";
+import { useCategory } from "../../hooks/admin/useCategory";
+import { useRecipeManagement } from "../../hooks/admin/useRecipeManagement";
+import { DetailCard, GradientCard } from "../../styles/ContainerStyles";
 
 const RecipeGenerator = () => {
   const [cuisines, setCuisines] = useState([]);
   const [dietary, setDietary] = useState([]);
-  const dispatch = useDispatch();
   const [tags, setTags] = useState([]);
   const [inputTag, setInputTag] = useState("");
   const [recipeCount, setRecipeCount] = useState(2);
   const [generationSuccess, setGenerationSuccess] = useState(false);
+  const [errors, setErrors] = useState({
+    cuisines: false,
+    dietary: false,
+    tags: false,
+  });
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
+  const { cuisineManagement, dietaryManagement } = useCategory();
+  const { fetchAllCuisines } = cuisineManagement;
+  const { fetchAllDietaryOptions } = dietaryManagement;
+  const { batchRecipeGeneration, recipeGeneratedMsg, generatedLoading } =
+    useRecipeManagement();
 
   React.useEffect(() => {
-    dispatch(fetchCuisines());
-    dispatch(fetchDietaryOptions());
+    fetchAllCuisines();
+    fetchAllDietaryOptions();
   }, []);
 
   const cuisineOptions = useSelector(cuisinesSelector);
   const dietaryOptions = useSelector(dietaryOptionsSelector);
 
+  // Validate the form
+  const validateForm = () => {
+    const newErrors = {
+      cuisines: cuisines.length === 0,
+      //dietary: dietary.length === 0,
+      tags: tags.length === 0,
+    };
+
+    setErrors(newErrors);
+    return !Object.values(newErrors).includes(true);
+  };
+
   const handleCuisineChange = (event) => {
-    setCuisines(event.target.value);
+    const value = event.target.value;
+    setCuisines(value);
+    if (formSubmitted) {
+      setErrors({ ...errors, cuisines: value.length === 0 });
+    }
   };
 
   const handleDietaryChange = (event) => {
-    setDietary(event.target.value);
+    const value = event.target.value;
+    setDietary(value);
   };
 
-  const handleTagChange = (event) => {
-    setTags(event.target.value);
+  const handleAddTag = (newTag) => {
+    if (newTag && !tags.includes(newTag)) {
+      const updatedTags = [...tags, newTag];
+      setTags(updatedTags);
+      if (formSubmitted) {
+        setErrors({ ...errors, tags: updatedTags.length === 0 });
+      }
+    }
+  };
+
+  const successGeneration = () => {
+    setTags([]);
+    setDietary([]);
+    setCuisines([]);
+    setGenerationSuccess(true);
   };
 
   const handleGenerate = () => {
-    // Simulate recipe generation
-    setTimeout(() => {
-      setGenerationSuccess(true);
-    }, 1500);
+    setFormSubmitted(true);
+    setGenerationSuccess(false);
+
+    if (validateForm()) {
+      setTimeout(() => {
+        batchRecipeGeneration(
+          tags,
+          cuisines,
+          dietary,
+          recipeCount,
+          successGeneration
+        );
+      }, 1500);
+    }
   };
 
   return (
@@ -83,16 +134,26 @@ const RecipeGenerator = () => {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={7.5}>
-          <Card>
+          <DetailCard>
             <CardContent>
               <Typography variant="h5" gutterBottom>
                 Generation Parameters
               </Typography>
               <Divider sx={{ my: 2 }} />
 
+              {formSubmitted && Object.values(errors).includes(true) && (
+                <Alert
+                  severity="error"
+                  icon={<ErrorIcon fontSize="inherit" />}
+                  sx={{ mb: 2 }}
+                >
+                  Please fill in all required fields before generating recipes.
+                </Alert>
+              )}
+
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth error={errors.cuisines} required>
                     <InputLabel id="cuisine-label">Cuisine Types</InputLabel>
                     <Select
                       labelId="cuisine-label"
@@ -124,6 +185,11 @@ const RecipeGenerator = () => {
                         </MenuItem>
                       ))}
                     </Select>
+                    {errors.cuisines && (
+                      <FormHelperText>
+                        Please select at least one cuisine
+                      </FormHelperText>
+                    )}
                   </FormControl>
                 </Grid>
 
@@ -162,29 +228,38 @@ const RecipeGenerator = () => {
                         </MenuItem>
                       ))}
                     </Select>
+                    {/* {errors.dietary && (
+                      <FormHelperText>
+                        Please select at least one dietary preference
+                      </FormHelperText>
+                    )} */}
                   </FormControl>
                 </Grid>
 
                 <Grid item xs={12}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth error={errors.tags} required>
                     <TextField
                       id="tags-input"
                       variant="outlined"
-                      placeholder="Type and press Enter to add"
+                      placeholder="Tags (Breakfast, Brunch, Quick, Easy)..."
                       fullWidth
                       value={inputTag}
-                      onChange={(event) => setInputTag(event.target.value)} // Update input state
+                      onChange={(event) => setInputTag(event.target.value)}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === ",") {
                           event.preventDefault();
                           const newTag = inputTag.trim();
-                          if (newTag && !tags.includes(newTag)) {
-                            setTags([...tags, newTag]);
-                          }
+                          handleAddTag(newTag);
                           setInputTag("");
                         }
                       }}
+                      error={errors.tags}
                     />
+                    {errors.tags && (
+                      <FormHelperText>
+                        Please add at least one tag
+                      </FormHelperText>
+                    )}
 
                     <Box
                       sx={{
@@ -201,7 +276,16 @@ const RecipeGenerator = () => {
                           size="small"
                           variant="outlined"
                           onDelete={() => {
-                            setTags(tags.filter((_, i) => i !== index));
+                            const updatedTags = tags.filter(
+                              (_, i) => i !== index
+                            );
+                            setTags(updatedTags);
+                            if (formSubmitted) {
+                              setErrors({
+                                ...errors,
+                                tags: updatedTags.length === 0,
+                              });
+                            }
                           }}
                           sx={{
                             border: `1px solid ${theme.palette.primary.light}`,
@@ -228,7 +312,7 @@ const RecipeGenerator = () => {
                     step={1}
                     marks
                     min={2}
-                    max={6}
+                    max={5}
                   />
                 </Grid>
               </Grid>
@@ -237,10 +321,17 @@ const RecipeGenerator = () => {
                 <Button
                   variant="contained"
                   color="primary"
-                  endIcon={<SendIcon />}
+                  disabled={generatedLoading}
+                  endIcon={
+                    generatedLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <SendIcon />
+                    )
+                  }
                   onClick={handleGenerate}
                 >
-                  Generate Recipes
+                  {generatedLoading ? "Generating..." : "Generate Recipe"}
                 </Button>
               </Box>
 
@@ -250,18 +341,26 @@ const RecipeGenerator = () => {
                   severity="success"
                   sx={{ mt: 3 }}
                 >
-                  Successfully generated {recipeCount} recipes based on your
-                  parameters!
+                  {recipeGeneratedMsg}
+                  <a
+                    href="/admin/recipes"
+                    style={{
+                      color: theme.palette.success.light,
+                      textDecoration: "underline",
+                    }}
+                  >
+                    View here!
+                  </a>
                 </Alert>
               )}
             </CardContent>
-          </Card>
+          </DetailCard>
         </Grid>
         <Grid item>
           <Divider orientation="vertical" flexItem sx={{ height: "100%" }} />
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <DetailCard>
             <CardContent>
               <Typography variant="h5" gutterBottom>
                 Generation Tips
@@ -282,7 +381,7 @@ const RecipeGenerator = () => {
                 saved for later editing.
               </Typography>
             </CardContent>
-          </Card>
+          </DetailCard>
         </Grid>
       </Grid>
     </Container>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   PreferenceContainer,
   PreferenceOptionsContainer,
@@ -12,38 +13,166 @@ import {
   Typography,
   useMediaQuery,
 } from "@mui/material";
-import { useUserPreferences } from "../../hooks/useUserPreferences";
-import { usePreferenceContext } from "../../context/PreferenceContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { fadeVariant } from "../../utils/animationUtils";
 import theme from "../../theme/theme";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  cuisinesSelector,
+  dietaryOptionsSelector,
+} from "../../redux/selectors/selectors";
+
+import { CookingAnimation } from "../Animation/CookingAnimation";
+import {
+  getCurrentUserProfile,
+  setCuisinePreferences,
+  setDietaryPreferences,
+} from "../../redux/apiClients/userAPI";
+
+import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
+import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
+import { displayErrorToast } from "../../utils/toastUtil";
+import axios from "axios";
+import { getAuthConfig } from "../../utils/authHeaders";
 
 const Preferences = () => {
-  const {
-    cuisines,
-    allergies,
-    healthConditions,
-    lifeStyles,
-    tempCuisineSelections,
-    tempDietarySelections,
-    commitSelections,
-    selectCuisineSelections,
-    selectDietaryRestrictions,
-    handleTempCuisineSelections,
-    handleTempDietarySelections,
-  } = useUserPreferences();
+  const [step, setStep] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
+  // Use Sets to store only IDs
+  const [tempDietarySelections, setTempDietarySelections] = React.useState(
+    new Set()
+  );
+  const [tempCuisineSelections, setTempCuisineSelections] = React.useState(
+    new Set()
+  );
 
-  const { step, nextStep, previousStep, skipStep, skipToMain } =
-    usePreferenceContext();
+  const [hasSelectedPreferences, setHasSelectedPreferences] =
+    React.useState(false);
 
-  React.useEffect(() => {
-    console.log("Calling from Preferences");
-  });
-
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
+  const cuisines = useSelector(cuisinesSelector);
+  const dietaryOptions = useSelector(dietaryOptionsSelector);
+
+  const updateLoginStatus = async () => {
+    try {
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_API}/auth/update`,
+        {},
+        getAuthConfig()
+      );
+      if (response.status === 200) {
+        console.log("Login status updated successfully.");
+        dispatch(getCurrentUserProfile());
+      }
+    } catch (error) {
+      console.error("Error updating login status:", error);
+      displayErrorToast(error);
+    }
+  };
+
+  const handleTempDietarySelections = (option) => {
+    const optionId = typeof option === "string" ? option : option._id;
+    setTempDietarySelections((prev) => {
+      const newSelections = new Set(prev);
+      newSelections.has(optionId)
+        ? newSelections.delete(optionId)
+        : newSelections.add(optionId);
+      return newSelections;
+    });
+  };
+
+  const handleTempCuisineSelections = (cuisine) => {
+    const cuisineId = typeof cuisine === "string" ? cuisine : cuisine._id;
+    setTempCuisineSelections((prev) => {
+      const newSelections = new Set(prev);
+      newSelections.has(cuisineId)
+        ? newSelections.delete(cuisineId)
+        : newSelections.add(cuisineId);
+      return newSelections;
+    });
+  };
+
+  const nextStep = () => {
+    if (step === 0) {
+      setStep(1);
+    } else {
+      finishSetup();
+    }
+  };
+
+  const previousStep = () => {
+    setStep(0);
+  };
+
+  const skipStep = () => {
+    if (step === 0) {
+      setStep(1);
+    } else {
+      finishSetup();
+    }
+  };
+
+  const skipToMain = () => {
+    finishSetup();
+  };
+
+  const finishSetup = () => {
+    if (tempDietarySelections.size > 0 || tempCuisineSelections.size > 0) {
+      const dietarySelections = Array.from(tempDietarySelections);
+      const cuisineSelections = Array.from(tempCuisineSelections);
+
+      setLoading(true);
+
+      const promises = [];
+      if (dietarySelections.length > 0) {
+        promises.push(
+          dispatch(setDietaryPreferences({ dietaryOptions: dietarySelections }))
+        );
+      }
+      if (cuisineSelections.length > 0) {
+        promises.push(
+          dispatch(setCuisinePreferences({ cuisineTypes: cuisineSelections }))
+        );
+      }
+
+      Promise.all(promises).finally(() => {
+        setTimeout(() => {
+          setLoading(false);
+          navigate("/home");
+        }, 3000);
+      });
+
+      updateLoginStatus();
+    } else {
+      setLoading(false);
+      navigate("/home");
+      updateLoginStatus();
+    }
+  };
+
+  React.useEffect(() => {
+    if (!cuisines.length) {
+      dispatch(fetchCuisines());
+    }
+    if (!dietaryOptions.length) {
+      dispatch(fetchDietaryOptions());
+    }
+  }, [dispatch, cuisines, dietaryOptions]);
+
+  React.useEffect(() => {
+    if (tempDietarySelections.size > 0 || tempCuisineSelections.size > 0) {
+      setHasSelectedPreferences(true);
+    }
+  }, [tempDietarySelections, tempCuisineSelections]);
+
+  if (loading && hasSelectedPreferences) {
+    return <CookingAnimation />;
+  }
   return (
-    <PreferenceContainer>
+    <PreferenceContainer isMobile={isMobile}>
       <Box display="flex" justifyContent="center">
         <BannerArea
           src={isMobile ? "./banner-s.png" : "banner-new.png"}
@@ -63,6 +192,7 @@ const Preferences = () => {
             ? "Choose your dietary preferences..."
             : "Choose your cuisine preferences..."}
         </Typography>
+
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div
@@ -73,48 +203,23 @@ const Preferences = () => {
               exit="exit"
             >
               <PreferenceOptionsContainer>
-                {allergies?.options?.map((allergy) => {
-                  const isSelected = tempDietarySelections.has(allergy);
+                {dietaryOptions?.map((opt) => {
+                  const isSelected = tempDietarySelections.has(opt._id);
                   return (
                     <SelectableChip
-                      key={allergy}
-                      label={allergy}
+                      key={opt._id}
+                      label={opt.name}
                       sx={{ fontSize: "1rem" }}
                       color={isSelected ? "primary" : "error"}
                       variant={isSelected ? "filled" : "outlined"}
-                      onClick={() => handleTempDietarySelections(allergy)}
-                    />
-                  );
-                })}
-                {healthConditions?.options?.map((hc) => {
-                  const isSelected = tempDietarySelections.has(hc);
-                  return (
-                    <SelectableChip
-                      key={hc}
-                      label={hc}
-                      sx={{ fontSize: "1rem" }}
-                      color={isSelected ? "primary" : "error"}
-                      variant={isSelected ? "filled" : "outlined"}
-                      onClick={() => handleTempDietarySelections(hc)}
-                    />
-                  );
-                })}
-                {lifeStyles?.options?.map((lifeStyle) => {
-                  const isSelected = tempDietarySelections.has(lifeStyle);
-                  return (
-                    <SelectableChip
-                      key={lifeStyle}
-                      label={lifeStyle}
-                      sx={{ fontSize: "1rem" }}
-                      color={isSelected ? "primary" : "error"}
-                      variant={isSelected ? "filled" : "outlined"}
-                      onClick={() => handleTempDietarySelections(lifeStyle)}
+                      onClick={() => handleTempDietarySelections(opt)}
                     />
                   );
                 })}
               </PreferenceOptionsContainer>
             </motion.div>
           )}
+
           {step === 1 && (
             <motion.div
               key="cuisine-selections"
@@ -125,11 +230,11 @@ const Preferences = () => {
             >
               <PreferenceOptionsContainer>
                 {cuisines?.map((cuisine) => {
-                  const isSelected = tempCuisineSelections.has(cuisine);
+                  const isSelected = tempCuisineSelections.has(cuisine._id);
                   return (
                     <SelectableChip
-                      key={cuisine}
-                      label={cuisine}
+                      key={cuisine._id}
+                      label={cuisine.name}
                       sx={{ fontSize: "1rem" }}
                       color={isSelected ? "primary" : "error"}
                       variant={isSelected ? "filled" : "outlined"}
@@ -152,8 +257,11 @@ const Preferences = () => {
             <Button
               onClick={previousStep}
               variant="contained"
-              color="warning"
-              sx={{ cursor: "pointer", textTransform: "uppercase" }}
+              sx={{
+                cursor: "pointer",
+                textTransform: "uppercase",
+                background: theme.palette.grey[600],
+              }}
             >
               Previous
             </Button>
@@ -172,13 +280,13 @@ const Preferences = () => {
 
           {step === 0 && tempDietarySelections.size > 0 && (
             <Button
-              onClick={() => {
-                commitSelections();
-                nextStep();
-              }}
+              onClick={nextStep}
               variant="contained"
-              color="warning"
-              sx={{ cursor: "pointer", textTransform: "uppercase" }}
+              sx={{
+                cursor: "pointer",
+                textTransform: "uppercase",
+                background: theme.palette.secondary.dark,
+              }}
             >
               Next
             </Button>
@@ -188,19 +296,26 @@ const Preferences = () => {
             <Button
               onClick={skipToMain}
               variant="text"
-              color="primary"
-              sx={{ cursor: "pointer", textTransform: "uppercase" }}
+              sx={{
+                cursor: "pointer",
+                textTransform: "uppercase",
+                color: theme.palette.secondary.dark,
+                textDecoration: "underline",
+              }}
             >
               Skip
             </Button>
           )}
 
-          {step === 1 && selectCuisineSelections.size > 0 && (
+          {step === 1 && tempCuisineSelections.size > 0 && (
             <Button
-              onClick={nextStep}
+              onClick={finishSetup}
               variant="contained"
-              color="warning"
-              sx={{ cursor: "pointer", textTransform: "uppercase" }}
+              sx={{
+                cursor: "pointer",
+                textTransform: "uppercase",
+                bgcolor: "secondary.main",
+              }}
             >
               Next
             </Button>

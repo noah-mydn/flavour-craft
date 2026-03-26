@@ -40,7 +40,8 @@ import {
   fetchFilteredRecipes,
   fetchRecipes,
 } from "../../redux/apiClients/recipeAPI";
-import { setFilters } from "../../redux/reducers/recipesSlice";
+import { removeFilters, setFilters } from "../../redux/reducers/recipesSlice";
+import AutoCompleteSearch from "../AutoCompleteSearch/AutoCompleteSearch";
 
 const FilterSort = ({ page, pageSize }) => {
   const dispatch = useDispatch();
@@ -54,15 +55,19 @@ const FilterSort = ({ page, pageSize }) => {
   const [cookingTimeOperator, setCookingTimeOperator] = useState("");
   const [cookingTimeValue, setCookingTimeValue] = useState();
 
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const cuisineOptions = useSelector(cuisinesSelector);
   const dietaryOptions = useSelector(dietaryOptionsSelector);
 
   React.useEffect(() => {
-    dispatch(fetchCuisines());
-    dispatch(fetchDietaryOptions());
-  }, [dispatch]);
+    if (!cuisineOptions.length) {
+      dispatch(fetchCuisines());
+    }
+    if (!dietaryOptions.length) {
+      dispatch(fetchDietaryOptions());
+    }
+  }, [dispatch, cuisineOptions, dietaryOptions]);
 
   const tagOptions = [
     "Breakfast",
@@ -78,6 +83,9 @@ const FilterSort = ({ page, pageSize }) => {
     "Seafood",
     "Salad",
     "Stew",
+    "Stir-Fry",
+    "Gourmet",
+    "Comfort Food",
   ];
 
   const timeOperators = [
@@ -89,20 +97,13 @@ const FilterSort = ({ page, pageSize }) => {
   ];
 
   const handleClearFilters = () => {
-    setSelectedCuisines([]);
-    setSelectedTags([]);
-    setSelectedDietaryPreferences([]);
-    setCookingTimeOperator("");
-    setCookingTimeValue();
+    dispatch(removeFilters());
+    window.location.reload();
   };
 
   const handleFilterRecipes = () => {
+    dispatch(removeFilters());
     setFiltersOpen(false);
-    // console.log("Selected Cuisines:", selectedCuisines);
-    // console.log("Selected Tags:", selectedTags);
-    // console.log("Selected Dietary Preferences:", selectedDietaryPreferences);
-    // console.log("Cooking Time Operator:", cookingTimeOperator);
-    // console.log("Cooking Time Value:", cookingTimeValue);
 
     let payload = {};
 
@@ -119,12 +120,20 @@ const FilterSort = ({ page, pageSize }) => {
       payload.cookingTime = `${cookingTimeOperator} ${cookingTimeValue}`;
     }
 
-    //console.log("Payload:", payload);
-    dispatch(setFilters(payload));
-    dispatch(fetchFilteredRecipes(payload, page, pageSize));
+    console.log("Payload:", payload);
+    if (Object.keys(payload).length > 0) {
+      dispatch(setFilters(payload));
+      dispatch(fetchFilteredRecipes({ filters: payload, page, pageSize }));
+    }
   };
 
   const handleSortRecipe = (event) => {
+    setSelectedCuisines([]);
+    setSelectedTags([]);
+    setSelectedDietaryPreferences([]);
+    setCookingTimeOperator("");
+    setCookingTimeValue();
+
     //console.log("SORT OPTION:", event.target.value);
     const selectedSort = event.target.value;
     setSortOption(selectedSort);
@@ -156,18 +165,22 @@ const FilterSort = ({ page, pageSize }) => {
           overflow: "hidden",
           //   bgcolor: "background.paper",
           bgcolor: "#FAF9F6",
+          p: 2,
         }}
       >
         {/* Top row with sort options and filter toggle */}
-        <Grid container spacing={2} alignItems="center" sx={{ p: 2 }}>
+        <Grid container spacing={2} alignItems="center">
           {isMobile ? (
             // Mobile layout
             <>
+              <Grid item xs={12}>
+                <AutoCompleteSearch />
+              </Grid>
               <Grid item xs={6}>
                 <FormControl size="small" fullWidth variant="outlined">
                   <Select
                     value={sortOption}
-                    onChange={(e) => setSortOption(e.target.value)}
+                    onChange={handleSortRecipe}
                     displayEmpty
                     sx={{ borderRadius: 2 }}
                   >
@@ -203,8 +216,10 @@ const FilterSort = ({ page, pageSize }) => {
           ) : (
             // Desktop/tablet layout
             <>
-              <Grid item xs={12} sm={5}></Grid>
-              <Grid item xs={12} sm={7}>
+              <Grid item md={6}>
+                <AutoCompleteSearch />
+              </Grid>
+              <Grid item md={6}>
                 <Stack
                   direction="row"
                   justifyContent="flex-end"

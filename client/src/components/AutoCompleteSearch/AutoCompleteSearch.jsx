@@ -15,7 +15,7 @@ const AutoCompleteSearch = () => {
     if (query.length > 3) {
       dispatch(fetchRecipes({ sortValue: "all", page: 1, pageSize: 200 }));
     }
-  }, [query, dispatch]);
+  }, [query]);
 
   const handleSelect = (event, value) => {
     if (value) {
@@ -28,6 +28,13 @@ const AutoCompleteSearch = () => {
       options={recipes || []}
       getOptionLabel={(option) => option.name}
       onChange={handleSelect}
+      fullWidth
+      sx={{
+        width: "100%",
+        "& .MuiAutocomplete-root, & .MuiFormControl-root": {
+          width: "100%",
+        },
+      }}
       renderInput={(params) => (
         <TextField
           {...params}
@@ -40,7 +47,7 @@ const AutoCompleteSearch = () => {
             width: 350,
             bgcolor: "transparent",
             "& .MuiOutlinedInput-root": {
-              borderRadius: 20,
+              borderRadius: 2,
             },
           }}
         />

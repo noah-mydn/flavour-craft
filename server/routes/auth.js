@@ -1,13 +1,20 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const { register, login, logout } = require("../controllers/authController");
+const {
+  register,
+  login,
+  logout,
+  updateLoginStatus,
+} = require("../controllers/authController");
 const passport = require("passport");
+const { userAuth } = require("../middlewares/authVerification");
 
 const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
+router.put("/update", userAuth, updateLoginStatus);
 
 // Route to initiate Google OAuth flow
 router.get(
@@ -15,15 +22,24 @@ router.get(
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Google OAuth callback route - this is where Google redirects after authentication
+// Google OAuth callback route
 router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: "http://localhost:3000/login?error=authentication_failed",
+    failureRedirect: `${process.env.REACT_APP_BASE_API}/login?error=authentication_failed`,
   }),
   async (req, res) => {
     try {
+      const user = {
+        id: req.user._id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        username: req.user.username,
+        email: req.user.email,
+        role: req.user.role,
+        isFirstLoggedIn: req.user.isFirstLoggedIn,
+      };
       // Generate tokens from authenticated user
       const accessToken = jwt.sign(
         {
@@ -41,17 +57,15 @@ router.get(
         { expiresIn: "7d" }
       );
 
-      // Store refresh token in DB
       req.user.refreshToken = refreshToken;
       await req.user.save();
 
-      // Redirect to frontend with tokens (you might want a more secure approach)
       res.redirect(
-        `http://localhost:3000/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
+        `${process.env.HOST_URL}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&userId=${req.user._id}`
       );
     } catch (error) {
       console.error("Error in callback handling:", error);
-      res.redirect("http://localhost:3000/login?error=server_error");
+      res.redirect(`${process.env.HOST_URL}/login?error=server_error`);
     }
   }
 );

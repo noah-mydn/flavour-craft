@@ -53,6 +53,7 @@ export function GenerateRecipeProvider({ children }) {
   };
 
   const handleGenerateRecipe = async () => {
+    setErrorGeneration(null);
     console.log("Current Recipe Input:", recipeInput);
     setGenerateLoading(true);
     let payload = {
@@ -68,9 +69,9 @@ export function GenerateRecipeProvider({ children }) {
         payload,
         getAuthConfig()
       );
-
-      console.log(response.data.data);
-      setGeneratedRecipe(response.data.data);
+      if (response?.data?.status === 200) {
+        setGeneratedRecipe(response.data.data);
+      }
     } catch (error) {
       console.error(error);
       setErrorGeneration(error.response.data.message);

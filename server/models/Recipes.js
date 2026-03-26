@@ -8,7 +8,7 @@ const recipeSchema = new mongoose.Schema({
   thumbnail: {
     type: String,
     default:
-      "https://res.cloudinary.com/dek6ihfme/image/upload/v1741418937/recipe-thumbnail-fallback_yhxyqo.png",
+      "https://res.cloudinary.com/dek6ihfme/image/upload/v1745670256/166c689f-ce34-4fbf-b5a1-1bc9e0ef963a_cpcldx.png",
   },
   ingredients: [
     {

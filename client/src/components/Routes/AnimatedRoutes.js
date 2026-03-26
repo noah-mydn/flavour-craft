@@ -31,11 +31,13 @@ import ManageCategories from "../../pages/admin/ManageCategories";
 import CampaignManager from "../../pages/admin/CampaignManager";
 import RecipeImageManagement from "../../pages/admin/RecipeManagement";
 import RecipesByCuisines from "../../pages/recipes/RecipeByCuisines";
-import { displayErrorToast, displaySuccessToast } from "../../utils/toastUtil";
+import { displayErrorToast } from "../../utils/toastUtil";
 import Post from "../Community/Post";
-import { Main } from "../Main/Main";
+
 import SavedRecipes from "../../pages/recipes/SavedRecipes";
 import GeneratedRecipes from "../../pages/recipes/GeneratedRecipes";
+import Preferences from "../Preferences/Preferences";
+import UserManagement from "../../pages/admin/UserManagement";
 
 const AnimatedRoutes = () => {
   const isMobile = useMediaQuery("(max-width: 600px)");
@@ -49,9 +51,17 @@ const AnimatedRoutes = () => {
 
   React.useEffect(() => {
     if (user && isVerified) {
-      dispatch(getCurrentUserProfile());
+      console.log("User is verified and logged in:", user);
+      dispatch(getCurrentUserProfile()).then((res) => {
+        console.log("Fetching latest profile...", res);
+        const updatedUser = res.payload;
+        if (updatedUser?.role === "user" && updatedUser?.isFirstLoggedIn) {
+          console.log("Redirecting after fetching latest profile");
+          navigate("/pref");
+        }
+      });
     }
-  }, [dispatch]);
+  }, [dispatch, user, isVerified]);
 
   React.useEffect(() => {
     if (accessToken) {
@@ -61,76 +71,80 @@ const AnimatedRoutes = () => {
 
   //Google Auth
   React.useEffect(() => {
-    // Only process if we have search parameters
-    if (location.search) {
-      console.log("IT RUNS");
-      const handleOAuthCallback = async () => {
-        try {
-          // Get tokens from URL parameters
-          const params = new URLSearchParams(location.search);
-          const accessToken = params.get("accessToken");
-          const refreshToken = params.get("refreshToken");
-          const userId = params.get("userId");
-          const error = params.get("error");
+    const params = new URLSearchParams(location.search);
+    const hasOAuthParams =
+      params.has("accessToken") ||
+      params.has("refreshToken") ||
+      params.has("userId");
 
-          // Check for errors
-          if (error) {
-            displayErrorToast({ message: `Authentication failed: ${error}` });
-            navigate("/auth");
-            return;
-          }
+    if (!hasOAuthParams) return;
 
-          // Validate tokens exist
-          if (!accessToken || !refreshToken || !userId) {
-            displayErrorToast({ message: "Missing authentication data" });
-            navigate("/auth");
-            return;
-          }
+    console.log("Running Google OAuth callback...");
 
-          // Fetch user data with the token
-          const response = await fetch(
-            `${process.env.REACT_APP_BASE_API}/user/me`,
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          );
+    const handleOAuthCallback = async () => {
+      try {
+        const accessToken = params.get("accessToken");
+        const refreshToken = params.get("refreshToken");
+        const userId = params.get("userId");
+        const error = params.get("error");
 
-          if (!response.ok) {
-            throw new Error("Failed to fetch user data");
-          }
-
-          const userData = await response.json();
-
-          // Store tokens and user data
-          sessionStorage.setItem("accessToken", accessToken);
-          sessionStorage.setItem("userData", JSON.stringify(userData.user));
-          localStorage.setItem("refreshToken", refreshToken);
-
-          // Update Redux state
-          dispatch({
-            type: "auth/loginSuccess",
-            payload: {
-              user: userData.user,
-              accessToken,
-              refreshToken,
-            },
-          });
-
-          displaySuccessToast("Successfully logged in with Google");
-
-          // Redirect to home page
-          navigate("/home");
-        } catch (error) {
-          console.error("OAuth callback error:", error);
-          displayErrorToast({ message: "Authentication process failed" });
+        if (error) {
+          displayErrorToast({ message: `Authentication failed: ${error}` });
           navigate("/auth");
+          return;
         }
-      };
 
-      handleOAuthCallback();
-    }
+        if (!accessToken || !userId) {
+          displayErrorToast({ message: "Missing authentication data" });
+          navigate("/auth");
+          return;
+        }
+
+        const response = await fetch(
+          `${process.env.REACT_APP_BASE_API}/user/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch user data");
+
+        const userData = await response.json();
+
+        sessionStorage.setItem("accessToken", accessToken);
+        sessionStorage.setItem("userData", JSON.stringify(userData.user));
+        localStorage.setItem("refreshToken", refreshToken);
+
+        const authUser = {
+          id: userData?.user?._id,
+          firstName: userData?.user?.firstName,
+          lastName: userData?.user?.lastName,
+          username: userData?.user?.username,
+          role: userData?.user?.role,
+          email: userData?.user?.email,
+          isFirstLoggedIn: userData?.user?.isFirstLoggedIn,
+        };
+
+        dispatch({
+          type: "auth/loginSuccess",
+          payload: { user: authUser, accessToken, refreshToken },
+        });
+
+        if (userData?.user?.isFirstLoggedIn) {
+          navigate("/pref");
+        } else {
+          navigate("/home");
+        }
+      } catch (error) {
+        console.error("OAuth callback error:", error);
+        displayErrorToast({ message: "Authentication process failed" });
+        navigate("/auth");
+      }
+    };
+
+    handleOAuthCallback();
   }, [dispatch, location, navigate]);
 
   return (
@@ -167,7 +181,7 @@ const AnimatedRoutes = () => {
         path="/home"
         element={
           <PrivateRoute>
-            <Main />
+            <Home />
           </PrivateRoute>
         }
       />
@@ -180,19 +194,10 @@ const AnimatedRoutes = () => {
         <Route path="me/generated" element={<GeneratedRecipes />} />
       </Route>
 
-      <Route path="/forum" element={<PrivateRoute />}>
+      <Route path="/post" element={<PrivateRoute />}>
         <Route index element={<Community isMobile={isMobile} />} />
         <Route path=":postId" element={<Post />} />
       </Route>
-
-      {/* <Route
-        path="/recipes/:recipeId"
-        element={
-          <PrivateRoute>
-            <RecipeDetail isMobile={isMobile} />
-          </PrivateRoute>
-        }
-      /> */}
 
       <Route
         path="/profile"
@@ -233,14 +238,18 @@ const AnimatedRoutes = () => {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="users" element={<UserManagement />} />
         <Route path="recipes" element={<RecipeImageManagement />} />
+        <Route path="recipes/:recipeId" element={<RecipeDetail />} />
         <Route path="generator" element={<RecipeGenerator />} />
         <Route path="reported" element={<ReportedContent />} />
+        <Route path="reported/:postId" element={<Post />} />
         <Route path="categories" element={<ManageCategories />} />
         <Route path="campaigns" element={<CampaignManager />} />
       </Route>
 
       <Route path="/not-found" element={<NotFound />} />
+      <Route path="/pref" element={<Preferences />} />
     </Routes>
   );
 };

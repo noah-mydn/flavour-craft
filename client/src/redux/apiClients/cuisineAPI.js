@@ -1,29 +1,39 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { displayErrorToast } from "../../utils/toastUtil";
+import {
+  displayErrorToast,
+  displayInfoToast,
+  displaySuccessToast,
+} from "../../utils/toastUtil";
 import axios from "axios";
 import { getAuthConfig } from "../../utils/authHeaders";
 
-// Fetch all dietary options
+// Fetch all cuisines
 export const fetchCuisines = createAsyncThunk(
   "dietary/fetchCuisines",
-  async (_, { rejectWithValue }) => {
+  async ({ page, pageSize } = {}, { rejectWithValue }) => {
+    const BASE_API = process.env.REACT_APP_BASE_API;
+    const API_URL =
+      page !== undefined && pageSize !== undefined
+        ? `${BASE_API}/preferences/cuisines?page=${page}&pageSize=${pageSize}`
+        : `${BASE_API}/preferences/cuisines`;
+
+    console.log("IT RUNS:", API_URL);
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_BASE_API}/preferences/cuisines`,
-        getAuthConfig()
-      );
-      //console.log(response.data.cuisines);
-      return response.data.cuisines;
+      const response = await axios.get(API_URL, getAuthConfig());
+      return response.data;
     } catch (error) {
       displayErrorToast(error);
-      return rejectWithValue(error.response.data);
+      console.log("CUISINES FETCHING ERROR:", error);
+      return rejectWithValue(
+        error.response?.data || "An unexpected error occurred"
+      );
     }
   }
 );
 
 //Get By Id
 export const fetchCuisineById = createAsyncThunk(
-  "cuisines/fetchById",
+  "cuisine/fetchById",
   async (id, { rejectWithValue }) => {
     try {
       const response = await axios.get(
@@ -39,7 +49,7 @@ export const fetchCuisineById = createAsyncThunk(
 
 // Add a dietary option
 export const addCuisine = createAsyncThunk(
-  "dietary/addCuisine",
+  "cuisine/addCuisine",
   async (newDietary, { rejectWithValue }) => {
     try {
       const response = await axios.post(
@@ -47,7 +57,11 @@ export const addCuisine = createAsyncThunk(
         newDietary,
         getAuthConfig()
       );
-      return response.data.cuisine;
+      displaySuccessToast(
+        "New cuisine type added: ",
+        response.data.cuisineType?.name
+      );
+      return response.data.cuisineType;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response.data);
@@ -57,7 +71,7 @@ export const addCuisine = createAsyncThunk(
 
 // Update a dietary option
 export const updateCuisine = createAsyncThunk(
-  "dietary/updateCuisine",
+  "cuisine/updateCuisine",
   async ({ id, name }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
@@ -65,7 +79,13 @@ export const updateCuisine = createAsyncThunk(
         { name },
         getAuthConfig()
       );
-      return response.data.cuisine;
+      displaySuccessToast(
+        "Cuisine updated!: ",
+        response.data.updatedCuisine?.name
+      );
+
+      //console.log(response.data);
+      return response.data.updatedCuisine;
     } catch (error) {
       displayErrorToast(error);
       return rejectWithValue(error.response.data);
@@ -75,13 +95,14 @@ export const updateCuisine = createAsyncThunk(
 
 // Delete a dietary option
 export const deleteCuisine = createAsyncThunk(
-  "dietary/deleteCuisine",
-  async (id, { rejectWithValue }) => {
+  "cuisine/deleteCuisine",
+  async ({ id }, { rejectWithValue }) => {
     try {
       await axios.delete(
         `${process.env.REACT_APP_BASE_API}/preferences/cuisines/${id}`,
         getAuthConfig()
       );
+      displayInfoToast("Cuisine type deleted!");
       return id;
     } catch (error) {
       displayErrorToast(error);

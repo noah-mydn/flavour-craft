@@ -1,6 +1,8 @@
 export const convertBlobsToFiles = async (blobUrls) => {
-  return Promise.all(
-    blobUrls.map(async (blobUrl, index) => {
+  const urls = Array.isArray(blobUrls) ? blobUrls : [blobUrls];
+
+  const files = await Promise.all(
+    urls.map(async (blobUrl, index) => {
       try {
         const response = await fetch(blobUrl);
         const blob = await response.blob();
@@ -11,4 +13,6 @@ export const convertBlobsToFiles = async (blobUrls) => {
       }
     })
   );
+
+  return Array.isArray(blobUrls) ? files : files[0];
 };

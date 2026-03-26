@@ -4,8 +4,11 @@ import {
   Card,
   Chip,
   Link,
+  List,
+  ListItem,
   ListItemButton,
   TextField,
+  Typography,
 } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import theme from "../theme/theme";
@@ -110,7 +113,9 @@ export const HomeContainer = styled(Box)(({ theme }) => ({
   marginTop: "2.5rem",
 }));
 
-export const PreferenceContainer = styled(Box)(({ theme }) => ({}));
+export const PreferenceContainer = styled(Box)(({ theme, isMobile }) => ({
+  marginTop: isMobile ? "8.9rem " : "7rem",
+}));
 
 export const PreferenceOptionsContainer = styled(Box)(({ theme }) => ({
   margin: "0 auto",
@@ -273,13 +278,14 @@ export const AnimatedChip = styled(Chip)(({ theme }) => ({
   },
 }));
 
-export const ActionButton = styled(Box)(({ theme, active }) => ({
+export const ActionButton = styled(Box)(({ theme, active, isAdmin }) => ({
   display: "flex",
   alignItems: "center",
-  padding: "4px 10px",
+  padding: "4px 6px",
   borderRadius: 20,
-  cursor: "pointer",
+  cursor: isAdmin ? "default" : "pointer",
   transition: "all 0.2s ease",
+
   background: active ? alpha(theme.palette.primary.main, 0.1) : "transparent",
   "&:hover": {
     background: alpha(theme.palette.primary.main, active ? 0.15 : 0.05),
@@ -287,8 +293,9 @@ export const ActionButton = styled(Box)(({ theme, active }) => ({
 }));
 
 export const GradientCard = styled(Card)(({ theme }) => ({
+  marginBottom: "1rem",
   borderRadius: 16,
-  background: "white",
+  background: theme.palette.common.white,
   position: "relative",
   transition: "all 0.3s ease",
   overflow: "visible",
@@ -311,4 +318,55 @@ export const DetailCard = styled(Card)(({ theme }) => ({
   border: "1px solid",
   borderColor: alpha(theme.palette.primary.main, 0.08),
   padding: "1rem",
+}));
+
+export const CustomCancelBtn = styled(Button)(({ theme }) => ({
+  color: theme.palette.grey[700],
+  borderColor: theme.palette.grey[300],
+  bgcolor: theme.palette.grey[300],
+  "&:hover": {
+    bgcolor: theme.palette.grey[400],
+  },
+}));
+
+export const NotificationHeader = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2),
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+}));
+
+export const NotificationList = styled(List)(({ theme }) => ({
+  padding: 0,
+  overflowY: "auto",
+  flex: 1,
+}));
+
+export const NotificationItem = styled(ListItem)(({ theme, read }) => ({
+  padding: theme.spacing(2),
+  backgroundColor: read ? "transparent" : theme.palette.action.hover,
+  transition: "background-color 0.3s",
+  cursor: "pointer",
+  "&:hover": {
+    backgroundColor: theme.palette.action.selected,
+  },
+}));
+
+export const TimeStamp = styled(Typography)(({ theme }) => ({
+  fontSize: "0.75rem",
+  color: theme.palette.text.secondary,
+  marginTop: theme.spacing(0.5),
+}));
+
+export const EmptyState = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: theme.spacing(4),
+  height: "100%",
+  textAlign: "center",
+  color: theme.palette.text.secondary,
 }));

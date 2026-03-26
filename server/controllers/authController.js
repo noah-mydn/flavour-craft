@@ -2,20 +2,27 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const User = require("../models/Users");
+const UserAnalytics = require("../models/UserAnalytics");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 const register = async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists!" });
+      return res
+        .status(400)
+        .json({ status: 400, message: "User already exists!" });
     }
 
-    // Create new user and save
-    const newUser = new User({ firstName, lastName, email, password });
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      password,
+      isFirstLoggedIn: true,
+    });
     await newUser.save();
 
     const accessToken = jwt.sign(
@@ -33,16 +40,28 @@ const register = async (req, res) => {
     newUser.refreshToken = refreshToken;
     await newUser.save();
 
+    await UserAnalytics.updateOne(
+      { userId: newUser._id },
+      {
+        userId: newUser._id,
+        generatedRecipeCount: 0,
+        status: "Active",
+        lastActiveAt: newUser.createdAt,
+      },
+      { upsert: true }
+    );
+
     res.status(201).json({
       message: "User registered successfully!",
       accessToken,
       refreshToken,
       user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        email: user.email,
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        isFirstLoggedIn: newUser.isFirstLoggedIn,
+        authProvider: "local",
       },
     });
   } catch (error) {
@@ -56,7 +75,7 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -77,9 +96,12 @@ const login = async (req, res) => {
     );
 
     user.refreshToken = refreshToken;
-    await user.save();
 
-    // Step 4: Send response
+    if (user.isFirstLoggedIn) {
+      user.isFirstLoggedIn = false;
+      await user.save();
+    }
+
     res.status(200).json({
       message: "Login successful",
       accessToken,
@@ -88,8 +110,10 @@ const login = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
-        username: user.username,
         email: user.email,
+        role: user.role,
+        isFirstLoggedIn: user.isFirstLoggedIn,
+        authProvider: user.authProvider,
       },
     });
   } catch (error) {
@@ -99,93 +123,25 @@ const login = async (req, res) => {
   }
 };
 
-//Google Auth Config
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:8080/auth/google/callback",
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      console.log("Profile:", profile);
-      try {
-        //console.log("Google profile:", profile);
-        const existingUser = await User.findOne({
-          email: profile.emails[0].value,
-        });
+const updateLoginStatus = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
 
-        if (existingUser) {
-          //console.log("Existing user found:", existingUser);
-          return done(null, existingUser);
-        }
-
-        // Creating a new user
-        const newUser = new User({
-          firstName: profile.name.givenName,
-          lastName: profile.name.familyName || profile.name.givenName,
-          email: profile.emails[0].value,
-          password: null,
-          userImg: profile.photos[0]
-            ? profile.photos[0].value
-            : "upload/avatar.png",
-        });
-
-        console.log("Creating new user:", newUser);
-        const savedUser = await newUser.save();
-        console.log("User saved successfully:", savedUser);
-        return done(null, savedUser);
-      } catch (error) {
-        console.error("Error during Google Auth:", error);
-        return done(error, false);
-      }
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-  )
-);
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`,
-      passReqToCallback: true,
-    },
-    async (req, accessToken, refreshToken, profile, done) => {
-      try {
-        // Check if user exists
-        let user = await User.findOne({ email: profile.emails[0].value });
+    user.isFirstLoggedIn = false;
+    await user.save();
 
-        if (!user) {
-          // Create new user if doesn't exist
-          user = await User.create({
-            firstName:
-              profile.name.givenName || profile.displayName.split(" ")[0],
-            lastName:
-              profile.name.familyName ||
-              profile.displayName.split(" ").slice(1).join(" "),
-            email: profile.emails[0].value,
-            googleId: profile.id,
-            profileImage: profile.photos[0]?.value || "",
-            // Set a random password or handle this differently based on your requirements
-            password:
-              Math.random().toString(36).slice(-8) +
-              Math.random().toString(36).slice(-8),
-          });
-        } else if (!user.googleId) {
-          // If user exists but doesn't have googleId (maybe they registered with email)
-          user.googleId = profile.id;
-          await user.save();
-        }
-
-        return done(null, user);
-      } catch (error) {
-        console.error("Error in Google Strategy:", error);
-        return done(error, null);
-      }
-    }
-  )
-);
+    res
+      .status(200)
+      .json({ status: 200, message: "Login status updated successfully" });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
 
 // Serialize and deserialize user
 passport.serializeUser((user, done) => {
@@ -207,16 +163,14 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:8080/auth/google/callback",
+      callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
       userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user exists in database
         let user = await User.findOne({ email: profile.emails[0].value });
 
         if (!user) {
-          // Create new user if not found
           user = await User.create({
             firstName:
               profile.name.givenName || profile.displayName.split(" ")[0],
@@ -225,11 +179,26 @@ passport.use(
               profile.displayName.split(" ").slice(1).join(" "),
             email: profile.emails[0].value,
             googleId: profile.id,
-            // Set other required fields with default values as needed
+            isFirstLoggedIn: true,
+            authProvider: "google",
           });
+
+          await UserAnalytics.updateOne(
+            { userId: user._id },
+            {
+              userId: user._id,
+              generatedRecipeCount: 0,
+              status: "Active",
+              lastActiveAt: user.createdAt,
+            },
+            { upsert: true }
+          );
         } else if (!user.googleId) {
-          // If user exists but hasn't used Google auth before, update their record
           user.googleId = profile.id;
+          if (user.isFirstLoggedIn) {
+            user.isFirstLoggedIn = false;
+            user.authProvider = "google";
+          }
           await user.save();
         }
 
@@ -259,4 +228,5 @@ module.exports = {
   register,
   login,
   logout,
+  updateLoginStatus,
 };

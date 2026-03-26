@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcrypt");
 const User = require("../models/Users");
 const Post = require("../models/community/Posts");
 const Comment = require("../models/community/Comments");
@@ -7,24 +8,76 @@ const Notification = require("../models/community/Notification");
 const { default: mongoose } = require("mongoose");
 
 const editUserProfile = async (req, res) => {
+  console.log("editUserProfile hit");
   try {
-    const { userId } = req.params;
+    const userId = req.user.userId;
     const updateData = req.body;
 
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
+    if (req.file) {
+      updateData.userImg = req.file.path;
+    }
+
+    if (!Object.hasOwn(req.body, "cuisinePreferences")) {
+      updateData.cuisinePreferences = [];
+    }
+
+    if (!Object.hasOwn(req.body, "dietaryRestrictions")) {
+      updateData.dietaryRestrictions = [];
+    }
+
+    const normalizeArray = (field) => {
+      const value = updateData[field];
+      if (value === undefined) return undefined;
+      if (Array.isArray(value)) return value;
+      return [value];
+    };
+
+    ["cuisinePreferences", "dietaryRestrictions"].forEach((field) => {
+      if (updateData[field]) {
+        updateData[field] = normalizeArray(field);
+      }
     });
+
+    const allowedFields = [
+      "firstName",
+      "lastName",
+      "dietaryRestrictions",
+      "cuisinePreferences",
+      "userImg",
+    ];
+    const filteredUpdateData = Object.fromEntries(
+      Object.entries(updateData).filter(
+        ([key, value]) => allowedFields.includes(key) && value !== undefined
+      )
+    );
+
+    if (Object.keys(filteredUpdateData).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No valid fields provided for update" });
+    }
+
+    // Update user
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      filteredUpdateData,
+      { new: true }
+    );
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    delete updatedUser.password;
+    console.log("Edit Profile Response:", res);
     return res.status(200).json({
       status: 200,
       message: "User profile updated successfully",
       user: updatedUser,
     });
   } catch (err) {
+    console.error("Edit Profile Error:", err);
+
     res
       .status(500)
       .json({ message: "Error updating user profile", error: err.message });
@@ -33,27 +86,83 @@ const editUserProfile = async (req, res) => {
 
 const deleteUserProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.userId;
+    const { email } = req.body;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ message: "Email is required to confirm deletion." });
+    }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found." });
     }
 
-    await Post.deleteMany({ userId });
-    await Comment.deleteMany({ userId });
-    await Notification.deleteMany({ userId });
+    if (user.email !== email) {
+      return res
+        .status(401)
+        .json({ message: "Email confirmation does not match." });
+    }
 
+    // Delete related data
+    await Post.deleteMany({ author: userId });
+    await Comment.deleteMany({ author: userId });
+    await Notification.deleteMany({ author: userId });
+
+    // Delete user profile
     await User.findByIdAndDelete(userId);
 
     return res.status(200).json({
       status: 200,
-      message: "User profile updated successfully",
+      message: "User profile deleted successfully.",
     });
   } catch (err) {
     res
       .status(500)
       .json({ message: "Error deleting user profile", error: err.message });
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Both old and new passwords are required." });
+    }
+
+    const user = await User.findById(userId).select("+password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect old password." });
+    }
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        message: "New password must be different from the old password.",
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while updating the password." });
   }
 };
 
@@ -78,7 +187,7 @@ const addCuisinePreferences = async (req, res) => {
       userId,
       { $set: { cuisinePreferences: cuisineObjectIds } },
       { new: true, runValidators: true }
-    ).populate("cuisinePreferences"); // Populate to return full objects
+    ).populate("cuisinePreferences");
 
     if (!updatedUser) {
       return res.status(404).json({ status: 404, message: "User not found." });
@@ -87,7 +196,7 @@ const addCuisinePreferences = async (req, res) => {
     return res.status(200).json({
       status: 200,
       message: "Cuisine preferences updated successfully.",
-      data: updatedUser.cuisinePreferences, // Now contains full objects
+      data: updatedUser.cuisinePreferences,
     });
   } catch (error) {
     console.error("Error updating cuisine preferences:", error);
@@ -128,7 +237,7 @@ const addDietaryPreferences = async (req, res) => {
     return res.status(200).json({
       status: 200,
       message: "Dietary preferences updated successfully.",
-      data: updatedUser.dietaryRestrictions, // Now contains full objects
+      data: updatedUser.dietaryRestrictions,
     });
   } catch (error) {
     console.error("Error updating dietary preferences:", error);
@@ -193,6 +302,7 @@ const getCurrentUserProfile = async (req, res) => {
 module.exports = {
   editUserProfile,
   deleteUserProfile,
+  updatePassword,
   addDietaryPreferences,
   addCuisinePreferences,
   getUserProfileById,

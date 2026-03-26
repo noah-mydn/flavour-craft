@@ -5,6 +5,8 @@ import {
   Pagination,
   useMediaQuery,
   useTheme,
+  Link,
+  Typography,
 } from "@mui/material";
 import React from "react";
 
@@ -13,14 +15,12 @@ import { fetchFilteredRecipes } from "../../redux/apiClients/recipeAPI";
 import RecipeCardSkeleton from "./RecipeDetailCardSkeleton";
 import RecipeCard from "../../components/Recipes/RecipeCard";
 import {
-  filtersSelector,
   loadingRecipesSelector,
   paginationSelector,
   recipesListSelector,
 } from "../../redux/selectors/selectors";
-import { useRecipe } from "../../hooks/useRecipe";
-import TopNavigationBar from "../../components/Navigations/TopNavigationBar";
-import { Link, useParams } from "react-router-dom";
+
+import { useParams } from "react-router-dom";
 import { setFilters } from "../../redux/reducers/recipesSlice";
 
 const RecipesByCuisines = () => {
@@ -45,8 +45,10 @@ const RecipesByCuisines = () => {
     if (cuisineType) {
       let payload = { cuisineTypes: [cuisineType] };
 
+      console.log("Payload:", payload);
+
       dispatch(setFilters(payload));
-      dispatch(fetchFilteredRecipes(payload, page, 10));
+      dispatch(fetchFilteredRecipes({ filters: payload, page, pageSize: 10 }));
     }
     return () => {
       dispatch(setFilters({}));
@@ -54,91 +56,91 @@ const RecipesByCuisines = () => {
   }, [cuisineType, dispatch, page, 10]);
 
   return (
-    <React.Fragment>
-      <TopNavigationBar />
-      <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
-        <Grid container direction="column" spacing={3}>
-          {/* Breadcrumbs and Sort/Filter Section */}
-          <Grid
-            item
-            container
-            justifyContent="space-between"
-            alignItems="center"
-            px={3}
-          >
-            <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
-              <Link
-                color="text.secondary"
-                to="/recipes"
-                sx={{ textDecoration: "none", cursor: "pointer" }}
-              >
-                Recipes
-              </Link>
-              <Link
-                color="secondary.dark"
-                sx={{
-                  textDecoration: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {cuisineType.charAt(0).toUpperCase() + cuisineType.slice(1)}
-              </Link>
-            </Breadcrumbs>
-            {/* <Box
-              display="flex"
-              justifyContent={isMobile ? "center" : "flex-end"}
-              width="100%"
-              mt={isMobile ? 7 : 3}
+    <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
+      <Grid container direction="column" spacing={3}>
+        {/* Breadcrumbs and Sort/Filter Section */}
+        <Grid
+          item
+          container
+          justifyContent="space-between"
+          alignItems="center"
+          px={3}
+        >
+          <Breadcrumbs aria-label="breadcrumb" sx={{ marginY: 2 }}>
+            <Link
+              color="text.secondary"
+              href={"/recipes"}
+              sx={{ textDecoration: "none", cursor: "pointer" }}
             >
-              <Stack direction={isMobile ? "column" : "row"} spacing={3}>
-                <FormControl sx={{ width: "150px", maxWidth: "225px" }}>
-                  <InputLabel id="sort-label">Sort By</InputLabel>
-                  <Select
-                    labelId="sort-label"
-                    id="sort-select"
-                    label="Sort By"
-                    size="small"
-                    value={sortValue}
-                    onChange={handleSortChange}
-                  >
-                    <MenuItem value="all" selected>
-                      Most Recent
-                    </MenuItem>
-                    <MenuItem value="popular">Most Popular</MenuItem>
-                    <MenuItem value="mostViewed">Most Viewed</MenuItem>
-                    <MenuItem value="personalized">Personalized</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Box> */}
-          </Grid>
+              Recipes
+            </Link>
+            <Link
+              color="secondary.dark"
+              sx={{
+                textDecoration: "none",
+                cursor: "pointer",
+              }}
+            >
+              {cuisineType.charAt(0).toUpperCase() + cuisineType.slice(1)}
+            </Link>
+          </Breadcrumbs>
+        </Grid>
 
-          {/* Recipe Cards Grid */}
-          <Grid
-            item
-            container
-            spacing={4}
-            justifyContent="center"
-            alignContent="center"
-            justifyItems="center"
-            alignItems="center"
-          >
-            {loading
-              ? Array(4)
-                  .fill(0)
-                  .map((_, index) => (
-                    <Grid item key={`skeleton-${index}`} md={12} lg={6}>
-                      <RecipeCardSkeleton />
-                    </Grid>
-                  ))
-              : recipes?.map((recipe) => (
-                  <Grid item key={recipe._id} xs={10} lg={6}>
-                    <RecipeCard recipe={recipe} />
+        {/* Recipe Cards Grid */}
+        <Grid
+          item
+          container
+          spacing={4}
+          justifyContent="center"
+          alignContent="center"
+          justifyItems="center"
+          alignItems="center"
+        >
+          {!loading && recipes?.length === 0 && (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems={"center"}
+              gap={2}
+              my={6}
+            >
+              <Typography variant="h5" color="text.primary">
+                No recipes found
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                We couldn't find any recipes under
+                <b style={{ textTransform: "uppercase" }}>
+                  &nbsp;"{cuisineType}"
+                </b>{" "}
+                cuisine.
+              </Typography>
+            </Box>
+          )}
+          {loading
+            ? Array(4)
+                .fill(0)
+                .map((_, index) => (
+                  <Grid item key={`skeleton-${index}`} md={12} lg={6}>
+                    <RecipeCardSkeleton />
                   </Grid>
-                ))}
-          </Grid>
+                ))
+            : recipes?.map((recipe) => (
+                <Grid
+                  item
+                  key={recipe._id}
+                  xs={8}
+                  sm={6}
+                  md={4.5}
+                  lg={2.5}
+                  rowSpacing={3}
+                >
+                  <RecipeCard recipe={recipe} />
+                </Grid>
+              ))}
+        </Grid>
 
-          {/* Pagination */}
+        {/* Pagination */}
+        {!loading && recipes?.length > 0 && (
           <Grid item container justifyContent="center">
             <Pagination
               count={pagination?.totalPages || 1}
@@ -147,9 +149,9 @@ const RecipesByCuisines = () => {
               onChange={handlePageChange}
             />
           </Grid>
-        </Grid>
-      </Box>
-    </React.Fragment>
+        )}
+      </Grid>
+    </Box>
   );
 };
 

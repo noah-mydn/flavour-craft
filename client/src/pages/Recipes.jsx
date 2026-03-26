@@ -34,6 +34,7 @@ import {
 } from "../redux/apiClients/recipeAPI";
 import FilterSort from "../components/FilterSort/FilterSort";
 import { SearchOff } from "@mui/icons-material";
+import { removeFilters } from "../redux/reducers/recipesSlice";
 
 const Recipes = () => {
   const theme = useTheme();
@@ -41,6 +42,7 @@ const Recipes = () => {
   const loading = useSelector(loadingRecipesSelector);
   const pagination = useSelector(paginationSelector);
   const filters = useSelector(filtersSelector);
+  const filterExists = useSelector(filterExistsSelector);
   const dispatch = useDispatch();
 
   const { filterRecipeOption } = useRecipe();
@@ -59,27 +61,23 @@ const Recipes = () => {
     setPage(value);
   };
 
+  const clearFilters = () => {
+    dispatch(removeFilters());
+    window.location.reload();
+  };
+
   React.useEffect(() => {
-    if (filters && Object.keys(filters).length > 0) {
-      dispatch(fetchFilteredRecipes(filters, page, pageSize));
+    if (filters && Object?.keys(filters)?.length > 0) {
+      console.log("It runs");
+      dispatch(fetchFilteredRecipes({ filters, page, pageSize }));
     } else {
-      console.log("BECAUSE OF THIS:");
+      console.log("Default runs");
       dispatch(fetchRecipes({ sortValue, page, pageSize }));
     }
-  }, [filters, page, dispatch]);
+  }, [filters, page, pageSize, dispatch, sortValue]);
 
-  // sort changes
-  React.useEffect(() => {
-    if (
-      (!filters || Object.keys(filters).length === 0) &&
-      sortValue !== "all"
-    ) {
-      console.log("BECAUSE OF NO FILTERS:");
-      dispatch(fetchRecipes({ sortValue, page, pageSize }));
-    }
-  }, [sortValue, dispatch]);
+  console.log("FILTERs:", filters);
 
-  console.log("Recipes:", recipes);
   return (
     <Box mt={16} mx={isMobile ? 2 : isTablet ? 4 : 8}>
       <Grid container direction="column" spacing={3}>
@@ -101,13 +99,29 @@ const Recipes = () => {
             ? Array(4)
                 .fill(0)
                 .map((_, index) => (
-                  <Grid item key={`skeleton-${index}`} md={12} lg={6}>
+                  <Grid
+                    item
+                    key={`skeleton-${index}`}
+                    xs={8}
+                    sm={6}
+                    md={4.5}
+                    lg={2.5}
+                    rowSpacing={3}
+                  >
                     <RecipeCardSkeleton />
                   </Grid>
                 ))
             : hasRecipes
             ? recipes.map((recipe) => (
-                <Grid item key={recipe._id} xs={11} sm={10} lg={6}>
+                <Grid
+                  item
+                  key={recipe._id}
+                  xs={8}
+                  sm={6}
+                  md={4.5}
+                  lg={2.5}
+                  rowSpacing={3}
+                >
                   <RecipeCard recipe={recipe} />
                 </Grid>
               ))
@@ -136,7 +150,7 @@ const Recipes = () => {
                 variant="contained"
                 color="primary"
                 sx={{ mt: 2, borderRadius: 2, textTransform: "none", px: 4 }}
-                onClick={() => window.location.reload()}
+                onClick={clearFilters}
               >
                 Clear All Filters
               </Button>

@@ -1,106 +1,76 @@
 import React from "react";
 import {
   Card,
+  CardContent,
   Box,
   Skeleton,
-  useMediaQuery,
-  CardContent,
   Stack,
+  useMediaQuery,
 } from "@mui/material";
 import theme from "../../theme/theme";
 
-const RecipeCardSkeleton = ({ width }) => {
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+const RecipeCardSkeleton = () => {
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("lg"));
+
+  const calculatedMaxHeight = isMobile ? 380 : isTablet ? 430 : 450;
 
   return (
     <Card
       sx={{
         display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        height: isTablet ? "auto" : "180px",
+        flexDirection: "column",
         borderRadius: 4,
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         position: "relative",
         overflow: "hidden",
         background: "#FFF",
-        width: width ? width : "100%",
         mb: 2,
+        width: "100%",
+        maxHeight: calculatedMaxHeight,
+        height: 370,
+        margin: "0 auto",
       }}
     >
-      {/* Image skeleton */}
-      <Box
-        sx={{
-          position: "relative",
-          width: isMobile ? "100%" : isTablet ? "40%" : "35%",
-          minWidth: isMobile ? "100%" : "180px",
-        }}
-      >
-        <Skeleton
-          variant="rectangular"
-          height={isMobile ? "200px" : "100%"}
-          width="100%"
-          animation="wave"
-          sx={{
-            height: isMobile ? "200px" : "180px",
-            backgroundColor: "#f5f5f5",
-          }}
-        />
+      {/* Skeleton for image */}
+      <Skeleton
+        variant="rectangular"
+        width="100%"
+        height={200}
+        animation="wave"
+      />
 
-        {/* Rating badge skeleton */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 10,
-            left: 10,
-          }}
-        >
-          <Skeleton variant="rounded" width={50} height={24} animation="wave" />
-        </Box>
-
-        {/* Category chip skeleton */}
-        <Box sx={{ position: "absolute", top: 10, right: 10 }}>
-          <Skeleton variant="rounded" width={60} height={24} animation="wave" />
-        </Box>
-      </Box>
-
-      {/* Content section skeleton */}
+      {/* Skeleton for content */}
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
-          width: isMobile ? "100%" : "65%",
           position: "relative",
           p: 2,
+          flex: 1,
         }}
       >
         <CardContent sx={{ flex: "1 0 auto", p: 1 }}>
           {/* Title skeleton */}
-          <Skeleton
-            variant="text"
-            width="80%"
-            height={28}
-            animation="wave"
-            sx={{ mb: 1 }}
-          />
+          <Skeleton variant="text" width="70%" height={30} animation="wave" />
 
-          {/* Time and cuisine type skeleton */}
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{
-              mb: 2,
-            }}
-          >
-            <Skeleton variant="text" width={80} height={24} animation="wave" />
+          {/* Time and cuisine skeleton */}
+          <Stack direction="row" alignItems="center" spacing={2} sx={{ my: 1 }}>
+            <Skeleton
+              variant="circular"
+              width={20}
+              height={20}
+              animation="wave"
+            />
+            <Skeleton variant="text" width={60} height={24} animation="wave" />
             <Skeleton variant="text" width={80} height={24} animation="wave" />
           </Stack>
 
           {/* Dietary preferences skeleton */}
-          <Stack direction="row" spacing={1} mt={1}>
+          <Stack direction="row" spacing={1} mt={1} flexWrap="wrap" useFlexGap>
             <Skeleton
               variant="rounded"
-              width={70}
+              width={60}
               height={24}
               animation="wave"
             />
@@ -112,14 +82,14 @@ const RecipeCardSkeleton = ({ width }) => {
             />
             <Skeleton
               variant="rounded"
-              width={70}
+              width={80}
               height={24}
               animation="wave"
             />
           </Stack>
         </CardContent>
 
-        {/* Save button skeleton */}
+        {/* Favorite button skeleton */}
         <Box
           sx={{
             position: "absolute",

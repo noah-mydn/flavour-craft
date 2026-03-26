@@ -1,7 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { googleAuth, login, register } from "../apiClients/authAPI";
 
-const storedUser = JSON.parse(sessionStorage.getItem("userData")) || null;
+const storedUser =
+  JSON.parse(sessionStorage.getItem("userData")) ||
+  JSON.parse(sessionStorage.getItem("auth")) ||
+  null;
 const storedAccessToken = sessionStorage.getItem("accessToken") || null;
 const storedRefreshToken = localStorage.getItem("refreshToken") || null;
 
@@ -26,19 +29,18 @@ const authSlice = createSlice({
   initialState: initialState,
   reducers: {
     logout: (state) => {
+      console.log("Removing accessToken from sessionStorage");
+
+      sessionStorage.removeItem("auth");
+      sessionStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      sessionStorage.removeItem("userData");
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
-      console.log("Removing accessToken from sessionStorage");
-      sessionStorage.removeItem("accessToken");
-
-      console.log("Removing auth from sessionStorage");
-      //sessionStorage.removeItem("auth");
-      sessionStorage.removeItem("userData");
-
-      console.log("Removing refreshToken from localStorage");
-      localStorage.removeItem("refreshToken");
-      window.location.href = "/auth";
+      state.isVerified = false;
+      state.error = null;
+      //window.location.href = "/auth";
     },
     setIsVerified: (state, action) => {
       state.isVerified = action.payload;
@@ -50,6 +52,9 @@ const authSlice = createSlice({
       state.refreshToken = action.payload.refreshToken;
       state.isVerified = true;
       state.error = null;
+      sessionStorage.setItem("accessToken", state.accessToken);
+      sessionStorage.setItem("auth", JSON.stringify(state.user));
+      localStorage.setItem("refreshToken", state.refreshToken);
     },
   },
   extraReducers: (builder) => {

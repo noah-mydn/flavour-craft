@@ -53,6 +53,7 @@ export const isResetSelector = (state) => state.post.isResetState;
 export const postListSelector = (state) => state.postList.posts;
 export const postsLoadingSelector = (state) => state.postList.loading;
 export const postsErrorSelector = (state) => state.postList.error;
+export const postsPaginationSelector = (state) => state.postList.pagination;
 //Post (edit,delete)
 export const postByIdSelector = (state) => state.postList.postById;
 export const postLoadingSelector = (state) => state.postList.postLoading;

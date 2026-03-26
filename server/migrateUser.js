@@ -16,20 +16,17 @@ async function migrateUsers() {
   for (const user of users) {
     let updated = false;
 
-    // Ensure username
     if (!user.username && user.firstName) {
       user.username = `${user.firstName}_${user._id}`;
       updated = true;
     }
 
-    // Ensure password is hashed
     if (user.password && !user.password.startsWith("$2b$")) {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(user.password, salt);
       updated = true;
     }
 
-    // Validate savedRecipes & ratedRecipes
     user.savedRecipes = user.savedRecipes.filter((id) =>
       mongoose.Types.ObjectId.isValid(id)
     );

@@ -11,11 +11,74 @@ const cloudinaryStorage = new CloudinaryStorage({
       {
         width: 500,
         height: 500,
-        crop: "pad",
+        crop: "fill",
       },
     ],
   },
 });
 
+const profilePicStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "flavourCraft_profiles",
+    allowedFormats: ["jpg", "png", "jpeg"],
+    transformation: [
+      {
+        width: 300,
+        height: 300,
+        crop: "fill",
+      },
+    ],
+  },
+});
+
+const recipeThumbnailStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "flavourCraft_recipes",
+    allowedFormats: ["jpg", "png", "jpeg"],
+    // transformation: [
+    //   {
+    //     width: 400,
+    //     height: 400,
+    //     crop: "fill",
+    //   },
+    // ],
+  },
+});
+
+const campaignStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: "campaigns",
+      allowedFormats: ["jpg", "png", "jpeg"],
+      public_id: `${Date.now()}-${file.originalname}`,
+    };
+  },
+});
+
 const cloudinaryUpload = multer({ storage: cloudinaryStorage });
-module.exports = { cloudinaryUpload };
+const profilePicUpload = multer({ storage: profilePicStorage });
+const recipeImgUpload = multer({
+  storage: recipeThumbnailStorage,
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.match(/^image\/(jpeg|jpg|png)$/)) {
+      return cb(
+        new Error("Only image files (jpg, jpeg, png) are allowed!"),
+        false
+      );
+    }
+    cb(null, true);
+  },
+});
+const campaignUpload = multer({
+  storage: campaignStorage,
+});
+
+module.exports = {
+  cloudinaryUpload,
+  profilePicUpload,
+  recipeImgUpload,
+  campaignUpload,
+};

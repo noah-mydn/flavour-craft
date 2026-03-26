@@ -20,7 +20,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import theme from "../../theme/theme";
-import { FoodBank } from "@mui/icons-material";
+import { Diversity3Outlined, FoodBank } from "@mui/icons-material";
 
 const SidebarLogo = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -46,6 +46,11 @@ const StyledNavLink = styled(NavLink)(({ theme }) => ({
 const AdminSidebar = ({ open, onToggle }) => {
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/admin" },
+    {
+      text: "User Management",
+      icon: <Diversity3Outlined />,
+      path: "/admin/users",
+    },
     {
       text: "Recipe Management",
       icon: <FoodBank />,
@@ -79,7 +84,7 @@ const AdminSidebar = ({ open, onToggle }) => {
       sx={{
         flexShrink: 0,
         "& .MuiDrawer-paper": {
-          width: isMobile ? "90%" : 240,
+          width: isMobile ? "75%" : 240,
           boxSizing: "border-box",
           overflow: "hidden",
         },

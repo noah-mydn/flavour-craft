@@ -18,6 +18,7 @@ import {
   Tooltip,
   useMediaQuery,
   Typography,
+  Badge,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import React, { useState } from "react";
@@ -37,12 +38,15 @@ import {
   Search,
   ChevronRight,
   ArrowBack,
+  Notifications,
 } from "@mui/icons-material";
 
 import { logout } from "../../redux/reducers/authSlice";
 import { useNavigate } from "react-router-dom";
-import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
-import AutoCompleteSearch from "../AutoCompleteSearch/AutoCompleteSearch";
+
+import { useCategory } from "../../hooks/admin/useCategory";
+import NotificationComponent from "./NotificationComponent";
+import { useNotification } from "../../hooks/useNotification";
 
 const TopNavigationBar = () => {
   const user = useSelector(userSelector);
@@ -54,7 +58,8 @@ const TopNavigationBar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-
+  const { cuisineManagement } = useCategory();
+  const { fetchAllCuisines } = cuisineManagement;
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -68,21 +73,34 @@ const TopNavigationBar = () => {
   const [mobileMenuLevel, setMobileMenuLevel] = useState("main"); // 'main', 'recipes', 'cuisines'
   const [mobileMenuTitle, setMobileMenuTitle] = useState("Main Menu");
 
+  //notification
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
+  const { notifications } = useNotification();
+
+  // Count unread notifications for the badge
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const openNotificationPanel = () => {
+    setNotificationPanelOpen(true);
+  };
+
+  const closeNotificationPanel = () => {
+    setNotificationPanelOpen(false);
+  };
+
   const accountLogout = () => {
     dispatch(logout());
   };
   const cuisineTypes = useSelector(cuisinesSelector);
 
-  //console.log("CuisineTypes:", cuisineTypes);
-
   React.useEffect(() => {
-    dispatch(fetchCuisines());
+    fetchAllCuisines();
   }, []);
 
   const recipeSubMenuItems = [
     { label: "All Recipes", link: "/recipes" },
     { label: "Generate Recipes", link: "/generate" },
-    { label: "Recipes by Cuisine", link: "/recipes/cuisine", hasSubmenu: true },
+    { label: "Recipes by Cuisine", link: "", hasSubmenu: true },
   ];
 
   const showUserMenu = (event) => {
@@ -148,8 +166,8 @@ const TopNavigationBar = () => {
       icon: <LocalDining />,
       hasSubmenu: true,
     },
-    // { label: "Favourites", link: "/favourites", icon: <Favorite /> },
-    { label: "Community", link: "/forum", icon: <Forum /> },
+
+    { label: "Community", link: "/post", icon: <Forum /> },
   ];
 
   return (
@@ -180,7 +198,12 @@ const TopNavigationBar = () => {
                 <MenuIcon color="primary" />
               </IconButton>
 
-              <Box display="flex" justifyContent="center">
+              <Box
+                display="flex"
+                justifyContent="center"
+                component="a"
+                href="/home"
+              >
                 <img src="/logo.png" alt="Logo" width={130} height={60} />
               </Box>
             </Box>
@@ -196,7 +219,12 @@ const TopNavigationBar = () => {
             </IconButton>
           )}
           {(isMobile || isDesktop) && (
-            <Box display="flex" justifyContent="center">
+            <Box
+              display="flex"
+              justifyContent="center"
+              component="a"
+              href="/home"
+            >
               <img src="/logo.png" alt="Logo" width={130} height={60} />
             </Box>
           )}
@@ -254,7 +282,7 @@ const TopNavigationBar = () => {
                                   textDecoration: "none",
                                   color: theme.palette.secondary.dark,
                                   "&:hover": {
-                                    bgcolor: theme.palette.primary.light,
+                                    bgcolor: theme.palette.secondary.dark,
                                     color: theme.palette.common.white,
                                   },
                                 }}
@@ -293,7 +321,7 @@ const TopNavigationBar = () => {
                                             color: theme.palette.secondary.dark,
                                             "&:hover": {
                                               bgcolor:
-                                                theme.palette.primary.light,
+                                                theme.palette.secondary.dark,
                                               color: theme.palette.common.white,
                                             },
                                           }}
@@ -318,43 +346,15 @@ const TopNavigationBar = () => {
             </Box>
           )}
 
-          {/* Search Bar */}
-          {!isMobile && (
-            // <TextField
-            //   variant="outlined"
-            //   size="small"
-            //   placeholder="Search..."
-            //   sx={{
-            //     width: isMobile ? 250 : 350,
-            //     bgcolor: "transparent",
-            //     "& .MuiOutlinedInput-root": {
-            //       "& fieldset": {
-            //         borderColor: theme.palette.secondary.dark,
-            //         borderRadius: 20,
-            //       },
-            //       "&:hover fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //       "&.Mui-focused fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //     },
-            //   }}
-            //   slotProps={{
-            //     input: {
-            //       startAdornment: (
-            //         <Search
-            //           sx={{ color: theme.palette.secondary.dark, mr: 1 }}
-            //         />
-            //       ),
-            //     },
-            //   }}
-            // />
-            <AutoCompleteSearch />
-          )}
-
           {/* User Profile Avatar */}
           <Box display="flex" gap={2} justifyContent="flex-end">
+            <Tooltip title="Notifications">
+              <IconButton onClick={openNotificationPanel}>
+                <Badge badgeContent={unreadCount} max={99} color="primary">
+                  <Notifications />
+                </Badge>
+              </IconButton>
+            </Tooltip>
             <Tooltip title={user?.firstName}>
               <Avatar
                 sx={{
@@ -367,41 +367,7 @@ const TopNavigationBar = () => {
             </Tooltip>
           </Box>
         </Box>
-        <Box display="flex" justifyContent="center" alignItems="center">
-          {isMobile && (
-            // <TextField
-            //   variant="outlined"
-            //   size="small"
-            //   placeholder="Search..."
-            //   sx={{
-            //     width: 350,
-            //     bgcolor: "transparent",
-            //     "& .MuiOutlinedInput-root": {
-            //       "& fieldset": {
-            //         borderColor: theme.palette.secondary.dark,
-            //         borderRadius: 20,
-            //       },
-            //       "&:hover fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //       "&.Mui-focused fieldset": {
-            //         borderColor: theme.palette.secondary.main,
-            //       },
-            //     },
-            //   }}
-            //   slotProps={{
-            //     input: {
-            //       startAdornment: (
-            //         <Search
-            //           sx={{ color: theme.palette.secondary.dark, mr: 1 }}
-            //         />
-            //       ),
-            //     },
-            //   }}
-            // />
-            <AutoCompleteSearch />
-          )}
-        </Box>
+        <Box display="flex" justifyContent="center" alignItems="center"></Box>
       </AppBar>
 
       {/* Mobile Drawer with Menu Levels */}
@@ -415,7 +381,13 @@ const TopNavigationBar = () => {
           },
         }}
       >
-        <Box display="flex" justifyContent="center" py={2}>
+        <Box
+          display="flex"
+          justifyContent="center"
+          py={2}
+          component="a"
+          href="/home"
+        >
           <img src="/logo.png" alt="Logo" width={130} height={60} />
         </Box>
 
@@ -429,7 +401,7 @@ const TopNavigationBar = () => {
           px={2}
           py={1}
           sx={{
-            bgcolor: theme.palette.secondary.main,
+            bgcolor: theme.palette.primary.main,
             color: "white",
           }}
         >
@@ -480,7 +452,7 @@ const TopNavigationBar = () => {
                   >
                     <ListItemIcon
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                       }}
                     >
                       {nav.icon}
@@ -488,7 +460,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={nav.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -514,7 +486,7 @@ const TopNavigationBar = () => {
                   >
                     <ListItemIcon
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                       }}
                     >
                       {nav.icon}
@@ -522,7 +494,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={nav.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -563,7 +535,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={item.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -590,7 +562,7 @@ const TopNavigationBar = () => {
                     <ListItemText
                       primary={item.label}
                       sx={{
-                        color: theme.palette.secondary.dark,
+                        color: theme.palette.primary.light,
                         fontWeight: "bold",
                       }}
                     />
@@ -635,7 +607,7 @@ const TopNavigationBar = () => {
                   <ListItemText
                     primary={cuisine.name}
                     sx={{
-                      color: theme.palette.secondary.dark,
+                      color: theme.palette.primary.light,
                       fontWeight: "bold",
                     }}
                   />
@@ -655,10 +627,19 @@ const TopNavigationBar = () => {
         MenuListProps={{ "aria-labelledby": "basic-button" }}
       >
         <MenuItem onClick={() => navigate("/profile")}>My Profile</MenuItem>
-        <MenuItem>Saved Recipes</MenuItem>
-        <MenuItem>Generated Recipes</MenuItem>
+        <MenuItem onClick={() => navigate("/recipes/me/saved")}>
+          Saved Recipes
+        </MenuItem>
+        <MenuItem onClick={() => navigate("/recipes/me/generated")}>
+          Generated Recipes
+        </MenuItem>
         <MenuItem onClick={accountLogout}>Logout</MenuItem>
       </Menu>
+
+      <NotificationComponent
+        open={notificationPanelOpen}
+        onClose={closeNotificationPanel}
+      />
     </>
   );
 };

@@ -11,15 +11,13 @@ import { login, register } from "../redux/apiClients/authAPI";
 import React from "react";
 import { setUserProfile } from "../redux/reducers/userProfileSlice";
 import { logout } from "../redux/reducers/authSlice";
-import { displayErrorToast, displaySuccessToast } from "../utils/toastUtil";
+import { displayErrorToast } from "../utils/toastUtil";
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
   const user = useSelector(userSelector);
-  const loading = useSelector(loadingSelector);
-  const error = useSelector(errorSelector);
   const isVerified = useSelector(isVerifiedSelector);
 
   const [accountUser, setAccountUser] = React.useState({
@@ -45,15 +43,20 @@ export const useAuth = () => {
     dispatch(login(accountUser));
     console.log(user);
     dispatch(setUserProfile(user));
-    if (isVerified) {
-      return navigate("/home");
-    }
   };
 
-  //Register
-  const accountRegister = (e) => {
+  const accountRegister = async (e) => {
     e.preventDefault();
-    dispatch(
+
+    if (!accountUser?.termsAndConditions) {
+      displayErrorToast({
+        title: "Error",
+        message: "You must agree to the terms and conditions to register",
+      });
+      return;
+    }
+
+    await dispatch(
       register({
         firstName: accountUser.firstName,
         lastName: accountUser.lastName,
@@ -61,17 +64,16 @@ export const useAuth = () => {
         password: accountUser.password,
       })
     );
-    console.log(user);
-    dispatch(setUserProfile(user));
-    if (isVerified) {
-      return navigate("/home");
+
+    if (user && isVerified) {
+      console.log("This runs!");
+      dispatch(setUserProfile(user));
     }
   };
 
   //Logout
   const accountLogout = () => {
     dispatch(logout());
-    navigate("/auth");
   };
 
   return {

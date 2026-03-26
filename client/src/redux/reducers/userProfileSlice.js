@@ -1,7 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   getCurrentUserProfile,
+  setCuisinePreferences,
+  setDietaryPreferences,
   toggleSavedRecipe,
+  updateUserProfile,
 } from "../apiClients/userAPI";
 
 const initialState = {
@@ -18,6 +21,7 @@ const userProfileSlice = createSlice({
     setUserProfile: (state, action) => {
       return { ...state, ...action.payload };
     },
+
     updateCuisinePreferences: (state, action) => {
       state.cuisinePreferences = action.payload;
       const storedUserData = sessionStorage.getItem("userData");
@@ -30,6 +34,31 @@ const userProfileSlice = createSlice({
     updateDietaryRestrictions: (state, action) => {
       state.dietaryRestrictions = action.payload;
     },
+    rateRecipes: (state, action) => {
+      const { recipeId, rating } = action.payload;
+      if (state.profile?.ratedRecipes) {
+        const recipeIndex = state.profile.ratedRecipes.findIndex(
+          (recipe) => recipe.recipeId === recipeId
+        );
+        if (recipeIndex !== -1) {
+          console.log(
+            "Previous rating:",
+            state.profile.ratedRecipes[recipeIndex].rating
+          );
+          state.profile.ratedRecipes[recipeIndex].rating = rating;
+          console.log(
+            "New rating:",
+            state.profile.ratedRecipes[recipeIndex].rating
+          );
+        } else {
+          state.profile.ratedRecipes.push({ recipeId, rating });
+        }
+      }
+    },
+    saveRecipe: (state, action) => {
+      state.profile.savedRecipes.push(action.payload);
+    },
+
     clearUserProfile: () => initialState,
   },
   extraReducers: (builder) => {
@@ -53,6 +82,47 @@ const userProfileSlice = createSlice({
       })
       .addCase(toggleSavedRecipe.rejected, (state, action) => {
         state.status = "failed";
+      })
+      .addCase(setDietaryPreferences.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(setDietaryPreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        //store only Ids
+        state.profile.dietaryPreferences = action.payload.map(
+          (item) => item.id
+        );
+      })
+      .addCase(setDietaryPreferences.rejected, (state, action) => {
+        console.error("Dietary Preferences Fetch Failed:", action.payload);
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(setCuisinePreferences.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(setCuisinePreferences.fulfilled, (state, action) => {
+        state.isLoading = false;
+        //store only Ids
+        state.profile.cuisinePreferences = action.payload.map(
+          (item) => item.id
+        );
+      })
+      .addCase(setCuisinePreferences.rejected, (state, action) => {
+        console.error("Cuisine Preferences Fetch Failed:", action.payload);
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(updateUserProfile.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.profile = action.payload;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       });
   },
 });
@@ -62,6 +132,8 @@ export const {
   updateCuisinePreferences,
   updateDietaryRestrictions,
   clearUserProfile,
+  rateRecipes,
+  saveRecipe,
 } = userProfileSlice.actions;
 
 export default userProfileSlice.reducer;

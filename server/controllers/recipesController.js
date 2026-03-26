@@ -1,6 +1,7 @@
 const Recipe = require("../models/Recipes");
 const { CohereClient } = require("cohere-ai");
 const User = require("../models/Users");
+
 const {
   getTimePeriod,
   getRecipesByTimeAndDietary,
@@ -12,43 +13,89 @@ const {
 const {
   updateCuisineAndDietaryDb,
 } = require("../controllers/preferencesController");
+const mongoose = require("mongoose");
+const Users = require("../models/Users");
+const { DietaryOption } = require("../models/DietaryOptions");
+const { strictDietaryRestrictions } = require("../constants/data");
 
 const cohere = new CohereClient({
   token: process.env.COHERE_TOKEN,
 });
 
 const generateRecipesInBatch = async (req, res) => {
+  console.log("Recipe Generation Log :", req.user);
+  if (req.user?.role !== "admin") {
+    return;
+  }
+
+  const { tags, cuisines, dietaryOptions, count } = req.body;
+
   try {
     const prompt = `
-      Generate 2 breakfast and brunch recipes using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects.
-      Cuisine types include:  Japanese.
-      Any of these Dietary types: Shellfish-Free, Diabetes-Friendly, Low-Sodium, Kidney-Friendly, Vegan,
-      tag include breakfast, brunch, drinks, baking, etc more,
-      description should be image promptable precise description, instructions should be detailed and step-by-step
-      Schema:
-      {
-        "name": "String (Recipe name)",
-        "ingredients": [
-          {
-            "name": "String (Ingredient name)",
-            "quantity": "String",
-            "substitute": ["String"]
-          }
-        ],
-        "shortDescription": "String", 
-        "dietaryPreferences": ["String"],
-        "cuisineTypes": ["String"],
-        "tags": ["String"] 
-        "cookingInstructions": ["String"] ,
-        "nutritionalInfo": {
-          "calories": "String",
-          "protein": "String",
-          "carbs": "String",
-          "fat": "String"
-        },
-        "cookingTime": "String"
-      }
-    `;
+    Generate ${count} recipes under any of ${tags.join(
+      ","
+    )} using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects.
+  
+    Any of these Cuisine types: ${cuisines.join(",")}.
+    Any of these Dietary types: ${dietaryOptions.join(",")}.
+  
+    STRICT VALIDATION RULES:
+    -If given cuisine type is all, analyze the origin of the recipe and label its cuisine, do not label it as All.
+    - **Verify all ingredients align with dietary labels**:
+      - Vegan recipes **CANNOT** contain any meat, dairy, eggs, honey, or animal-derived products.
+      - Vegetarian recipes **CANNOT** contain meat, poultry, or fish.
+      - Halal recipes **CANNOT** contain pork, alcohol, or non-halal meat.
+      - Kosher recipes **MUST** only contain kosher-certified ingredients.
+      - Gluten-free recipes **CANNOT** contain wheat, barley, or rye.
+      - Nut-Free recipes **CANNOT** contain any type of nuts.
+      - Soy-Free recipes **CANNOT** contain soybeans, soy sauce, tofu, miso, or any soy-derived products.
+      - Strict dietary validation - **No mislabeling allowed**.
+      - Dietary Options IS NOT CUISINE. Do not add cuisine to dietaryRestrictions.
+      - Cuisine is NOT DIETARY RESTRICTIONS. Do not add dietaryRestrictions to cuisineTypes.
+    - **Ingredient Substitutions:**
+      - If an ingredient violates a dietary restriction, **replace it ONLY with a nutritionally and functionally similar alternative**.
+      - Example:
+        - **Miso paste (soy-based) → Chickpea miso**, NOT vegetable broth.
+        - **Smoked sausage (pork) → Chicken sausage (for halal/kosher)**.
+        - **Soy sauce → Coconut aminos (for soy-free)**.
+      - If a compliant substitute is unavailable, **exclude the ingredient**.
+  
+    - **Recipe Quality:**
+      - Provide a **precise and image-promptable** description for each recipe.
+      - Ensure **detailed, step-by-step** cooking instructions.
+    
+    - **Nutritional Information: (for a single serving estimate)**
+      - Macronutrients **must be stated in grams (g)** for calories, protein, carbs, and fat for a single serving value.
+      - Estimation should be closely related to actual value. do not generate impossible and faulty values.
+      - Only if macronutrient values cannot be estimated, use **"Varies"** . Do not use otherwise.
+    
+    - **Output Format:**
+      - The response must be a structured JSON array.
+  
+    Schema:
+    {
+      "name": "String (Recipe name)",
+      "ingredients": [
+        {
+          "name": "String (Ingredient name)",
+          "quantity": "String",
+          "substitute": ["String"]
+        }
+      ],
+      "shortDescription": "String", 
+      "dietaryPreferences": ["String", maximum-2],
+      "cuisineTypes": ["String"],
+      "tags": ["String"],
+      "cookingInstructions": ["String"],
+      "nutritionalInfo": {
+        "calories": "String",
+        "protein": "String",
+        "carbs": "String",
+        "fat": "String"
+      },
+      "cookingTime": "String"
+    }
+  `;
 
     // Call Cohere API for recipe generation
     const stream = await cohere.chatStream({
@@ -56,24 +103,20 @@ const generateRecipesInBatch = async (req, res) => {
       message: prompt,
       temperature: 0.3,
     });
-
     let responseText = "";
     for await (const chat of stream) {
       if (chat.eventType === "text-generation") {
         responseText += chat.text;
       }
     }
-
-    console.log(responseText);
-    // Clean and parse AI response
+    // parse AI response
     const cleanRecipeDataString = responseText
       .replace(/^```json\n/, "")
       .replace(/\n```$/, "");
 
     const recipes = JSON.parse(cleanRecipeDataString);
-    console.log("Generated Recipes:", recipes);
 
-    // Filter out duplicate recipes based on the name
+    // Filter duplicates
     const existingRecipeNames = await Recipe.find({}, "name").then((docs) =>
       docs.map((doc) => doc.name)
     );
@@ -81,11 +124,10 @@ const generateRecipesInBatch = async (req, res) => {
     const uniqueRecipes = recipes.filter(
       (recipe) => !existingRecipeNames.includes(recipe.name)
     );
-
     // Save unique recipes to MongoDB
     await Recipe.insertMany(uniqueRecipes);
-    console.log("Recipes successfully saved to the database.");
     await updateIngredientsDatabase();
+
     return res.status(200).json({
       status: 200,
       message: `${uniqueRecipes.length} new recipes saved to the database.`,
@@ -96,7 +138,8 @@ const generateRecipesInBatch = async (req, res) => {
     return res.status(500).json({
       status: 500,
       message:
-        "An error occurred while generating or saving the recipes. Please try again.",
+        "An error occurred while generating or saving the recipes, " +
+        error.message,
     });
   }
 };
@@ -124,24 +167,15 @@ const generateRecipe = async (req, res) => {
   try {
     // Check DB first
     const query = {
-      // Strict match for cuisine
-      cuisineTypes: { $all: cuisines }, // Ensures ALL selected cuisines are included
-
-      // Dietary preferences should be flexible
+      cuisineTypes: { $all: cuisines },
       dietaryPreferences: { $in: dietaryPreferences },
-
-      // Ingredients should be flexible but must be part of the list
       $or: [
-        {
-          "ingredients.name": { $in: ingredients }, // Ingredient matches directly
-        },
-        {
-          "ingredients.substitute": { $in: ingredients }, // Match ingredient substitutes
-        },
+        { "ingredients.name": { $in: ingredients } },
+        { "ingredients.substitute": { $in: ingredients } },
       ],
     };
 
-    const recipesFromDB = await Recipe.find(query).limit(25);
+    const recipesFromDB = await Recipe.find(query).limit(4);
 
     if (recipesFromDB.length > 0) {
       return res
@@ -149,138 +183,219 @@ const generateRecipe = async (req, res) => {
         .json({ status: 200, message: "Recipes found.", data: recipesFromDB });
     }
 
-    console.log("No matching recipes found. Generating with AI...");
-
-    // AI Recipe Generation
     const prompt = `
-      Generate 4 complete and authentic recipes based on the given details.
-      **Important Rules**:
-     
-      - If a value is unknown, generate a realistic value instead.
-      - Use ingredients from the list, but not necessarily all. 
-      - If no valid recipes can be generated, return: { "error": "Sorry, I couldn't find any recipe." }
-      - If you are unsure about cuisine, just don't add
+Generate only one recipe using the following schema format. Include all required fields and ensure the content is properly structured. Return the result as an array of JSON objects. If you cannot find authentic recipes, you can just say, "Sorry, I cannot find any recipes for the given ingredients and dietary preferences."
+Don't add made up recipes. Also, strictly provide nutritional information for each recipe, just the estimations based on ingredients and cooking style. Not false information.
 
-      **Input Details**:
-      - Ingredients: ${ingredients.join(", ")}
-      - Cuisine types: ${cuisines.join(", ")}
-      - Dietary preferences: ${dietaryPreferences.join(", ")}
+Use the following:
+- Ingredients: ${ingredients.join(", ")}
+- Cuisine types: ${cuisines.join(", ")} [only one]
+- Dietary preferences: ${dietaryPreferences.join(", ")} [max 2 tags]
 
-      **Expected JSON Schema**:
-       - **ALL fields inside are mandatory.**. Do NOT leave any fields empty.
+STRICT VALIDATION RULES:
+- If given cuisine type is "All", analyze the origin of the recipe and label its cuisine, do not label it as All.
+- **Verify all ingredients align with dietary labels**:
+  - Vegan recipes CANNOT contain any meat, dairy, eggs, honey, or animal-derived products.
+  - Vegetarian recipes CANNOT contain meat, poultry, or fish.
+  - Halal recipes CANNOT contain pork, alcohol, or non-halal meat.
+  - Kosher recipes MUST only contain kosher-certified ingredients.
+  - Gluten-free recipes CANNOT contain wheat, barley, or rye.
+  - Nut-Free recipes CANNOT contain any type of nuts.
+  - Soy-Free recipes CANNOT contain soybeans, soy sauce, tofu, miso, or any soy-derived products.
+  - Strict dietary validation - No mislabeling allowed.
+  - Dietary Options IS NOT CUISINE. Do not add cuisine to dietaryPreferences.
+  - Cuisine is NOT DIETARY RESTRICTIONS. Do not add dietaryPreferences to cuisineTypes.
+
+- **Ingredient Substitutions**:
+  - If an ingredient violates a dietary restriction, replace it ONLY with a nutritionally and functionally similar alternative.
+    - e.g., Miso paste → Chickpea miso, not vegetable broth
+    - Soy sauce → Coconut aminos
+  - If a compliant substitute is unavailable, exclude the ingredient.
+
+- **Recipe Quality**:
+  - Provide a precise and image-promptable description for each recipe.
+  - Ensure detailed, step-by-step cooking instructions.
+
+- **Nutritional Information** (for a single serving estimate):
+  - Macronutrients must be stated in grams (g) for calories, protein, carbs, and fat.
+  - Estimation should be closely related to actual values. Do not generate unrealistic values.
+  - If exact macronutrient values cannot be estimated, use "Varies" — only if absolutely necessary.
+
+- **Output Format**:
+  - The response must be a structured JSON array.
+
+Schema:
 {
-  "recipes": [
+  "name": "String (Recipe name)",
+  "ingredients": [
     {
-      "name": "String",
-      "shortDescription": "String",
-      "ingredients": [{"name": "String", "quantity": "String", "substitute": ["String"]}],
-      "cookingInstructions": ["String"],
-      "cookingTime": "String",
-      "cuisineTypes": ["String"], 
-      "dietaryPreferences": ["String"],
-      "tags": ["String"],
-      "nutritionalInfo": {"calories": "String", "protein": "String", "carbs": "String", "fat": "String"}
+      "name": "String (Ingredient name)",
+      "quantity": "String",
+      "substitute": ["String"]
     }
-  ]
+  ],
+  "shortDescription": "String", 
+  "dietaryPreferences": ["String"] maximum-2,
+  "cuisineTypes": ["String"],
+  "tags": ["String"],
+  "cookingInstructions": ["String"],
+  "nutritionalInfo": {
+    "calories": "String",
+    "protein": "String",
+    "carbs": "String",
+    "fat": "String"
+  },
+  "cookingTime": "String"
 }
-Return **ONLY JSON**, nothing else.
-`;
+    `;
 
+    // Call Cohere API
     const stream = await cohere.chatStream({
       model: "command-r-08-2024",
       message: prompt,
       temperature: 0.3,
-      chatHistory: [{ role: "User", message: prompt }],
-      promptTruncation: "AUTO",
     });
 
     let responseText = "";
-    try {
-      for await (const chat of stream) {
-        if (chat.eventType === "text-generation") {
-          responseText += chat.text;
-        }
+    for await (const chat of stream) {
+      if (chat.eventType === "text-generation") {
+        responseText += chat.text;
       }
-    } catch (error) {
-      console.error("Error streaming AI response:", error.message);
-      return res.status(500).json({
-        status: 500,
-        message: "Error retrieving AI response.",
-      });
     }
-
-    console.log("Raw AI Response:", responseText);
 
     const cleanRecipeDataString = responseText
-      .replace(/^```json\n/, "") // Remove leading code block markers
-      .replace(/\n```$/, "") // Remove trailing markers
-      .trim(); // Remove extra spaces
+      .replace(/^```json\n/, "")
+      .replace(/\n```$/, "");
 
-    // Add a closing bracket if missing
-    if (!cleanRecipeDataString.endsWith("}")) {
-      cleanRecipeDataString += "}";
-    }
+    const recipes = JSON.parse(cleanRecipeDataString);
+    console.log("Generated Recipes:", recipes);
 
-    // Validate AI response
-    let generatedRecipes;
-    try {
-      generatedRecipes = JSON.parse(cleanRecipeDataString);
+    const existingRecipeNames = await Recipe.find({}, "name").then((docs) =>
+      docs.map((doc) => doc.name)
+    );
 
-      if (
-        !generatedRecipes ||
-        !generatedRecipes.recipes ||
-        !Array.isArray(generatedRecipes.recipes)
-      ) {
-        throw new Error("Invalid JSON structure from AI");
-      }
-    } catch (error) {
-      console.error("Error parsing AI response:", error.message);
-      console.error("Received AI response:", cleanRecipeDataString);
-      return res.status(500).json({
-        status: 500,
-        message: "AI response is not valid JSON.",
-      });
-    }
+    const uniqueRecipes = recipes.filter(
+      (recipe) => !existingRecipeNames.includes(recipe.name)
+    );
 
-    generatedRecipes.recipes = generatedRecipes.recipes.map((recipe) => ({
-      name: recipe.name || "Unknown Recipe",
-      shortDescription: recipe.shortDescription || "",
-      ingredients: recipe.ingredients,
+    const generatedRecipes = await Recipe.insertMany(uniqueRecipes);
 
-      cookingInstructions: recipe.cookingInstructions,
-      cookingTime: recipe.cookingTime,
-      cuisineTypes: recipe.cuisineTypes || [],
-      dietaryPreferences: recipe.dietaryPreferences || [],
-      tags: recipe.tags || [],
-      nutritionalInfo: {
-        calories: recipe.nutritionalInfo?.calories || "Unknown",
-        protein: recipe.nutritionalInfo?.protein || "Unknown",
-        carbs: recipe.nutritionalInfo?.carbs || "Unknown",
-        fat: recipe.nutritionalInfo?.fat || "Unknown",
+    const userId = req.user.userId;
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        myRecipeGenerations: { $each: generatedRecipes.map((r) => r._id) },
       },
-    }));
-
-    console.log("Generated Recipes:", generatedRecipes.recipes);
-
-    // Save to DB
-    const newlySavedRecipes = await Recipe.insertMany(generatedRecipes.recipes);
-    await updateIngredientsDatabase();
-    await updateCuisineAndDietaryDb();
-
-    // Extract recipe IDs
-    const recipeIds = newlySavedRecipes?.map((recipe) => recipe._id);
-
-    // Update user's myRecipeGenerations field
-    await User.findByIdAndUpdate(req.user.userId, {
-      $push: { myRecipeGenerations: { $each: recipeIds } },
     });
 
-    return res.status(201).json({ status: 201, data: newlySavedRecipes });
+    await updateIngredientsDatabase();
+
+    return res.status(200).json({
+      status: 200,
+      message: `${generatedRecipes.length} new recipes saved to the database.`,
+      data: generatedRecipes,
+    });
   } catch (error) {
-    console.error("Error generating recipe:", error.message);
+    console.error("Error generating or saving recipes:", error.message);
     return res.status(500).json({
       status: 500,
-      message: `Error generating recipe, ${error.message}`,
+      message:
+        "An error occurred while generating or saving the recipes" +
+        error.message,
+    });
+  }
+};
+
+const uploadRecipeThumbnail = async (req, res) => {
+  const recipeId = req.params.id;
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: 400, message: "No file uploaded" });
+    }
+    const imageUrl = req.file.path;
+    const updatedRecipe = await Recipe.findByIdAndUpdate(
+      recipeId,
+      { $set: { thumbnail: imageUrl } },
+      { new: true }
+    );
+    if (!updatedRecipe) {
+      return res.status(404).json({ status: 404, message: "Recipe not found" });
+    }
+    return res.status(200).json({ status: 200, data: updatedRecipe });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: `Error uploading recipe thumbnail, ${error.message}`,
+    });
+  }
+};
+
+const deleteRecipesInBatch = async (req, res) => {
+  const recipeIds = req.body.recipeIds;
+  try {
+    if (!recipeIds || recipeIds.length === 0) {
+      return res
+        .status(400)
+        .json({ status: 400, message: "No recipe IDs provided" });
+    }
+
+    await Recipe.deleteMany({ _id: { $in: recipeIds } });
+    return res
+      .status(200)
+      .json({ status: 200, data: "Recipes deleted successfully" });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: `Error deleting recipes, ${error.message}`,
+    });
+  }
+};
+
+const deleteRecipe = async (req, res) => {
+  const recipeId = req.params.id;
+
+  if (!recipeId) {
+    return res.status(400).json({
+      status: 400,
+      message: "Invalid recipe ID format",
+    });
+  }
+
+  try {
+    let id = new mongoose.Types.ObjectId(recipeId);
+    const recipe = await Recipe.findById(id);
+    if (!recipe) {
+      return res.status(404).json({ status: 404, message: "Recipe not found" });
+    }
+
+    await User.updateMany(
+      {
+        $or: [
+          { savedRecipes: id },
+          { myRecipeGenerations: id },
+          { ratedRecipes: id },
+        ],
+      },
+      {
+        $pull: {
+          savedRecipes: id,
+          myRecipeGenerations: id,
+          ratedRecipes: id,
+        },
+      }
+    );
+
+    await Recipe.findByIdAndDelete(recipeId);
+    await Recipe.findByIdAndUpdate(recipeId, { $inc: { views: -1 } });
+
+    return res.status(200).json({
+      status: 200,
+      data: "Recipe deleted successfully",
+      recipeId,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: `Error deleting recipe, ${error.message}`,
     });
   }
 };
@@ -351,7 +466,6 @@ const filterRecipes = async (req, res) => {
 
     let filterCriteria = [];
 
-    // Convert ingredients to array properly
     if (ingredients) {
       const ingredientsArray = Array.isArray(ingredients)
         ? ingredients
@@ -359,13 +473,11 @@ const filterRecipes = async (req, res) => {
       filterCriteria.push({ ingredients: { $in: ingredientsArray } });
     }
 
-    // Convert cuisine types to array and apply strict filtering
     if (cuisineTypes && cuisineTypes.length > 0) {
       const cuisineArray = Array.isArray(cuisineTypes)
         ? cuisineTypes
         : cuisineTypes.toString().split(",");
 
-      // Apply case-insensitive regex filtering for each cuisine type
       const regexCuisines = cuisineArray.map((cuisine) => ({
         cuisineTypes: { $regex: new RegExp(`^${cuisine.trim()}$`, "i") },
       }));
@@ -373,7 +485,6 @@ const filterRecipes = async (req, res) => {
       filterCriteria.push({ $or: regexCuisines });
     }
 
-    // Convert dietary preferences to array
     if (dietaryPreferences && dietaryPreferences.length > 0) {
       const dietaryArray = Array.isArray(dietaryPreferences)
         ? dietaryPreferences
@@ -381,14 +492,11 @@ const filterRecipes = async (req, res) => {
       filterCriteria.push({ dietaryPreferences: { $in: dietaryArray } });
     }
 
-    // Convert tags to array
     if (tags && tags.length > 0) {
       const tagArray = Array.isArray(tags) ? tags : tags.toString().split(",");
       filterCriteria.push({ tags: { $in: tagArray } });
     }
 
-    // Filter by cooking time
-    // Filter by cooking time
     if (cookingTime) {
       const operatorMap = {
         "<": "$lt",
@@ -404,26 +512,83 @@ const filterRecipes = async (req, res) => {
         const time = parseInt(match[2], 10);
 
         if (!isNaN(time)) {
-          // Extract just the numeric part from the cookingTime string and convert to number for comparison
           filterCriteria.push({
             $expr: {
               [operatorMap[operator]]: [
                 {
-                  $toInt: {
-                    $arrayElemAt: [
-                      {
-                        $split: [
-                          {
-                            $arrayElemAt: [
-                              { $split: ["$cookingTime", ","] },
-                              0,
-                            ],
-                          },
-                          " ",
-                        ],
-                      },
-                      0,
-                    ],
+                  $let: {
+                    vars: {
+                      ct: { $toLower: "$cookingTime" },
+                    },
+                    in: {
+                      $add: [
+                        {
+                          $cond: [
+                            {
+                              $regexMatch: {
+                                input: "$$ct",
+                                regex: /([\d.]+)\s*(hour|hours|hr|hrs)/,
+                              },
+                            },
+                            {
+                              $multiply: [
+                                {
+                                  $toDouble: {
+                                    $arrayElemAt: [
+                                      {
+                                        $getField: {
+                                          field: "captures",
+                                          input: {
+                                            $regexFind: {
+                                              input: "$$ct",
+                                              regex:
+                                                /([\d.]+)\s*(hour|hours|hr|hrs)/,
+                                            },
+                                          },
+                                        },
+                                      },
+                                      0,
+                                    ],
+                                  },
+                                },
+                                60,
+                              ],
+                            },
+                            0,
+                          ],
+                        },
+                        {
+                          $cond: [
+                            {
+                              $regexMatch: {
+                                input: "$$ct",
+                                regex: /(\d+)\s*(minute|minutes|min|mins)/,
+                              },
+                            },
+                            {
+                              $toInt: {
+                                $arrayElemAt: [
+                                  {
+                                    $getField: {
+                                      field: "captures",
+                                      input: {
+                                        $regexFind: {
+                                          input: "$$ct",
+                                          regex:
+                                            /(\d+)\s*(minute|minutes|min|mins)/,
+                                        },
+                                      },
+                                    },
+                                  },
+                                  0,
+                                ],
+                              },
+                            },
+                            0,
+                          ],
+                        },
+                      ],
+                    },
                   },
                 },
                 time,
@@ -434,11 +599,9 @@ const filterRecipes = async (req, res) => {
       }
     }
 
-    // Convert pagination values to numbers
     const pageNumber = parseInt(page, 10) || 1;
     const pageSizeNumber = parseInt(pageSize, 10) || 10;
 
-    // Construct query properly
     const query = filterCriteria.length ? { $and: filterCriteria } : {};
     console.log("Filtered Query:", JSON.stringify(query, null, 2));
 
@@ -534,12 +697,13 @@ const rateRecipe = async (req, res) => {
   try {
     const userId = req.user.userId;
     const recipeId = req.params.id;
-    const { rating } = req.body;
+    let { rating } = req.body;
 
+    rating = Number(rating);
     if (!rating || rating < 1 || rating > 5) {
       return res
         .status(400)
-        .json({ message: "Invalid rating. Must be between 1-5." });
+        .json({ message: "Invalid rating. Must be between 1 and 5." });
     }
 
     const user = await User.findById(userId);
@@ -548,38 +712,39 @@ const rateRecipe = async (req, res) => {
     const recipe = await Recipe.findById(recipeId);
     if (!recipe) return res.status(404).json({ message: "Recipe not found" });
 
-    // Check if user has already rated this recipe
-    const existingRating = user.ratedRecipes.find(
-      (r) => r.recipeId.toString() === recipeId
+    let existingRating = user.ratedRecipes.find(
+      (r) => r.recipeId && r.recipeId.toString() === recipeId
     );
+
     if (existingRating) {
-      // Update existing rating
       const oldRating = existingRating.rating;
       existingRating.rating = rating;
 
-      // Adjust recipe rating average
+      // Update average rating
       const newAverage =
         (recipe.ratings.average * recipe.ratings.count - oldRating + rating) /
         recipe.ratings.count;
-      await Recipe.findByIdAndUpdate(recipeId, {
-        $set: { "ratings.average": newAverage },
-      });
+
+      recipe.ratings.average = newAverage;
     } else {
       // New rating
       user.ratedRecipes.push({ recipeId, rating });
       recipe.ratings.count += 1;
+
       recipe.ratings.average =
         (recipe.ratings.average * (recipe.ratings.count - 1) + rating) /
         recipe.ratings.count;
-      await recipe.save();
     }
 
-    await user.save();
+    // Save both user and recipe
+    await Promise.all([user.save(), recipe.save()]);
+
     return res.status(200).json({
       status: 200,
       message: "Recipe rated successfully",
     });
   } catch (error) {
+    console.error("Rate recipe error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -594,16 +759,16 @@ const getPopularRecipes = async (req, res) => {
         $addFields: {
           popularityScore: {
             $add: [
-              { $multiply: ["$saves", 0.5] }, // Saves carry the most weight
-              { $multiply: ["$views", 0.3] }, // Views have medium influence
-              { $multiply: ["$ratings.average", 0.2] }, // Consider average rating
+              { $multiply: ["$saves", 0.5] },
+              { $multiply: ["$views", 0.3] },
+              { $multiply: ["$ratings.average", 0.2] },
             ],
           },
         },
       },
-      { $sort: { popularityScore: -1 } }, // Sort by popularity
-      { $skip: skip }, // Skip previous pages
-      { $limit: parseInt(pageSize) }, // Limit results per page
+      { $sort: { popularityScore: -1 } },
+      { $skip: skip },
+      { $limit: parseInt(pageSize) },
     ]);
 
     const totalRecipes = await Recipe.countDocuments();
@@ -656,57 +821,107 @@ const getPersonalizedRecipes = async (req, res) => {
     const { page = 1, pageSize = 10 } = req.query;
     const skip = (page - 1) * pageSize;
 
-    // Get user preferences
+    // Get user
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const dietaryOptions = await DietaryOption.find({
+      _id: { $in: user.dietaryRestrictions },
+    });
+
+    const userDietNames = dietaryOptions.map((d) => d.name);
+    const userStrictDiets = userDietNames.filter((diet) =>
+      strictDietaryRestrictions.includes(diet)
+    );
+    const userOptionalDiets = userDietNames.filter(
+      (diet) => !strictDietaryRestrictions.includes(diet)
+    );
+    // Build filters
+    const strictFilter = userStrictDiets.length
+      ? [{ dietaryPreferences: { $all: userStrictDiets } }]
+      : [];
+
+    const optionalFilter = userOptionalDiets.length
+      ? [{ dietaryPreferences: { $in: userOptionalDiets } }]
+      : [];
+
+    const cuisineFilter =
+      user.cuisinePreferences.length > 0 &&
+      !user.cuisinePreferences.includes("All")
+        ? [{ cuisineTypes: { $in: user.cuisinePreferences } }]
+        : [];
+
+    const combinedFilter = {
+      $and: [
+        ...(strictFilter.length > 0 ? strictFilter : optionalFilter),
+        ...cuisineFilter,
+      ],
+    };
+    // Fetch combined filter
+    let recipes = await Recipe.find(combinedFilter)
+      .skip(skip)
+      .limit(parseInt(pageSize));
+    let totalRecipes = recipes.length;
+
+    //Fallback to only dietary preferences
+    if (
+      recipes.length === 0 &&
+      (strictFilter.length > 0 || optionalFilter.length > 0)
+    ) {
+      const fallbackFilter = {
+        $and: [...(strictFilter.length > 0 ? strictFilter : optionalFilter)],
+      };
+
+      recipes = await Recipe.find(fallbackFilter)
+        .skip(skip)
+        .limit(parseInt(pageSize));
+      totalRecipes = recipes.length;
     }
 
-    let filterCriteria = {};
-
-    // Filter by dietary preferences
-    if (user.dietaryRestrictions.length > 0) {
-      filterCriteria.dietaryPreferences = { $in: user.dietaryRestrictions };
+    //Sort results
+    if (recipes.length > 0 && userOptionalDiets.length > 0) {
+      recipes = recipes.sort((a, b) => {
+        const aMatches = a.dietaryPreferences.filter((pref) =>
+          userOptionalDiets.includes(pref)
+        ).length;
+        const bMatches = b.dietaryPreferences.filter((pref) =>
+          userOptionalDiets.includes(pref)
+        ).length;
+        return bMatches - aMatches;
+      });
     }
 
-    // Filter by cuisine preferences
-    if (user.cuisinePreferences.length > 0) {
-      filterCriteria.cuisineTypes = { $in: user.cuisinePreferences };
-    }
-
-    // Get personalized recipes based on both dietary and cuisine preferences
-    let recipes = await Recipe.find(filterCriteria)
-      .skip(skip) // Skip results based on page
-      .limit(10); // Limit the number of recipes per page
-
-    // Get the total number of matching personalized recipes for pagination info
-    const totalRecipes = recipes.length;
-
-    // If no recipes are found, show similar recipes from saved ones
+    // Fallback to user's saved recipes
     if (recipes.length === 0 && user.savedRecipes.length > 0) {
       const savedRecipes = await Recipe.find({
         _id: { $in: user.savedRecipes },
+        dietaryPreferences: { $in: userStrictDiets },
       })
         .skip(skip)
-        .limit(parseInt(pageSize)); // Limit saved recipes as well
+        .limit(parseInt(pageSize));
+      totalRecipes = savedRecipes.length;
 
       return res.status(200).json({
         status: 200,
         recipes: savedRecipes,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(savedRecipes?.length / pageSize),
+          totalPages: Math.ceil(totalRecipes / pageSize),
           totalRecipes,
         },
       });
     }
 
-    // If no saved recipes, show random recipes
-    if (recipes.length === 0) {
-      const randomRecipes = await Recipe.aggregate([{ $sample: { size: 10 } }]);
+    // Fallback to random recipes (still matching strict diets)
+    if (recipes.length === 0 && userStrictDiets.length > 0) {
+      const randomRecipes = await Recipe.aggregate([
+        { $match: { dietaryPreferences: { $in: userStrictDiets } } },
+        { $sample: { size: parseInt(pageSize) } },
+      ]);
       return res.status(200).json({ recipes: randomRecipes });
     }
 
+    //  Final response
     return res.status(200).json({
       recipes,
       pagination: {
@@ -716,7 +931,7 @@ const getPersonalizedRecipes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching personalized recipes:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -846,65 +1061,207 @@ const getMostViewedRecipes = async (req, res) => {
 
 const getRecipeOfTheDay = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.user.userId;
 
-    // Fetch user preferences (e.g., dietary restrictions, liked cuisines)
-    const user = await User.findById(userId);
+    // Fetch user preferences and populate dietary and cuisine preferences
+    const user = await User.findById(userId)
+      .populate("dietaryRestrictions", "_id name") // Assuming dietaryRestrictions have "name" field
+      .populate("cuisinePreferences", "_id name");
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const { dietaryPreferences, savedRecipes, ratedRecipes } = user;
+    const {
+      dietaryRestrictions = [],
+      cuisinePreferences = [],
+      savedRecipes = [],
+      ratedRecipes = [],
+    } = user;
 
-    // Step 1: Get all recipes matching dietary preferences
-    let filteredRecipes = await Recipe.find({
-      dietaryPreferences: { $in: dietaryPreferences },
-    });
+    // Extract IDs
+    const dietaryIds = dietaryRestrictions.map((d) => d._id);
+    const cuisineIds = cuisinePreferences.map((c) => c._id);
 
-    // Step 2: Prioritize saved and highly rated recipes
-    let preferredRecipes = filteredRecipes.filter(
-      (recipe) =>
-        savedRecipes.includes(recipe._id) || ratedRecipes[recipe._id] >= 4
-    );
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split("T")[0];
 
-    let selectedRecipe;
-
-    if (preferredRecipes.length > 0) {
-      // Step 3: Randomly pick from preferred recipes
-      selectedRecipe =
-        preferredRecipes[Math.floor(Math.random() * preferredRecipes.length)];
-    } else if (filteredRecipes.length > 0) {
-      // Step 4: If no preferred recipes, randomly pick from all filtered recipes
-      selectedRecipe =
-        filteredRecipes[Math.floor(Math.random() * filteredRecipes.length)];
-    } else {
-      return res.status(404).json({ message: "No matching recipes found" });
+    // Fetch recipes matching dietary restrictions (or all if none)
+    let filteredRecipes = [];
+    if (dietaryIds.length > 0 || cuisineIds.length > 0) {
+      filteredRecipes = await Recipe.find({
+        $or: [
+          { dietaryPreferences: { $in: dietaryIds } },
+          { cuisineTypes: { $in: cuisineIds } },
+        ],
+      });
     }
 
-    // Store the selected recipe as today's recipe (optional: use Redis or cache)
-    await User.findByIdAndUpdate(userId, {
-      lastRecipeOfTheDay: selectedRecipe._id,
-    });
+    // If no recipes match preferences, fetch all recipes
+    if (!filteredRecipes || filteredRecipes.length === 0) {
+      filteredRecipes = await Recipe.find({});
+    }
+
+    if (!filteredRecipes || filteredRecipes.length === 0) {
+      return res.status(200).json({ message: "No recipes found" });
+    }
+
+    // Find user's preferred recipes (saved or rated ≥ 4)
+    const preferredRecipes = filteredRecipes.filter(
+      (recipe) =>
+        savedRecipes.includes(recipe._id.toString()) ||
+        ratedRecipes.some(
+          (r) => r.recipeId === recipe._id.toString() && r.rating >= 4
+        )
+    );
+
+    const recipePool =
+      preferredRecipes.length > 0 ? preferredRecipes : filteredRecipes;
+
+    if (recipePool.length === 0) {
+      return res.status(200).json({ message: "No suitable recipe found" });
+    }
+
+    // Generate a deterministic index for today’s recipe
+    const seed =
+      parseInt(userId.substring(0, 8), 16) +
+      parseInt(today.replace(/-/g, ""), 10);
+    const recipeIndex = seed % recipePool.length;
+
+    const selectedRecipe = recipePool[recipeIndex];
 
     res.status(200).json({
       status: 200,
       recipe: selectedRecipe,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching recipe of the day" });
+    console.error("Error in getRecipeOfTheDay:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
 const getTimeBasedRecipe = async (req, res) => {
-  const { dietaryPreferences } = req.body || [];
-  const time = getTimePeriod();
-
-  console.log("Time:", time);
-
   try {
-    const recipes = await getRecipesByTimeAndDietary(time, dietaryPreferences);
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId).populate(
+      "dietaryRestrictions",
+      "_id name"
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const dietaryNames = user.dietaryRestrictions.map((d) => d.name);
+
+    const time = getTimePeriod();
+    console.log("Time:", time);
+    console.log("Dietary Names:", dietaryNames);
+
+    const recipes = await getRecipesByTimeAndDietary(time, dietaryNames);
+
     res.status(200).json({ time, recipes });
   } catch (error) {
+    console.error("Error in getTimeBasedRecipe:", error);
     res.status(500).json({ message: "Error fetching recommended recipes" });
   }
+};
+
+const searchRecipe = async (req, res) => {
+  try {
+    const { query } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const skip = (page - 1) * pageSize;
+
+    const recipes = await Recipe.find({
+      $or: [{ name: { $regex: query, $options: "i" } }],
+    })
+      .skip(skip)
+      .limit(pageSize);
+
+    const totalRecipes = await Recipe.countDocuments({
+      $or: [{ name: { $regex: query, $options: "i" } }],
+    });
+
+    res.json({
+      pagination: {
+        totalRecipes,
+        currentPage: page,
+        totalPages: Math.ceil(totalRecipes / pageSize),
+      },
+      recipes,
+    });
+  } catch (error) {
+    console.error("Error searching recipes:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const cleanUpOrphanedRecipes = async () => {
+  try {
+    // Step 1: Fetch all existing recipe IDs from the Recipe collection
+    const allRecipeIds = await Recipe.find().select("_id");
+
+    const existingRecipeIds = allRecipeIds.map(
+      (recipe) => new mongoose.Types.ObjectId(recipe._id)
+    );
+
+    // Step 2: Update users by removing references to non-existing recipeIds from their arrays
+    await User.updateMany(
+      {
+        $or: [
+          { savedRecipes: { $nin: existingRecipeIds } },
+          { myRecipeGenerations: { $nin: existingRecipeIds } },
+          { ratedRecipes: { $nin: existingRecipeIds } },
+        ],
+      },
+      {
+        $pull: {
+          savedRecipes: { $nin: existingRecipeIds },
+          myRecipeGenerations: { $nin: existingRecipeIds },
+          ratedRecipes: { $nin: existingRecipeIds },
+        },
+      }
+    );
+
+    console.log("Orphaned recipe IDs have been cleaned up.");
+  } catch (error) {
+    console.error("Error cleaning orphaned recipe IDs:", error.message);
+  }
+};
+
+const recalculateRecipeRatings = async () => {
+  const recipes = await Recipe.find({});
+
+  for (const recipe of recipes) {
+    const recipeId = recipe._id.toString();
+    const users = await Users.find({ "ratedRecipes.recipeId": recipeId });
+
+    let total = 0;
+    let count = 0;
+
+    users.forEach((user) => {
+      const ratingEntry = user.ratedRecipes.find(
+        (r) =>
+          r.recipeId?.toString() === recipeId && r.rating >= 1 && r.rating <= 5
+      );
+
+      if (ratingEntry) {
+        total += ratingEntry.rating;
+        count++;
+      }
+    });
+
+    const newAverage = count > 0 ? total / count : 0;
+
+    recipe.ratings.average = newAverage;
+    recipe.ratings.count = count;
+    await recipe.save();
+  }
+
+  console.log("✅ All recipe ratings have been recalculated.");
 };
 
 module.exports = {
@@ -923,4 +1280,10 @@ module.exports = {
   generateRecipe,
   getRecipeOfTheDay,
   getTimeBasedRecipe,
+  uploadRecipeThumbnail,
+  deleteRecipesInBatch,
+  deleteRecipe,
+  searchRecipe,
+  cleanUpOrphanedRecipes,
+  recalculateRecipeRatings,
 };

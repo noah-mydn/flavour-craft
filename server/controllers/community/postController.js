@@ -1,13 +1,42 @@
 const Post = require("../../models/community/Posts");
 const Comment = require("../../models/community/Comments");
+const User = require("../../models/Users");
 const Notification = require("../../models/community/Notification");
+const Report = require("../../models/community/Reports");
+const cloudinary = require("cloudinary").v2;
 
 exports.createPost = async (req, res) => {
+  const userDoc = await User.findById(req.user.userId).select("isRestricted");
+
+  if (userDoc?.isRestricted) {
+    return res.status(403).json({
+      status: 403,
+      message:
+        "You cannot create posts because you are currently banned from posting",
+    });
+  }
+
   try {
     const user = req.user.userId;
     const { topic, description, tags } = req.body;
     const imageUrls = req.files ? req.files.map((file) => file.path) : [];
 
+    const totalImages = imageUrls?.length;
+    if (totalImages > 5) {
+      return res.status(400).json({
+        message: "You can only have a maximum of 5 images per post.",
+      });
+    }
+
+    //check topic, descriptions are there
+    if (!topic) {
+      return res
+        .status(400)
+        .json({ message: "You need to have a topic title" });
+    }
+    if (!description) {
+      return res.status(400).json({ message: "You need to add description" });
+    }
     const newPost = new Post({
       author: user,
       topic,
@@ -32,17 +61,104 @@ exports.createPost = async (req, res) => {
 
 exports.getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find()
-      .sort({ createdAt: -1 })
-      .populate("author", "firstName lastName userImg");
-    //.populate("comments.user", "firstName");
-    res.status(200).json({
+    let { page = 1, pageSize = 10, sort = "recent" } = req.query;
+    page = parseInt(page);
+    pageSize = parseInt(pageSize);
+    const skip = (page - 1) * pageSize;
+
+    let posts, totalCount;
+
+    switch (sort) {
+      case "trending": {
+        const since = new Date();
+        since.setHours(since.getHours() - 24);
+
+        const agg = await Post.aggregate([
+          { $match: { isRemoved: { $ne: true } } },
+          {
+            $addFields: {
+              recentUpvotes: {
+                $size: {
+                  $filter: {
+                    input: "$upvotes",
+                    as: "uv",
+                    cond: { $gte: ["$$uv.timestamp", since] },
+                  },
+                },
+              },
+              recentComments: {
+                $size: {
+                  $filter: {
+                    input: "$comments",
+                    as: "cm",
+                    cond: { $gte: ["$$cm.createdAt", since] },
+                  },
+                },
+              },
+            },
+          },
+          {
+            $addFields: {
+              trendingScore: {
+                $add: ["$recentUpvotes", "$recentComments"],
+              },
+            },
+          },
+          { $sort: { trendingScore: -1, createdAt: -1 } },
+          { $skip: skip },
+          { $limit: pageSize },
+        ]);
+
+        posts = await Post.populate(agg, {
+          path: "author",
+          select: "firstName lastName userImg",
+        });
+        totalCount = await Post.countDocuments({ isRemoved: { $ne: true } });
+        break;
+      }
+
+      case "popular": {
+        const agg = await Post.aggregate([
+          { $match: { isRemoved: { $ne: true } } }, // exclude removed posts
+          { $addFields: { upvoteCount: { $size: "$upvotes" } } },
+          { $sort: { upvoteCount: -1 } },
+          { $skip: skip },
+          { $limit: pageSize },
+        ]);
+
+        posts = await Post.populate(agg, {
+          path: "author",
+          select: "firstName lastName userImg",
+        });
+        totalCount = await Post.countDocuments({ isRemoved: { $ne: true } });
+        break;
+      }
+
+      case "recent":
+      default: {
+        posts = await Post.find({ isRemoved: { $ne: true } }) // filter here
+          .sort({ createdAt: -1 })
+          .populate("author", "firstName lastName userImg")
+          .skip(skip)
+          .limit(pageSize);
+
+        totalCount = await Post.countDocuments({ isRemoved: { $ne: true } });
+        break;
+      }
+    }
+
+    return res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
-      posts: posts,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+      posts,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error(error);
+    return res.status(500).json({
       status: 500,
       message: "Failed to retrieve posts",
       error: error.message,
@@ -50,28 +166,106 @@ exports.getAllPosts = async (req, res) => {
   }
 };
 
+exports.getPostById = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId.toString()).populate(
+      "author",
+      "firstName lastName userImg"
+    );
+
+    if (!post) {
+      return res.status(404).json({
+        status: 404,
+        message: "Post not found",
+      });
+    }
+
+    // Log post status
+    if (post.isRemoved) {
+      console.log(`Post ${post._id} is removed but shown explicitly`);
+    }
+
+    return res.status(200).json({
+      status: 200,
+      post,
+    });
+  } catch (error) {
+    console.error("Error fetching post:", error.message);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to retrieve post",
+      error: error.message,
+    });
+  }
+};
+
 exports.getTrendingPosts = async (req, res) => {
-  const day = new Date();
-  day.setHours(day.getHours() - 24);
+  let { page, pageSize } = req.query;
+  page = parseInt(page) || 1;
+  pageSize = parseInt(pageSize) || 10;
+
+  const skip = (page - 1) * pageSize;
+  const recentThreshold = new Date();
+  recentThreshold.setHours(recentThreshold.getHours() - 24); // last 24h
+
   try {
     const posts = await Post.aggregate([
-      { $match: { createdAt: { $gte: day } } },
       {
         $addFields: {
-          upvoteCount: { $size: "$upvotes" },
-          downvoteCount: { $size: "$downvotes" },
-          netVoteCount: {
-            $subtract: [{ $size: "$upvotes" }, { $size: "$downvotes" }],
+          recentUpvotes: {
+            $size: {
+              $filter: {
+                input: "$upvotes",
+                as: "upvote",
+                cond: { $gte: ["$$upvote.timestamp", recentThreshold] },
+              },
+            },
+          },
+          recentDownvotes: {
+            $size: {
+              $filter: {
+                input: "$downvotes",
+                as: "downvote",
+                cond: { $gte: ["$$downvote.timestamp", recentThreshold] },
+              },
+            },
+          },
+          recentComments: {
+            $size: {
+              $filter: {
+                input: "$comments",
+                as: "comment",
+                cond: { $gte: ["$$comment.createdAt", recentThreshold] },
+              },
+            },
           },
         },
       },
-      { $sort: { netVoteCount: -1 } },
+      {
+        $addFields: {
+          trendingScore: {
+            $add: [
+              { $subtract: ["$recentUpvotes", "$recentDownvotes"] },
+              "$recentComments",
+            ],
+          },
+        },
+      },
+      { $sort: { trendingScore: -1 } },
+      { $skip: skip },
+      { $limit: pageSize },
     ]);
+
+    const totalCount = await Post.countDocuments();
 
     res.status(200).json({
       status: 200,
-      message: "Posts retrieved successfully",
+      message: "Trending posts retrieved successfully",
       posts: posts,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -83,14 +277,26 @@ exports.getTrendingPosts = async (req, res) => {
 };
 
 exports.getPopularPosts = async (req, res) => {
+  let { page, pageSize } = req.query;
+  page = parseInt(page) || 1;
+  pageSize = parseInt(pageSize) || 10;
+
+  const skip = (page - 1) * pageSize;
   try {
     const posts = await Post.aggregate([
       { $addFields: { upVoteCount: { $size: "$upvotes" } } },
       { $sort: { upVoteCount: -1 } },
-    ]);
+    ])
+      .skip(skip)
+      .limit(pageSize);
+    const totalCount = await Post.countDocuments();
     res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
       posts: posts,
     });
   } catch (error) {
@@ -103,6 +309,11 @@ exports.getPopularPosts = async (req, res) => {
 };
 
 exports.getPostsByTags = async (req, res) => {
+  let { page, pageSize } = req.query;
+  page = parseInt(page) || 1;
+  pageSize = parseInt(pageSize) || 10;
+
+  const skip = (page - 1) * pageSize;
   try {
     const tags = req.query.tags.split(",");
     const posts = await Post.aggregate([
@@ -112,11 +323,17 @@ exports.getPostsByTags = async (req, res) => {
         },
       },
       { $sort: { netVoteCount: -1 } },
-    ]);
+    ])
+      .skip(skip)
+      .limit(pageSize);
+    const totalCount = await Post.countDocuments({ tags: { $in: tags } });
+
     res.status(200).json({
       status: 200,
       message: "Posts retrieved successfully",
       posts: posts,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
     });
   } catch (error) {
     res.status(500).json({
@@ -127,64 +344,74 @@ exports.getPostsByTags = async (req, res) => {
   }
 };
 
-exports.getPostById = async (req, res) => {
+exports.updatePost = async (req, res) => {
   try {
-    console.time("getPostById Query");
+    // 1. Parse request data
+    const { postId } = req.params;
+    let { topic, description, tags, existingImages } = req.body;
 
-    const post = await Post.findById(req.params.postId.toString()).populate(
-      "author",
-      "firstName lastName userImg"
-    );
+    if (!Array.isArray(existingImages)) {
+      existingImages = existingImages ? [existingImages] : [];
+    }
 
-    console.timeEnd("getPostById Query");
+    // 2. Get new files
+    const newFiles = req.files || [];
 
-    if (!post) {
-      return res.status(404).json({
-        status: 404,
-        message: "Post not found",
+    // Check total image count (max 5)
+    const totalImages = existingImages.length + newFiles.length;
+    if (totalImages > 5) {
+      return res.status(400).json({
+        message: "You can only have a maximum of 5 images per post.",
       });
     }
+
+    // 3. Find original post
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    // 4. Upload new images to Cloudinary
+    const newImageUrls = await Promise.all(
+      newFiles.map(async (file) => {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: "flavourCraft_posts",
+        });
+        return result.secure_url;
+      })
+    );
+
+    // 5. Identify images to delete
+    const imagesToDelete = post.images.filter(
+      (img) => !existingImages.includes(img)
+    );
+
+    // 6. Delete removed images from Cloudinary
+    await Promise.all(
+      imagesToDelete.map(async (url) => {
+        const publicId = url.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`flavourCraft_posts/${publicId}`);
+      })
+    );
+
+    // 7. Update post with combined images
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      {
+        topic,
+        description,
+        tags,
+        images: [...existingImages, ...newImageUrls],
+      },
+      { new: true }
+    );
 
     res.status(200).json({
       status: 200,
-      post,
-    });
-  } catch (error) {
-    console.error("Error fetching post:", error.message);
-    res.status(500).json({
-      status: 500,
-      message: "Failed to retrieve post",
-      error: error.message,
-    });
-  }
-};
-
-exports.updatePost = async (req, res) => {
-  try {
-    const { topic, description, tags } = req.body;
-    let updatedFields = { topic, description, tags };
-    if (req.file) {
-      updatedFields.image = req.file.path;
-    }
-    const post = await Post.findByIdAndUpdate(
-      req.params.postId,
-      updatedFields,
-      { new: true }
-    );
-    if (!post) {
-      return res.status(404).json({
-        status: 404,
-        message: "Post not found",
-      });
-    }
-    res.status(204).json({
-      status: 204,
       message: "Post updated successfully",
-      post: post,
+      post: updatedPost,
     });
   } catch (error) {
+    console.error("Update error:", error);
     res.status(500).json({
-      status: 500,
       message: "Failed to update post",
       error: error.message,
     });
@@ -193,16 +420,57 @@ exports.updatePost = async (req, res) => {
 
 exports.deletePost = async (req, res) => {
   try {
-    const post = await Post.findByIdAndDelete(req.params.postId);
+    const userId = req.user.userId;
+    const post = await Post.findById(req.params.postId);
+
     if (!post) {
       return res.status(404).json({
         status: 404,
         message: "Post not found",
       });
     }
+
+    // Check if the user is the author
+    if (post.author.toString() !== userId) {
+      return res.status(403).json({
+        status: 403,
+        message: "You do not have permission to delete this post",
+      });
+    }
+
+    // Delete images from Cloudinary
+    if (post.images && post.images.length > 0) {
+      for (const imageUrl of post.images) {
+        const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id from URL
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
+
+    // Find and delete related comments
+    const comments = await Comment.find({ postId: req.params.postId });
+
+    for (const comment of comments) {
+      // Delete comment images from Cloudinary
+      if (comment.images && comment.images.length > 0) {
+        for (const imageUrl of comment.images) {
+          const publicId = imageUrl.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
+      // Delete notifications related to this comment
+      await Notification.deleteMany({ commentId: comment._id });
+    }
+
+    // Delete all comments related to the post
+    await Comment.deleteMany({ postId: req.params.postId });
+
+    // Delete the post
+    await Post.findByIdAndDelete(req.params.postId);
+
     res.status(200).json({
       status: 200,
-      message: "Post deleted successfully",
+      message:
+        "Post, related comments, comment images & notifications deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -215,6 +483,16 @@ exports.deletePost = async (req, res) => {
 
 exports.addComment = async (req, res) => {
   console.log("Commented User:", req.user);
+  const userDoc = await User.findById(req.user.userId).select("isRestricted");
+
+  if (userDoc?.isRestricted) {
+    return res.status(403).json({
+      status: 403,
+      message:
+        "You cannot create posts because you are currently banned from posting",
+    });
+  }
+
   try {
     const author = req.user.userId;
     const { content } = req.body;
@@ -236,21 +514,38 @@ exports.addComment = async (req, res) => {
     post.comments.push(newComment._id);
     await post.save();
 
-    //send noti to post's author
-    if (post.author._id.toString() != author.toString()) {
-      const noti = new Notification({
-        author: post.author._id,
+    // Fetch the commenter with profile data
+    const commentedUser = await User.findById(author).select(
+      "firstName lastName userImg"
+    );
+    console.log("Fetched Commented User:", commentedUser);
+
+    // Send notification to post's author
+    if (post.author.toString() !== author.toString()) {
+      const notification = new Notification({
         type: "comment",
-        message: `${req.user.firstName} left a comment on your post.`,
+        recipient: post.author,
+        author: {
+          firstName: commentedUser.firstName,
+          lastName: commentedUser.lastName,
+          userImg: commentedUser.userImg,
+        },
+        message: `${commentedUser.firstName} left a comment on your post.`,
         link: `/post/${postId}`,
         isRead: false,
       });
-      await noti.save();
+      await notification.save();
     }
 
     res.status(201).json({
       status: 201,
       message: "Comment added successfully",
+      comment: {
+        postId,
+        _id: newComment._id,
+        content: newComment.content,
+        author,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -276,7 +571,7 @@ exports.updateComment = async (req, res) => {
       });
     }
 
-    if (comment.author.toString() !== userId.toString()) {
+    if (comment.author._id.toString() !== userId.toString()) {
       return res.status(403).json({
         status: 403,
         message: "You are not authorized to edit this comment",
@@ -310,10 +605,10 @@ exports.deleteComment = async (req, res) => {
         message: "Comment not found",
       });
     }
-    if (comment.userId != req.user.userId) {
+    if (comment.author._id != req.user.userId) {
       console.log(req);
       return res.status(403).json({
-        commentedUser: comment.userId,
+        commentedUser: comment.author._id,
         loggedUser: req.user.userId,
         status: 403,
         message: "You are not authorized to delete this comment",
@@ -332,6 +627,8 @@ exports.deleteComment = async (req, res) => {
     res.status(200).json({
       status: 200,
       message: "Comment deleted successfully",
+      postId,
+      commentId,
     });
   } catch (error) {
     res.status(500).json({
@@ -404,6 +701,7 @@ exports.upvotePost = async (req, res) => {
       status: 200,
       message: "Liked this post",
       postId: post._id,
+      userId: req.user.userId,
       upvotes: post.upvotes.length,
     });
   } catch (error) {
@@ -508,16 +806,46 @@ exports.deleteDownVote = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
     const notifications = await Notification.find({
-      userId: req.user._id,
+      recipient: req.user.userId,
+      createdAt: { $gte: oneWeekAgo },
     }).sort({ createdAt: -1 });
+
     res.status(200).json({
       status: 200,
       notifications: notifications,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to fetch notifications", error: error.message });
+    res.status(500).json({
+      message: "Failed to fetch notifications",
+      error: error.message,
+    });
+  }
+};
+
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { isRead: true },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    res.status(200).json({
+      message: "Notification marked as read",
+      notification,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      //error: error.message,
+    });
   }
 };

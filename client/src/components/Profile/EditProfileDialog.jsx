@@ -16,110 +16,42 @@ import {
   Chip,
   useTheme,
   CircularProgress,
+  useMediaQuery,
 } from "@mui/material";
 import { AddAPhoto, Check, Close } from "@mui/icons-material";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  cuisinesSelector,
+  dietaryOptionsSelector,
+} from "../../redux/selectors/selectors";
+import { fetchCuisines } from "../../redux/apiClients/cuisineAPI";
+import { fetchDietaryOptions } from "../../redux/apiClients/dietaryAPI";
+import useProfile from "../../hooks/useProfile";
 
 const EditProfileDialog = ({ open, onClose, user }) => {
+  const {
+    profileData,
+    profileImage,
+    loading,
+    handleInputChange,
+    handleAutocompleteChange,
+    handleImageChange,
+    handleSubmit,
+  } = useProfile(user);
+
   const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
-  const [profileImage, setProfileImage] = useState(user?.userImg || null);
-  const [imageFile, setImageFile] = useState(null);
-  const [formData, setFormData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
-    // Not allowing email changes is also common, depends on your requirements
-  });
+  const cuisines = useSelector(cuisinesSelector);
+  const dietaryOptions = useSelector(dietaryOptionsSelector);
 
-  // For dietary restrictions and cuisine preferences
-  const [selectedDietaryRestrictions, setSelectedDietaryRestrictions] =
-    useState(user?.dietaryRestrictions || []);
-  const [selectedCuisinePreferences, setSelectedCuisinePreferences] = useState(
-    user?.cuisinePreferences || []
-  );
+  React.useEffect(() => {
+    dispatch(fetchCuisines());
+    dispatch(fetchDietaryOptions());
+  }, []);
 
-  // Sample data for dropdowns - replace with your actual data source
-  const dietaryOptions = [
-    { _id: "67d001043d88023d7040cf6f", name: "Gluten-Free" },
-    { _id: "67d000e23d88023d7040ce1c", name: "Low-Sugar" },
-    { _id: "67d001183d88023d7040d049", name: "Soy-Free" },
-    { _id: "sample1", name: "Vegetarian" },
-    { _id: "sample2", name: "Vegan" },
-    { _id: "sample3", name: "Keto" },
-    { _id: "sample4", name: "Dairy-Free" },
-    { _id: "sample5", name: "Nut-Free" },
-  ];
-
-  const cuisineOptions = [
-    { _id: "67cfff0c3191bb61ad097653", name: "Chinese" },
-    { _id: "67cfff393191bb61ad0977ec", name: "Korean" },
-    { _id: "sample6", name: "Italian" },
-    { _id: "sample7", name: "Mexican" },
-    { _id: "sample8", name: "Indian" },
-    { _id: "sample9", name: "Thai" },
-    { _id: "sample10", name: "Mediterranean" },
-    { _id: "sample11", name: "Japanese" },
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setProfileImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = async () => {
-    //setLoading(true);
-
-    // Create FormData object for file upload
-    const profileData = new FormData();
-
-    // Append text fields
-    profileData.append("firstName", formData.firstName);
-    profileData.append("lastName", formData.lastName);
-    profileData.append("email", formData.email);
-
-    // Append image if changed
-    if (imageFile) {
-      profileData.append("userImg", imageFile);
-    }
-
-    // Append arrays as JSON strings (or use your preferred method)
-    profileData.append(
-      "dietaryRestrictions",
-      JSON.stringify(selectedDietaryRestrictions)
-    );
-    profileData.append(
-      "cuisinePreferences",
-      JSON.stringify(selectedCuisinePreferences)
-    );
-
-    console.log(profileData);
-
-    // try {
-    //   // Dispatch update action (assuming it handles FormData correctly)
-    //   await dispatch(updateUserProfile(profileData));
-    //   onClose(true); // Close with success flag
-    // } catch (error) {
-    //   console.error("Error updating profile:", error);
-    // } finally {
-    //   setLoading(false);
-    // }
+  const editUserProfile = () => {
+    handleSubmit(() => onClose(false));
   };
 
   return (
@@ -127,7 +59,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
       open={open}
       onClose={() => onClose(false)}
       fullWidth
-      maxWidth="md"
+      fullScreen={fullScreen}
       PaperProps={{
         sx: { borderRadius: 3 },
       }}
@@ -163,7 +95,7 @@ const EditProfileDialog = ({ open, onClose, user }) => {
             <Box sx={{ position: "relative", pt: 2 }}>
               <Avatar
                 src={profileImage}
-                alt={`${formData.firstName} ${formData.lastName}`}
+                alt={`${profileData.firstName} ${profileData.lastName}`}
                 sx={{
                   width: 120,
                   height: 120,
@@ -204,9 +136,10 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                 <TextField
                   name="firstName"
                   label="First Name"
-                  value={formData.firstName}
+                  value={profileData.firstName}
                   onChange={handleInputChange}
                   fullWidth
+                  size="small"
                   margin="normal"
                   variant="outlined"
                 />
@@ -215,7 +148,8 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                 <TextField
                   name="lastName"
                   label="Last Name"
-                  value={formData.lastName}
+                  value={profileData.lastName}
+                  size="small"
                   onChange={handleInputChange}
                   fullWidth
                   margin="normal"
@@ -226,9 +160,11 @@ const EditProfileDialog = ({ open, onClose, user }) => {
                 <TextField
                   name="email"
                   label="Email Address"
-                  value={formData.email}
+                  value={profileData.email}
                   onChange={handleInputChange}
                   fullWidth
+                  size="small"
+                  disabled
                   margin="normal"
                   variant="outlined"
                   type="email"
@@ -238,92 +174,116 @@ const EditProfileDialog = ({ open, onClose, user }) => {
           </Grid>
 
           {/* Dietary Restrictions */}
-          <Grid item xs={12}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
-              Dietary Restrictions
-            </Typography>
-            <Autocomplete
-              multiple
-              id="dietary-restrictions"
-              options={dietaryOptions}
-              getOptionLabel={(option) => option.name}
-              value={selectedDietaryRestrictions}
-              onChange={(event, newValue) => {
-                setSelectedDietaryRestrictions(newValue);
-              }}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    key={option._id}
-                    label={option.name}
-                    {...getTagProps({ index })}
-                    sx={{
-                      borderRadius: 15,
-                      color: "#fff",
-                      background: theme.palette.secondary.dark,
-                    }}
+          {user?.role !== "admin" && (
+            <Grid item xs={12}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Dietary Restrictions
+              </Typography>
+              <Autocomplete
+                size="small"
+                multiple
+                id="dietary-restrictions"
+                options={dietaryOptions}
+                getOptionLabel={(option) => option.name}
+                value={profileData?.dietaryRestrictions}
+                onChange={(event, newValue) =>
+                  handleAutocompleteChange("dietaryRestrictions", newValue)
+                }
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      key={option._id}
+                      label={option.name}
+                      {...getTagProps({ index })}
+                      sx={{
+                        "& .MuiChip-deleteIcon": {
+                          color: "#fff",
+                        },
+                        borderRadius: 15,
+                        color: "#fff",
+                        background: theme.palette.secondary.dark,
+                      }}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="outlined"
+                    placeholder={
+                      profileData?.dietaryRestrictions.length === 0
+                        ? "Select dietary restrictions"
+                        : ""
+                    }
+                    fullWidth
+                    margin="normal"
                   />
-                ))
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="outlined"
-                  placeholder="Select dietary restrictions"
-                  fullWidth
-                  margin="normal"
-                />
-              )}
-              isOptionEqualToValue={(option, value) => option._id === value._id}
-            />
-          </Grid>
+                )}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
+              />
+            </Grid>
+          )}
 
           {/* Cuisine Preferences */}
-          <Grid item xs={12}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
-              Cuisine Preferences
-            </Typography>
-            <Autocomplete
-              multiple
-              id="cuisine-preferences"
-              options={cuisineOptions}
-              getOptionLabel={(option) => option.name}
-              value={selectedCuisinePreferences}
-              onChange={(event, newValue) => {
-                setSelectedCuisinePreferences(newValue);
-              }}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    key={option._id}
-                    label={option.name}
-                    {...getTagProps({ index })}
-                    sx={{
-                      borderRadius: 15,
-                      color: "#fff",
-                      background: theme.palette.secondary.dark,
-                    }}
+          {user?.role !== "admin" && (
+            <Grid item xs={12}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Cuisine Preferences
+              </Typography>
+              <Autocomplete
+                size="small"
+                multiple
+                id="cuisine-preferences"
+                options={cuisines}
+                getOptionLabel={(option) => option.name}
+                value={profileData?.cuisinePreferences}
+                onChange={(event, newValue) =>
+                  handleAutocompleteChange("cuisinePreferences", newValue)
+                }
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      key={option._id}
+                      label={option.name}
+                      {...getTagProps({ index })}
+                      sx={{
+                        "& .MuiChip-deleteIcon": {
+                          color: "#fff",
+                        },
+                        borderRadius: 15,
+                        color: "#fff",
+                        background: theme.palette.secondary.dark,
+                      }}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="outlined"
+                    placeholder={
+                      profileData?.cuisinePreferences?.length === 0
+                        ? "Select cuisine preferences"
+                        : ""
+                    }
+                    fullWidth
+                    margin="normal"
                   />
-                ))
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="outlined"
-                  placeholder="Select cuisine preferences"
-                  fullWidth
-                  margin="normal"
-                />
-              )}
-              isOptionEqualToValue={(option, value) => option._id === value._id}
-            />
-          </Grid>
+                )}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
+              />
+            </Grid>
+          )}
         </Grid>
       </DialogContent>
 
       <DialogActions sx={{ p: 3, justifyContent: "flex-end" }}>
         <Button
-          onClick={handleSubmit}
+          onClick={editUserProfile}
           variant="contained"
           disabled={loading}
           startIcon={loading ? <CircularProgress size={20} /> : <Check />}

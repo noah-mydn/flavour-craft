@@ -1,87 +1,312 @@
 import React from "react";
-import { Clock, BookOpen, User, Heart } from "lucide-react";
+import {
+  Box,
+  Typography,
+  Chip,
+  Button,
+  Container,
+  useMediaQuery,
+  useTheme,
+  CardMedia,
+  alpha,
+  Grid,
+  Divider,
+  Paper,
+} from "@mui/material";
+import {
+  AccessTime as AccessTimeIcon,
+  LocalDining as CuisineIcon,
+  Restaurant as IngredientsIcon,
+} from "@mui/icons-material";
 
-const GeneratedRecipeCard = ({ recipes }) => {
-  if (!recipes || recipes.length === 0) {
-    return (
-      <div className="text-center p-6 text-gray-500">No recipes found</div>
-    );
-  }
+import { useNavigate } from "react-router-dom";
+import Flag from "react-world-flags";
+import cuisineFlags from "../../constants/flags";
+import { DetailCard } from "../../styles/ContainerStyles";
+
+const GeneratedRecipeCard = ({ recipe }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {recipes.map((recipe, index) => (
-        <div
-          key={recipe._id || index}
-          className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-        >
-          {/* Recipe Image */}
-          <div className="relative h-48 bg-gray-100">
-            <img
-              src={recipe.thumbnail || "../recipe-fallback-thumbnail.png"}
-              alt={recipe.name}
-              className="w-full h-full object-cover"
+    <DetailCard
+      sx={{
+        overflow: "hidden",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+        borderRadius: 3,
+      }}
+    >
+      {/* Main content layout */}
+      <Grid container>
+        {/* Left side - Image */}
+        <Grid item xs={12} md={6} lg={5}>
+          <Box sx={{ position: "relative", height: "100%" }}>
+            <CardMedia
+              component="img"
+              src={recipe?.thumbnail}
+              alt={recipe?.name}
+              sx={{
+                width: "100%",
+                height: isMobile ? 240 : "100%",
+                objectFit: "cover",
+              }}
             />
-            <div className="absolute top-2 right-2 flex gap-1">
-              {recipe.dietaryPreferences?.map((pref, i) => (
-                <span
-                  key={i}
-                  className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full"
-                >
-                  {pref}
-                </span>
+            {/* Tags chips */}
+            <Box sx={{ position: "absolute", top: 15, left: 10 }}>
+              {recipe?.dietaryPreferences?.map((tag, idx) => (
+                <Chip
+                  key={idx}
+                  label={tag}
+                  size="small"
+                  sx={{
+                    fontSize: "0.7rem",
+                    height: 24,
+                    mr: 0.5,
+                    mb: 0.5,
+                    bgcolor: theme.palette.secondary.dark,
+                    color: "#fff",
+                  }}
+                />
               ))}
-            </div>
-          </div>
+            </Box>
+          </Box>
+        </Grid>
 
-          {/* Recipe Content */}
-          <div className="p-4">
-            <h3 className="font-medium text-lg mb-1 text-gray-900 line-clamp-1">
+        {/* Right side - Info */}
+        <Grid item xs={12} md={6} lg={7} px={2}>
+          <Box sx={{ p: 1 }}>
+            {/* Recipe Name */}
+            <Typography
+              variant="h5"
+              component="h1"
+              fontWeight="bold"
+              gutterBottom
+              sx={{
+                mb: 2,
+                color: theme.palette.text.primary,
+              }}
+            >
               {recipe.name}
-            </h3>
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-              {recipe.shortDescription}
-            </p>
+            </Typography>
 
-            {/* Recipe Meta Info */}
-            <div className="flex justify-between items-center text-xs text-gray-500 mb-3">
-              <div className="flex items-center">
-                <Clock size={14} className="mr-1" />
-                <span>{recipe.cookingTime}</span>
-              </div>
-              <div className="flex items-center">
-                <BookOpen size={14} className="mr-1" />
-                <span>{recipe.ingredients?.length || 0} ingredients</span>
-              </div>
-              <div className="flex items-center">
-                <Heart size={14} className="mr-1" />
-                <span>{recipe.saves || 0}</span>
-              </div>
-            </div>
+            {/* Nutritional info */}
+            <Paper
+              elevation={0}
+              sx={{
+                bgcolor: "transparent",
+                mb: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  mt: 3,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  maxWidth: 350,
+                }}
+              >
+                <Box sx={{ textAlign: "center" }}>
+                  <Typography variant="subtitle2" color="primary">
+                    Calories
+                  </Typography>
+                  <Typography variant="body1">
+                    {recipe?.nutritionalInfo?.calories}
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem />
+                <Box sx={{ textAlign: "center" }}>
+                  <Typography variant="subtitle2" color="primary">
+                    Fat
+                  </Typography>
+                  <Typography variant="body1">
+                    {recipe?.nutritionalInfo?.fat}
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem />
+                <Box sx={{ textAlign: "center" }}>
+                  <Typography variant="subtitle2" color="primary">
+                    Carbs
+                  </Typography>
+                  <Typography variant="body1">
+                    {recipe?.nutritionalInfo?.carbs}
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem />
+                <Box sx={{ textAlign: "center" }}>
+                  <Typography variant="subtitle2" color="primary">
+                    Protein
+                  </Typography>
+                  <Typography variant="body1">
+                    {recipe?.nutritionalInfo?.protein}
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
 
-            {/* Cuisine & Tags */}
-            <div className="flex flex-wrap gap-1 mt-3">
-              {recipe.cuisineTypes?.map((cuisine, i) => (
-                <span
-                  key={i}
-                  className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full"
-                >
-                  {cuisine}
-                </span>
-              ))}
-              {recipe.tags?.slice(0, 2).map((tag, i) => (
-                <span
-                  key={i}
-                  className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+            {/* Dietary Tags */}
+            <Box sx={{ mb: 3 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  flexWrap: "wrap",
+                }}
+              >
+                {recipe.tags?.map((pref, index) => (
+                  <Chip
+                    key={index}
+                    label={pref}
+                    size="small"
+                    sx={{
+                      mr: 1,
+                      mb: 1,
+                      color: "#fff",
+                      backgroundColor: theme.palette.text.secondary,
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
+
+      {/* Bottom section - Full width */}
+      <Box
+        sx={{
+          pb: 3,
+          pt: isMobile ? 0 : 1,
+          borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          // display: "flex",
+          // justifyContent: "center",
+          // flexDirection: "column",
+          // alignItems: "center",
+          width: "100%",
+        }}
+      >
+        {/* Quick Info */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-start",
+            flexWrap: "wrap",
+            gap: { xs: 2, sm: 1 },
+            my: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: theme.palette.text.secondary,
+            }}
+          >
+            <AccessTimeIcon sx={{ mr: 1, fontSize: 20 }} />
+            <Typography variant="body2">{recipe.cookingTime}</Typography>
+          </Box>
+
+          {!isMobile && (
+            <Box
+              sx={{
+                borderRight: "1px solid",
+                borderColor: "divider",
+                height: 20,
+                mx: 1,
+              }}
+            />
+          )}
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: theme.palette.text.secondary,
+            }}
+          >
+            <IngredientsIcon sx={{ mr: 1, fontSize: 20 }} />
+            <Typography variant="body2">
+              {recipe.ingredients?.length} Ingredients
+            </Typography>
+          </Box>
+
+          {!isMobile && (
+            <Box
+              sx={{
+                borderRight: "1px solid",
+                borderColor: "divider",
+                height: 20,
+                mx: 1,
+              }}
+            />
+          )}
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: theme.palette.text.secondary,
+            }}
+          >
+            <Flag
+              code={
+                cuisineFlags[
+                  recipe?.cuisineTypes?.length > 0 && recipe?.cuisineTypes[0]
+                ]
+              }
+              style={{
+                width: 24,
+                height: 16,
+                marginRight: 8,
+              }}
+            />
+            <Typography variant="body2">
+              {recipe?.cuisineTypes?.length > 0
+                ? recipe.cuisineTypes[0]
+                : "Unknown"}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Description */}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            mb: 3,
+            //px: { sm: 0, md: 6 },
+            lineHeight: 1.6,
+          }}
+        >
+          {recipe.shortDescription}
+        </Typography>
+
+        {/* Action Button */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            mt: 2,
+          }}
+        >
+          <Button
+            variant="contained"
+            color="primary"
+            size={isMobile ? "medium" : "large"}
+            sx={{
+              borderRadius: 2,
+              px: 4,
+              py: 1,
+              boxShadow: 2,
+            }}
+            onClick={() => navigate(`/recipes/${recipe?._id}`)}
+          >
+            View Full Recipe
+          </Button>
+        </Box>
+      </Box>
+    </DetailCard>
   );
 };
 

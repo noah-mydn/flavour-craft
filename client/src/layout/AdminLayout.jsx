@@ -25,8 +25,8 @@ const AdminLayout = () => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          marginLeft: sidebarOpen ? "240px" : "0px", // Push content when sidebar is open
-          width: sidebarOpen ? "calc(100% - 240px)" : "100%", // Adjust width properly
+          marginLeft: sidebarOpen ? "230px" : "0px",
+          width: sidebarOpen ? "calc(100% - 230px)" : "100%",
         }}
       >
         <AdminHeader onMenuClick={toggleSidebar} />
